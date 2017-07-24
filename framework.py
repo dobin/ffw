@@ -14,12 +14,6 @@ import shlex
 import signal 
 import sys
 import socket
-
-from ptrace.debugger.debugger import PtraceDebugger
-from ptrace.debugger.child import createChild
-from ptrace.debugger.process_event import ProcessExit
-from ptrace.debugger.ptrace_signal import ProcessSignal
-from signal import SIGCHLD, SIGTRAP, SIGSEGV
 import logging
 
 GLOBAL = {
@@ -145,7 +139,7 @@ def _handleOutcome(config, event, inputFile, seed, outputFile, count):
 
 
 def printConfig(config):
-    print "Config for thread:  " + config["threadId"]
+    print "Config for thread:  " + str(config["threadId"])
     print "  Running fuzzer:   ", config["fuzzer"]
     print "  Outcomde dir:     ", config["outcome_dir"]
     print "  Target:           ", config["target_bin"]
@@ -225,6 +219,9 @@ def sendDataToServer(config, file):
         # server down
         return False
 
+    if config["sendInitialDataFunction"] is not None:
+        config["sendInitialDataFunction"](sock)
+
     # sock.setblocking(0)
     file = open(file, "r")
     data = file.read()
@@ -298,16 +295,26 @@ def handlePrevCrash(config, outExt, inFile, outcome, runFuzzer, handleOutcome):
     sys.stdout.flush()
 
 
+def minimizeCrashes(config): 
+    pass
+
+
 # The main fuzzing loop
 # all magic is performed here
-def doFuzz(config, setupEnvironment=_setupEnvironment, chooseInput=_chooseInput,
-    generateSeed=_generateSeed, runFuzzer=_runFuzzer, runTarget=_runTarget,
-    checkForCrash=_checkForCrash, handleOutcome=_handleOutcome):
+def doFuzz(config):
+    setupEnvironment=_setupEnvironment
+    chooseInput=_chooseInput
+    generateSeed=_generateSeed
+    runFuzzer=_runFuzzer
+    runTarget=_runTarget,
+    checkForCrash=_checkForCrash
+    handleOutcome=_handleOutcome
+
     seed = 0
     count = 0
     outcome = None
     crashCount = 0 # number of crashes, absolute
-    crashCountNew = 0 # number of crashes since last minimizing
+    crashCountAnalLast = 0 # when was the last crash analysis
     threadId = 1
     gcovAnalysisLastIter = 0 # when was gcov analysis last performed (in iterations)
 
@@ -341,6 +348,10 @@ def doFuzz(config, setupEnvironment=_setupEnvironment, chooseInput=_chooseInput,
             epochCount = 0
         else: 
             epochCount += 1 
+
+        if crashCountAnalLast + config["crash_minimize_time"] < crashCount: 
+            minimizeCrashes(config)
+            crashCountAnalLast = crashCount
 
         haveOutcome = False
 

@@ -4,3 +4,5 @@ Todo
 - integrate several fuzzers
 - do authentication-awareness
 - cache all input files (leave them open)
+- crash bining
+- corpus destillation 
