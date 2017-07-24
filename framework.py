@@ -15,6 +15,8 @@ import signal
 import sys
 import socket
 import logging
+from multiprocessing import Process, Queue
+
 
 GLOBAL = {
     "process": 0,
@@ -299,9 +301,39 @@ def minimizeCrashes(config):
     pass
 
 
+# start subprocesses
+def doFuzz(config):
+    q = Queue()
+    orig = signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+    procs = []
+    n = 0
+    while n < config["processes"]:
+        print "Start child: " + str(n)
+        p = Process(target=doActualFuzz, args=(config, n, q))
+        procs.append(p)
+        p.start()
+        n += 1
+
+    signal.signal(signal.SIGINT, orig)
+
+    while True: 
+        try: 
+            r = q.get()
+            print "Mother: " + str(r[0]) + " " + str(r[1]) + " " + str(r[2]) + " " + str(r[3])
+        except KeyboardInterrupt:
+            for p in procs: 
+                p.terminate()
+                p.join()
+
+            break
+
+    print("Finished")
+
+
 # The main fuzzing loop
 # all magic is performed here
-def doFuzz(config):
+def doActualFuzz(config, threadId, queue):
     setupEnvironment=_setupEnvironment
     chooseInput=_chooseInput
     generateSeed=_generateSeed
@@ -315,7 +347,7 @@ def doFuzz(config):
     outcome = None
     crashCount = 0 # number of crashes, absolute
     crashCountAnalLast = 0 # when was the last crash analysis
-    threadId = 1
+    #threadId = 1
     gcovAnalysisLastIter = 0 # when was gcov analysis last performed (in iterations)
 
     print "Setup fuzzing.."
@@ -341,9 +373,10 @@ def doFuzz(config):
         diffTime = currTime - startTime
         if diffTime > 5:
             fuzzps = epochCount / diffTime
-            out = "\n T: %i   Fuzz per second: %i   Count: %i    Crash count: %i   " % (threadId, fuzzps, count, crashCount)
-            sys.stdout.write(out)
-            sys.stdout.flush()
+            #out = "\n T: %i   Fuzz per second: %i   Count: %i    Crash count: %i   " % (threadId, fuzzps, count, crashCount)
+            #sys.stdout.write(out)
+            #sys.stdout.flush()
+            queue.put( [threadId, fuzzps, count, crashCount] )
             startTime = currTime
             epochCount = 0
         else: 
