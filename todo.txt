@@ -1,0 +1,6 @@
+Todo
+
+- Do not make it file based
+- integrate several fuzzers
+- do authentication-awareness
+- cache all input files (leave them open)
