@@ -1,4 +1,5 @@
-# 
+# FFW - Fuzzing For Worms
+# Author: Dobin Rutishauser
 #
 # Based on: 
 #   Framework for fuzzing things
@@ -15,6 +16,7 @@ import signal
 import sys
 import socket
 import logging
+
 from multiprocessing import Process, Queue
 
 
@@ -151,31 +153,16 @@ def printConfig(config):
     
 
 def _runTarget(config):
-    #args = config["target_args"] % ({"input" : outputFile})
-    #cmd = shlex.split(config["target_bin"])
-    #pid = createChild(cmd, True, None)
     popenArg = [ config["target_bin"], str(config["target_port"]) ]
+    # create devnull so we can us it to surpress output of the server (2.7 specific)
     DEVNULL = open(os.devnull, 'wb')
-
-    #subprocess.call([config["basedir"] + "/" + fuzzerData["file"], args], shell=True, stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL)
-    #p = subprocess.Popen(popenArg, close_fds=True)
     p = subprocess.Popen(popenArg, stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL)
-    time.sleep(1)
+    time.sleep(1) # wait a bit so we are sure server is really started
     return p
 
 
 def startServer(config):
-    # Step 5: Run the target
     p = _runTarget(config)
-
-    #######################################################################
-    # This is where the magic happens. We monitor the process to determine
-    # if it has crashed
-    # Attach to the process with ptrace
-    #print "Ptrace pid: " + str(p.pid)
-    #dbg = PtraceDebugger()
-    #proc = dbg.addProcess(p.pid, True)
-    #proc.cont()
     GLOBAL["process"] = p
 
 
@@ -215,10 +202,12 @@ def sendDataToServer(config, file):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_address = ('localhost', config["target_port"])
 
+    print "Send to: " + str(config["target_port"])
     try: 
         sock.connect(server_address)
     except socket.error, exc:
         # server down
+        print "Down"
         return False
 
     if config["sendInitialDataFunction"] is not None:
@@ -290,9 +279,17 @@ def getServerCrashInfo(confg, file):
 
 def handlePrevCrash(config, outExt, inFile, outcome, runFuzzer, handleOutcome):
     # regenerate old outFile
+
+    # old filename
     outFilePrev = os.path.join(config["temp_dir"], str(GLOBAL["prev_seed"]) + outExt)
+
+    # start fuzzer with previous seed
     runFuzzer(config, inFile, GLOBAL["prev_seed"], outFilePrev, GLOBAL["prev_count"])
+
+    # handle the result 
     handleOutcome(config, outcome, inFile, GLOBAL["prev_seed"], outFilePrev, GLOBAL["prev_count"])
+
+    # output
     sys.stdout.write("!")
     sys.stdout.flush()
 
@@ -302,8 +299,11 @@ def minimizeCrashes(config):
 
 
 # start subprocesses
+# this is the main entry point for project fuzzers
 def doFuzz(config):
     q = Queue()
+    # have to remove sigint handler before forking children
+    # so ctlr-c works
     orig = signal.signal(signal.SIGINT, signal.SIG_IGN)
 
     procs = []
@@ -315,6 +315,7 @@ def doFuzz(config):
         p.start()
         n += 1
 
+    # restore signal handler
     signal.signal(signal.SIGINT, orig)
 
     while True: 
@@ -322,6 +323,7 @@ def doFuzz(config):
             r = q.get()
             print "Mother: " + str(r[0]) + " " + str(r[1]) + " " + str(r[2]) + " " + str(r[3])
         except KeyboardInterrupt:
+            # handle ctrl-c
             for p in procs: 
                 p.terminate()
                 p.join()
@@ -347,7 +349,6 @@ def doActualFuzz(config, threadId, queue):
     outcome = None
     crashCount = 0 # number of crashes, absolute
     crashCountAnalLast = 0 # when was the last crash analysis
-    #threadId = 1
     gcovAnalysisLastIter = 0 # when was gcov analysis last performed (in iterations)
 
     print "Setup fuzzing.."
@@ -373,9 +374,7 @@ def doActualFuzz(config, threadId, queue):
         diffTime = currTime - startTime
         if diffTime > 5:
             fuzzps = epochCount / diffTime
-            #out = "\n T: %i   Fuzz per second: %i   Count: %i    Crash count: %i   " % (threadId, fuzzps, count, crashCount)
-            #sys.stdout.write(out)
-            #sys.stdout.flush()
+            # send fuzzing information to parent process
             queue.put( [threadId, fuzzps, count, crashCount] )
             startTime = currTime
             epochCount = 0
@@ -402,14 +401,14 @@ def doActualFuzz(config, threadId, queue):
         runFuzzer(config, inFile, seed, outFile, count)
 
         # Send to server
-        # if it has crashed, the previous seed made it
+        # if it has crashed, the previous seed made it crash. handle it.
         if not sendDataToServer(config, outFile):
             handlePrevCrash(config, outExt, inFile, outcome, runFuzzer, handleOutcome)
             haveOutcome = True
             crashCount += 1
             startServer(config)
 
-        # check if crash (does not really work)
+        # check if server crashed (does not really work)
         if not haveOutcome and not isAlive(): 
             getServerCrashInfo(config, outFile)
             handleOutcome(config, outcome, inFile, seed, outFile, count)
@@ -418,7 +417,7 @@ def doActualFuzz(config, threadId, queue):
 
             startServer(config)
 
-        # try to restart
+        # restart server periodically
         if count > 0 and count % 10000 == 0:
             print "Restart server"
             if not testServerConnection(config):
