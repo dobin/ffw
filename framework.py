@@ -233,7 +233,6 @@ def sendDataToServer(config, file):
     return True
 
 
-
 def handlePrevCrash(config, outExt, inFile, outcome, runFuzzer, handleOutcome):
     # regenerate old outFile
 
@@ -251,21 +250,35 @@ def minimizeCrashes(config):
     pass
 
 
+
+
+def replayFindFile(config, index):
+    outcomes = sorted(glob.glob(os.path.join(config["outcome_dir"], '*.raw')), key=os.path.getctime)
+    return outcomes[int(index)]
+
+
 def replay(config, port, file):
-    #file = config["outcome_dir"] + "/" + file
+    if file.isdigit():
+        file = replayFindFile(config, file)
+
     config["target_port"] = int(port)
     print "File: " + file
     return sendDataToServer(config, file)
 
 
-
 def replayall(config, port):
-    outcomes = glob.glob(os.path.join(config["outcome_dir"], '1*.raw'))
+    print "Replay all files from directory: " + config["outcome_dir"]
+
+    outcomes = sorted(glob.glob(os.path.join(config["outcome_dir"], '*.raw')), key=os.path.getctime)
+    #sorted(glob.glob('*.png'), key=os.path.getmtime)
+    n = 0
     for outcome in outcomes: 
-        time.sleep(1)
+        time.sleep(1) # this is required, or replay is fucked. maybe use keyboard?
+        sys.stdout.write("%5d: " % n)
         if not replay(config, port, outcome):
             print "could not connect"
             break
+        n += 1
 
 
 # start subprocesses
