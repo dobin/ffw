@@ -16,6 +16,7 @@ import signal
 import sys
 import socket
 import logging
+import glob
 
 from multiprocessing import Process, Queue
 
@@ -202,12 +203,10 @@ def sendDataToServer(config, file):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_address = ('localhost', config["target_port"])
 
-    print "Send to: " + str(config["target_port"])
     try: 
         sock.connect(server_address)
     except socket.error, exc:
         # server down
-        print "Down"
         return False
 
     if config["sendInitialDataFunction"] is not None:
@@ -234,48 +233,6 @@ def sendDataToServer(config, file):
     return True
 
 
-def getServerCrashInfo(confg, file): 
-    #p = _runTarget(config)
-
-    while False:
-        try:
-            # Check if there is an event pending for the target applicaiton
-            # This will return immediately with either an event or None if
-            # there is no event. We do this so we can kill the target after
-            # it reaches the timeout
-            event = dbg.waitProcessEvent(blocking=False)
-
-            # Check if the process exited
-            if type(event) == ProcessExit:
-                # Step 6: Check for crash
-                outcome = checkForCrash(config, event)
-
-                # The target application exited so we're done here
-                break
-
-            elif type(event) == ProcessSignal:
-                # SIGCHLD simply notifies the parent that one of it's
-                # children processes has exited or changed (exec another
-                # process). It's not a bug so we tell the process to
-                # continue and we loop again to get the next event
-                if event.signum == SIGCHLD:
-                    event.process.cont()
-                    continue
-
-                outcome = checkForCrash(config, event)
-                break
-
-        except KeyboardInterrupt:
-            done = True
-            break
-
-        # Check if the process has reached the timeout
-        if time.time() >= endTime:
-            break
-        else:
-            # Give the CPU some timeslices to run other things
-            time.sleep(0.1)
-
 
 def handlePrevCrash(config, outExt, inFile, outcome, runFuzzer, handleOutcome):
     # regenerate old outFile
@@ -289,13 +246,26 @@ def handlePrevCrash(config, outExt, inFile, outcome, runFuzzer, handleOutcome):
     # handle the result 
     handleOutcome(config, outcome, inFile, GLOBAL["prev_seed"], outFilePrev, GLOBAL["prev_count"])
 
-    # output
-    sys.stdout.write("!")
-    sys.stdout.flush()
-
 
 def minimizeCrashes(config): 
     pass
+
+
+def replay(config, port, file):
+    #file = config["outcome_dir"] + "/" + file
+    config["target_port"] = int(port)
+    print "File: " + file
+    return sendDataToServer(config, file)
+
+
+
+def replayall(config, port):
+    outcomes = glob.glob(os.path.join(config["outcome_dir"], '1*.raw'))
+    for outcome in outcomes: 
+        time.sleep(1)
+        if not replay(config, port, outcome):
+            print "could not connect"
+            break
 
 
 # start subprocesses
@@ -321,7 +291,7 @@ def doFuzz(config):
     while True: 
         try: 
             r = q.get()
-            print "Mother: " + str(r[0]) + " " + str(r[1]) + " " + str(r[2]) + " " + str(r[3])
+            print "%d: %4d  %8d  %5d" % r
         except KeyboardInterrupt:
             # handle ctrl-c
             for p in procs: 
@@ -375,7 +345,7 @@ def doActualFuzz(config, threadId, queue):
         if diffTime > 5:
             fuzzps = epochCount / diffTime
             # send fuzzing information to parent process
-            queue.put( [threadId, fuzzps, count, crashCount] )
+            queue.put( (threadId, fuzzps, count, crashCount) )
             startTime = currTime
             epochCount = 0
         else: 
@@ -444,3 +414,32 @@ def doActualFuzz(config, threadId, queue):
     # all done, terminate server
     stopServer()
     
+
+def realMain(config):
+    func = "fuzz"
+    if len(sys.argv) > 1:
+        func = sys.argv[1]
+
+    if func == "corpus_destillation":
+        corpus_destillation()
+
+    if func == "minimize":
+        bin_crashes.minimize(config)
+
+    if func == "replay":
+        replay(config, sys.argv[2], sys.argv[3])
+
+    if func == "replayall":
+        replayall(config, sys.argv[2])
+
+    if func == "fuzz":
+        try:
+            doFuzz(config)
+        except KeyboardInterrupt as e:
+            return 0
+
+
+
+def corpus_destillation():
+    print "Corpus destillation"
+

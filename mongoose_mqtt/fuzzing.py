@@ -68,8 +68,7 @@ config = {
 
     # send data before the actual fuzzing packet
     # e.g. authentication
-    #"sendInitialDataFunction": sendInitialData,
-    "sendInitialDataFunction": None,
+    "sendInitialDataFunction": sendInitialData,
 
     # how many fuzzing instances should we start
     # Note: server needs to support port on command line
@@ -82,9 +81,15 @@ def corpus_destillation():
     print "Corpus destillation"
 
 
+def replay(config, id, port):
+    file = config["out_dir"] + id + ".raw"
+    config["target_port"] = port
+    framework.sendDataToServer(config, file)
+
+
 def main():
     func = "fuzz"
-    if len(sys.argv) == 2:
+    if len(sys.argv) > 1:
         func = sys.argv[1]
     
 
@@ -93,6 +98,10 @@ def main():
 
     if func == "minimize":
         bin_crashes.minimize(config)
+
+    # id port
+    if func == "replay":
+        replay(config, argv[2], argv[3])
 
     if func == "fuzz":
         try:
