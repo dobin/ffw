@@ -20,6 +20,7 @@ import glob
 
 from multiprocessing import Process, Queue
 
+import bin_crashes
 
 GLOBAL = {
     "process": 0,
@@ -126,7 +127,7 @@ def _handleOutcome(config, event, inputFile, seed, outputFile, count):
         f.write("Count: %d\n" % count)
         f.write("Fuzzer: %s\n" % config["fuzzer"])
         f.write("Target: %s\n" % config["target_bin"])
-        f.write("Target: %s\n" % time.strftime("%c"))
+        f.write("Time: %s\n" % time.strftime("%c"))
 
 
         if hasattr(event, "signum") and event.signum:

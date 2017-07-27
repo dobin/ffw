@@ -22,12 +22,28 @@ from multiprocessing import Process, Queue
 
 import framework
 
+# This is a Queue that behaves like stdout
+class StdoutQueue():
+    def __init__(self,*args,**kwargs):
+        self.q = args[0]
+
+    def write(self,msg):
+        self.q.put(msg)
+
+    def flush(self):
+        pass
+
 
 # this is the child process of bin_crashes
 # it will start the server as his own child
 # it will communicate crash report of the child (server) to the parent
-def startServer2(config, queue):
+def startServer(config, queue_sync, queue_out):
+    sys.stdout = StdoutQueue(queue_out)
+    print "Start Server"
+
     # create child via ptrace debugger
+    # API: createChild(arguments, no_stdout, env=None)
+    # TODO: Set env
     pid = createChild(
         [
             config["target_bin"],
@@ -43,7 +59,7 @@ def startServer2(config, queue):
     proc.cont()
 
     # notify parent about the pid
-    queue.put(pid)
+    queue_sync.put(pid)
 
     event = None
     while True:
@@ -67,14 +83,13 @@ def startServer2(config, queue):
 
     # send crash details
     # Note: If the server does not crash, we kill it in the parent.
-    #       This will still generate a valid "crash" and will be sent here
+    #       This will still generate a (unecessary) "crash" message and will be sent here
     # TODO fixme
     if event is not None: 
         data = getCrashDetails(event)
-        queue.put(data)
+        queue_sync.put(data)
 
     dbg.quit()
-
 
 
 def minimize(config):
@@ -82,7 +97,8 @@ def minimize(config):
     # Tell Glibc to abort on heap errors but not dump a bunch of output
     os.environ["MALLOC_CHECK_"] = "2"
 
-    queue = Queue()
+    queue_sync = Queue()
+    queue_out = Queue()
     crashes = dict()
     n = 100
 
@@ -96,26 +112,41 @@ def minimize(config):
         n += 1
 
         # start server in background
-        p = Process(target=startServer2, args=(config, queue))
+        p = Process(target=startServer, args=(config, queue_sync, queue_out))
         p.start()
 
         # wait for ok (pid) from child that the server has started
-        serverPid = queue.get()
-        time.sleep(0.1) # wait a bit till server is ready
+        serverPid = queue_sync.get()
+        time.sleep(0.2) # wait a bit till server is ready
+        while not framework.testServerConnection(config):
+            print "Server not ready, waiting and retrying"
+            time.sleep(0.2) # wait a bit till server is ready
+        
         framework.sendDataToServer(config, outcome)
 
         # get crash result data
         # or empty if server did not crash
         try:
-            crashData = queue.get(True, 1)
+            crashData = queue_sync.get(True, 1)
+            crashOutput = queue_out.get()
             details = crashData[3]
             signature = ( crashData[0], crashData[1], crashData[2] )
+            details = {
+                "faultOffset": crashData[0],
+                "module": crashData[1],
+                "signature": crashData[2],
+                "gdbdetails": crashData[3],
+                "output": crashOutput,
+                "file": outcome,
+            }
             crashes[signature] = details
+            storeValidCrash(config, signature, details)
         except:
             # timeout waiting for the data, which means the server did not crash
             # kill it, and receive the unecessary data
             os.kill(serverPid, signal.SIGTERM)
-            shit = queue.get()
+            notneeded1 = queue_sync.get()
+            crashOutput = queue_out.get()
 
         # wait for child to exit
         p.join()
@@ -123,9 +154,20 @@ def minimize(config):
     # manage all these crashes
     for crash in crashes:
         offset, mod, sig = crash
+        details = crashes[crash]
         print "Crash: %s+0x%x (signal %d)" % (mod, offset, sig)
-        print "\t%s" % crashes[crash]    
+        print "\t%s" % details["gdbdetails"]
 
+
+def storeValidCrash(config, crashSig, crashDetail):
+    with open(os.path.join(config["outcome_dir_bin"], crashDetail["file"] + ".crashdata.txt"), "w") as f:
+        f.write("Offset: %s\n" % crashDetail["faultOffset"])
+        f.write("Module: %s\n" % crashDetail["module"])
+        f.write("Signature: %s\n" % crashDetail["signature"])
+        f.write("Details: %s\n" % crashDetail["gdbdetails"])
+        f.write("Time: %s\n" % time.strftime("%c"))
+        f.write("Output:\n %s\n" % crashDetail["output"])
+        f.close()
 
 
 def getCrashDetails(event):
