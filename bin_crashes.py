@@ -106,8 +106,7 @@ def startServer(config, queue_sync, queue_out):
     dbg.quit()
 
 
-
-def getAsanOutput(config, pid): 
+def getAsanOutput(config, pid):
     # as we cannot get stdout/stderr of child process, we store asan
     # output in the temp folder in the format: asan.<pid>
     fileName = config["temp_dir"] + "/asan." + str(pid)
@@ -140,7 +139,7 @@ def minimize(config):
     queue_sync = Queue()
     queue_out = Queue()
     crashes = dict()
-    n = 100
+    n = 0
 
     outcomesDir = os.path.abspath(config["outcome_dir"])
     outcomes = glob.glob(os.path.join(outcomesDir, '*.raw'))
@@ -149,8 +148,8 @@ def minimize(config):
     print "Processing %d outcomes" % len(outcomes)
 
     for outcome in outcomes:
-        print "\n\n Now: " + str(n) + ": " + outcome
-        config["target_port"] = config["baseport"] + n 
+        print "\nNow: " + str(n) + ": " + outcome
+        config["target_port"] = config["baseport"] + n + 100
         n += 1
 
         # start server in background
@@ -209,7 +208,6 @@ def minimize(config):
             except:
                 print "  M: !!!!!!!!!!! Exception: No data to get for non-crash :-("
 
-
         # wait for child to exit
         p.join()
 
@@ -228,7 +226,7 @@ def storeValidCrash(config, crashSig, crashDetail):
         f.write("Signature: %s\n" % crashDetail["signature"])
         f.write("Details: %s\n" % crashDetail["gdbdetails"])
         f.write("Time: %s\n" % time.strftime("%c"))
-        f.write("Output:\n %s\n" % crashDetail["output"])
+        f.write("Child Output:\n %s\n" % crashDetail["output"])
         f.write("\n")
         f.write("ASAN Output:\n %s\n" % crashDetail["asan"])
         f.close()
