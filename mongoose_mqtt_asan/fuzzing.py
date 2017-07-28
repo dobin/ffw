@@ -36,7 +36,7 @@ config = {
 
     # Path to target
     "target_bin" : PROJDIR + "bin/mqtt_broker",
-    "target_args": "%(port)i", # not yet used TODO
+    "target_args": "%(port)i", # separate by space
 
     # Directory of input files
     "inputs_raw": PROJDIR + "in_raw", # TODO not yet used

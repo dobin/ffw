@@ -22,6 +22,20 @@ from multiprocessing import Process, Queue
 
 import framework
 
+sleeptimes = {
+    # wait time, so the asan file really appears
+    # used on every crash, should be short
+    "sleep_for_asan_file": 0.5,
+
+    # wait between server start and first connection attempt
+    # so it can settle-in
+    "wait_time_for_server_rdy": 0.1,
+
+    # how long we let the server run
+    # usually it should crash immediately
+    "max_server_run_time": 1,
+}
+
 
 # This is a Queue that behaves like stdout
 class StdoutQueue():
@@ -53,10 +67,7 @@ def startServer(config, queue_sync, queue_out):
     # create child via ptrace debugger
     # API: createChild(arguments[], no_stdout, env=None)
     pid = createChild(
-        [
-            config["target_bin"],
-            str(config["target_port"]),
-        ],
+        framework.getInvokeTargetArgs(config),
         False,
         None,
     )
@@ -107,13 +118,15 @@ def startServer(config, queue_sync, queue_out):
 
 
 def getAsanOutput(config, pid):
+    global sleeptimes 
+
     # as we cannot get stdout/stderr of child process, we store asan
     # output in the temp folder in the format: asan.<pid>
     fileName = config["temp_dir"] + "/asan." + str(pid)
     print "Get asan output"
     print "  filename: " + str(fileName)
 
-    time.sleep(0.5) # omg wait for the file to appear
+    time.sleep(sleeptimes["sleep_for_asan_file"]) # omg wait for the file to appear
 
     if not os.path.isfile(fileName):
         print "  !!!!!!!!! NO ASAN OUTPUT !!!"
@@ -132,6 +145,7 @@ def getAsanOutput(config, pid):
 
 
 def minimize(config):
+    global sleeptimes
     print "Crash minimize"
     # Tell Glibc to abort on heap errors but not dump a bunch of output
     os.environ["MALLOC_CHECK_"] = "2"
@@ -160,7 +174,7 @@ def minimize(config):
         data = queue_sync.get()
         serverPid = data[1]
         print "M: Server pid: " + str(serverPid)
-        time.sleep(1) # wait a bit till server is ready
+        time.sleep(sleeptimes["wait_time_for_server_rdy"]) # wait a bit till server is ready
         while not framework.testServerConnection(config):
             print "Server not ready, waiting and retrying"
             time.sleep(0.1) # wait a bit till server is ready
@@ -172,7 +186,7 @@ def minimize(config):
         # or empty if server did not crash
         try:
             print "M: Wait for crash data"
-            crashData = queue_sync.get(True, 1)
+            crashData = queue_sync.get(True, sleeptimes["max_server_run_time"])
             print "M: Crash!"
             crashData = crashData[1]
             crashOutput = queue_out.get()

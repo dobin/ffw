@@ -64,6 +64,16 @@ def _setupEnvironment(config):
     os.environ["MALLOC_CHECK_"] = "2"
 
 
+# create an array of the binary path and its parameters
+# used to start the process with popen() etc. 
+def getInvokeTargetArgs(config):
+    args = config["target_args"] % ( { "port": config["target_port"] } )
+    argsArr = args.split(" ")
+    cmdArr = [ config["target_bin"] ] 
+    cmdArr.extend( argsArr )
+    return cmdArr
+
+
 def _chooseInput(config):
     """
     Chooses an input from the inputs directory specified in the configuration
@@ -153,7 +163,7 @@ def printConfig(config):
     
 
 def _runTarget(config):
-    popenArg = [ config["target_bin"], str(config["target_port"]) ]
+    popenArg = getInvokeTargetArgs(config)
     # create devnull so we can us it to surpress output of the server (2.7 specific)
     DEVNULL = open(os.devnull, 'wb')
     p = subprocess.Popen(popenArg, stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL)
@@ -215,7 +225,10 @@ def sendDataToServer(config, file):
     file = open(file, "r")
     data = file.read()
 
-    sock.sendall(data)
+    try: 
+        sock.sendall(data)
+    except socket.error, exc:
+        return False
 
     if config["response_analysis"]:
         sock.settimeout(0.1)
@@ -345,7 +358,7 @@ def doActualFuzz(config, threadId, queue):
     startServer(config)
     testServerConnection(config)
 
-    print "Start fuzzing..."
+    print str(threadId) + " Start fuzzing..."
 
     startTime = time.time()
     epochCount = 0
