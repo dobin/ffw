@@ -54,13 +54,11 @@ def _setupEnvironment(config):
     # Silence warnings from the ptrace library
     logging.getLogger().setLevel(logging.ERROR)
 
-    # AddressSanitizer will report memory leaks by default on exit. We don't
-    # care about those since they aren't vulnerabilities, so disable it
-    #os.environ["ASAN_OPTIONS"] = "detect_leaks=false:abort_on_error=true"
-
-    # dont report leak on exits
-    #os.environ["ASAN_OPTIONS"]="color=never:verbosity=0:leak_check_at_exit=false:abort_on_error=true:log_path=" + config["projdir"] + "asanlogs/"
-    os.environ["ASAN_OPTIONS"]="color=never:verbosity=0:leak_check_at_exit=false:abort_on_error=true"
+    # Most important is to set log_path so we have access to the asan logs
+    asanOpts = "" 
+    asanOpts += "color=never:verbosity=0:leak_check_at_exit=false:" 
+    asanOpts += "abort_on_error=true:log_path=" + config["temp_dir"] + "/asan"
+    os.environ["ASAN_OPTIONS"] = asanOpts
 
     # Tell Glibc to abort on heap corruption but not dump a bunch of output
     os.environ["MALLOC_CHECK_"] = "2"
@@ -271,7 +269,6 @@ def replayall(config, port):
     print "Replay all files from directory: " + config["outcome_dir"]
 
     outcomes = sorted(glob.glob(os.path.join(config["outcome_dir"], '*.raw')), key=os.path.getctime)
-    #sorted(glob.glob('*.png'), key=os.path.getmtime)
     n = 0
     for outcome in outcomes: 
         time.sleep(1) # this is required, or replay is fucked. maybe use keyboard?
