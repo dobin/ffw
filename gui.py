@@ -24,25 +24,26 @@ def initGui(threadCount):
 	window_x_offset = 12
 	window_height = 3 + 2
 
+	box_y = 10
+
 	boxes = []
 	screen.border(0)
 
-	screen.addstr(5, 2, "Per second:")
-	screen.addstr(6, 2, "Count:")
-	screen.addstr(7, 2, "Crashes:")
+	screen.addstr(box_y + 1, 2, "Per second:")
+	screen.addstr(box_y + 2, 2, "Count:")
+	screen.addstr(box_y + 3, 2, "Crashes:")
 
 	#screen.addstr(10, 2, "BB:             BB previous: ")
 	#screen.addstr(11, 2, "Max crashes     reduced crahses: ")
 
-	screen.addstr(16, 2, "Memory free:")
-	screen.addstr(17, 2, "CPU usage:")
-
+	screen.addstr(3, 2, "CPU usage:")
+	screen.addstr(4, 2, "Memory free:")
 
 	n = 0
 	while n < threadCount:
 		boxX = base_window_x + n * window_x_offset
-		screen.addstr(3, boxX, "Process " + str(n))
-		boxx = curses.newwin(window_height, 10, 4, boxX)
+		screen.addstr(box_y-1, boxX+1, "Process " + str(n))
+		boxx = curses.newwin(window_height, 10, box_y, boxX)
 		boxx.box() 
 		boxes.append(boxx)
 
@@ -57,9 +58,9 @@ def updateGui(screen, boxes, data):
 	date = str(time.strftime("%c"))
 	screen.addstr(1, maxx - len(date) - 2, date)
 
-	screen.addstr(17, 15, str(psutil.cpu_percent()))
+	screen.addstr(3, 15, '%3d' % (psutil.cpu_percent()))
 	# svmem(total=10367352832, available=6472179712, percent=37.6, used=8186245120, free=2181107712, active=4748992512, inactive=2758115328, buffers=790724608, cached=3500347392, shared=787554304)
-	screen.addstr(16, 15, str(psutil.virtual_memory()[4] / (1024 * 1024)))
+	screen.addstr(4, 15, str(psutil.virtual_memory()[4] / (1024 * 1024)))
 
 	screen.refresh()
 	n = 0
