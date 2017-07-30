@@ -21,6 +21,7 @@ from ptrace.debugger.ptrace_signal import ProcessSignal
 from multiprocessing import Process, Queue
 
 import framework
+import network
 
 sleeptimes = {
     # wait time, so the asan file really appears
@@ -144,6 +145,69 @@ def getAsanOutput(config, pid):
     return data
 
 
+def minimizeOutcome(config, outcome, queue_sync, queue_out):
+
+
+    # start server in background
+    p = Process(target=startServer, args=(config, queue_sync, queue_out))
+    p.start()
+
+    # wait for ok (pid) from child that the server has started
+    data = queue_sync.get()
+    serverPid = data[1]
+    print "M: Server pid: " + str(serverPid)
+    time.sleep(sleeptimes["wait_time_for_server_rdy"]) # wait a bit till server is ready
+    while not network.testServerConnection(config):
+        print "Server not ready, waiting and retrying"
+        time.sleep(0.1) # wait a bit till server is ready
+    
+    print "M: Send"
+    network.sendDataToServer(config, outcome)
+
+    # get crash result data
+    # or empty if server did not crash
+    try:
+        print "M: Wait for crash data"
+        crashData = queue_sync.get(True, sleeptimes["max_server_run_time"])
+        print "M: Crash!"
+        crashData = crashData[1]
+        crashOutput = queue_out.get()
+        asanOutput = getAsanOutput(config, serverPid)
+        details = crashData[3]
+        signature = ( crashData[0], crashData[1], crashData[2] )
+        details = {
+            "faultOffset": crashData[0],
+            "module": crashData[1],
+            "signature": crashData[2],
+            "gdbdetails": crashData[3],
+            "output": crashOutput,
+            "asan": asanOutput,
+            "file": outcome,
+        }
+        storeValidCrash(config, signature, details)
+
+        return signature, details
+    except Exception as error:
+        print "M: Waited long enough, NO crash. "
+        print "Exception: " + str(error)
+        # timeout waiting for the data, which means the server did not crash
+        # kill it, and receive the unecessary data
+        # TODO: If os.kill throws an exception, it could not kill it, therefore
+        #       the start of the server failed. Retry
+        try: 
+            os.kill(serverPid, signal.SIGTERM)
+        except:
+            print "  M: !!!!!!!!!!! Exception: Could not kill :-("
+
+        try: 
+            notneeded1 = queue_sync.get(True, 1)
+            crashOutput = queue_out.get(True, 1)
+        except:
+            print "  M: !!!!!!!!!!! Exception: No data to get for non-crash :-("
+
+        return None, None
+
+
 def minimize(config):
     global sleeptimes
     print "Crash minimize"
@@ -154,6 +218,7 @@ def minimize(config):
     queue_out = Queue()
     crashes = dict()
     n = 0
+    noCrash = 0
 
     outcomesDir = os.path.abspath(config["outcome_dir"])
     outcomes = glob.glob(os.path.join(outcomesDir, '*.raw'))
@@ -161,70 +226,29 @@ def minimize(config):
     framework._setupEnvironment(config)
     print "Processing %d outcomes" % len(outcomes)
 
-    for outcome in outcomes:
-        print "\nNow: " + str(n) + ": " + outcome
-        config["target_port"] = config["baseport"] + n + 100
-        n += 1
+    try: 
+        for outcome in outcomes:
+            print "\nNow: " + str(n) + ": " + outcome
+            config["target_port"] = config["baseport"] + n + 100
+            sig, details = minimizeOutcome(config, outcome, queue_sync, queue_out)
 
-        # start server in background
-        p = Process(target=startServer, args=(config, queue_sync, queue_out))
-        p.start()
+            if sig is not None:
+                crashes[sig] = details
+            else:
+                noCrash += 1
+            n += 1
 
-        # wait for ok (pid) from child that the server has started
-        data = queue_sync.get()
-        serverPid = data[1]
-        print "M: Server pid: " + str(serverPid)
-        time.sleep(sleeptimes["wait_time_for_server_rdy"]) # wait a bit till server is ready
-        while not framework.testServerConnection(config):
-            print "Server not ready, waiting and retrying"
-            time.sleep(0.1) # wait a bit till server is ready
-        
-        print "M: Send"
-        framework.sendDataToServer(config, outcome)
-
-        # get crash result data
-        # or empty if server did not crash
-        try:
-            print "M: Wait for crash data"
-            crashData = queue_sync.get(True, sleeptimes["max_server_run_time"])
-            print "M: Crash!"
-            crashData = crashData[1]
-            crashOutput = queue_out.get()
-            asanOutput = getAsanOutput(config, serverPid)
-            details = crashData[3]
-            signature = ( crashData[0], crashData[1], crashData[2] )
-            details = {
-                "faultOffset": crashData[0],
-                "module": crashData[1],
-                "signature": crashData[2],
-                "gdbdetails": crashData[3],
-                "output": crashOutput,
-                "asan": asanOutput,
-                "file": outcome,
-            }
-            crashes[signature] = details
-            storeValidCrash(config, signature, details)
-        except Exception as error:
-            print "M: Waited long enough, NO crash. "
-            print "Exception: " + str(error)
-            # timeout waiting for the data, which means the server did not crash
-            # kill it, and receive the unecessary data
-            # TODO: If os.kill throws an exception, it could not kill it, therefore
-            #       the start of the server failed. Retry
-            try: 
-                os.kill(serverPid, signal.SIGTERM)
-            except:
-                print "  M: !!!!!!!!!!! Exception: Could not kill :-("
-
-            try: 
-                notneeded1 = queue_sync.get(True, 1)
-                crashOutput = queue_out.get(True, 1)
-            except:
-                print "  M: !!!!!!!!!!! Exception: No data to get for non-crash :-("
+    except KeyboardInterrupt:
+        # cleanup on ctrl-c
+        try: 
+            os.kill(serverPid, signal.SIGTERM)
+        except:
+            pass
 
         # wait for child to exit
-        p.join()
+        #p.join()
 
+    print "Number of no crashes: " + str(noCrash)
     # manage all these crashes
     for crash in crashes:
         offset, mod, sig = crash

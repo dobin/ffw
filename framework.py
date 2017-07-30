@@ -219,12 +219,6 @@ def handlePrevCrash(config, outExt, inFile, outcome, runFuzzer, handleOutcome):
     handleOutcome(config, outcome, inFile, GLOBAL["prev_seed"], outFilePrev, GLOBAL["prev_count"])
 
 
-def minimizeCrashes(config): 
-    pass
-
-
-
-
 # Fuzzing main parent
 #   this is the main entry point for project fuzzers
 #   receives data from fuzzing-children via queues
