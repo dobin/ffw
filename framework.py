@@ -17,11 +17,13 @@ import sys
 import socket
 import logging
 import glob
+import replay
 
 from multiprocessing import Process, Queue
 
 import bin_crashes
 import gui
+import network
 
 GLOBAL = {
     "process": 0,
@@ -33,14 +35,11 @@ GLOBAL_SLEEP = {
     # can be high as it is not happening so often
     "sleep_after_server_start": 1,
 
-    # how long to wait after server start
-    # should be more like short because its used on every outcome
-    "sleep_replay_after_server_start": 1,
-
     # send update interval from child to parent
     # via queue
     "communicate_interval": 3
 }
+
 
 # Global cache of inputs
 _inputs = []
@@ -207,63 +206,6 @@ def isAlive():
         return False
 
 
-def testServerConnection(config):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_address = ('localhost', config["target_port"])
-
-    try: 
-        sock.connect(server_address)
-    except socket.error, exc:
-        # server down
-        return False
-    
-    sock.close()
-
-    return True
-
-
-# has to return False on error
-# so crash can be detected
-def sendDataToServer(config, file):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_address = ('localhost', config["target_port"])
-
-    try: 
-        sock.connect(server_address)
-    except socket.error, exc:
-        # server down
-        return False
-
-    if config["sendInitialDataFunction"] is not None:
-        res = config["sendInitialDataFunction"](sock)
-        # could not send, so already crash?
-        if not res: 
-            return False
-
-    # sock.setblocking(0)
-    file = open(file, "r")
-    data = file.read()
-
-    try: 
-        sock.sendall(data)
-    except socket.error, exc:
-        return False
-
-    if config["response_analysis"]:
-        sock.settimeout(0.1)
-        try: 
-            r = sock.recv(1024)
-            # print "Received len: " + str(len(r))
-        except Exception,e:
-            #print "Recv exception"
-            pass
-
-    file.close()
-    sock.close()
-
-    return True
-
-
 def handlePrevCrash(config, outExt, inFile, outcome, runFuzzer, handleOutcome):
     # regenerate old outFile
 
@@ -281,33 +223,6 @@ def minimizeCrashes(config):
     pass
 
 
-def replayFindFile(config, index):
-    outcomes = sorted(glob.glob(os.path.join(config["outcome_dir"], '*.raw')), key=os.path.getctime)
-    return outcomes[int(index)]
-
-
-def replay(config, port, file):
-    if file.isdigit():
-        file = replayFindFile(config, file)
-
-    config["target_port"] = int(port)
-    print "File: " + file
-    return sendDataToServer(config, file)
-
-
-def replayall(config, port):
-    global GLOBAL_SLEEP
-    print "Replay all files from directory: " + config["outcome_dir"]
-
-    outcomes = sorted(glob.glob(os.path.join(config["outcome_dir"], '*.raw')), key=os.path.getctime)
-    n = 0
-    for outcome in outcomes: 
-        time.sleep( GLOBAL_SLEEP["sleep_replay_after_server_start"] ) # this is required, or replay is fucked. maybe use keyboard?
-        sys.stdout.write("%5d: " % n)
-        if not replay(config, port, outcome):
-            print "could not connect"
-            break
-        n += 1
 
 
 # Fuzzing main parent
@@ -336,9 +251,8 @@ def doFuzz(config, useCurses):
     else: 
         fuzzConsole(config, q, procs)
 
-def fuzzCurses(config, q, procs):
-    screen, boxes = gui.initGui( config["processes"] )
 
+def fuzzCurses(config, q, procs):
     data = [None] * config["processes"]
     n = 0
     while n < config["processes"]:
@@ -349,6 +263,8 @@ def fuzzCurses(config, q, procs):
             "crashcount": 0,
         }
         n += 1
+
+    screen, boxes = gui.initGui( config["processes"] )
 
     while True: 
         try: 
@@ -369,6 +285,7 @@ def fuzzCurses(config, q, procs):
             gui.cleanup()
 
             break
+
 
 def fuzzConsole(config, q, procs):
     while True: 
@@ -419,9 +336,10 @@ def doActualFuzz(config, threadId, queue):
 
     # start server
     startServer(config)
-    testServerConnection(config)
+    network.testServerConnection(config)
 
     print str(threadId) + " Start fuzzing..."
+    queue.put( (threadId, 0, 0, 0) )
 
     startTime = time.time()
     epochCount = 0
@@ -459,7 +377,7 @@ def doActualFuzz(config, threadId, queue):
 
         # Send to server
         # if it has crashed, the previous seed made it crash. handle it.
-        if not sendDataToServer(config, outFile):
+        if not network.sendDataToServer(config, outFile):
             handlePrevCrash(config, outExt, inFile, outcome, runFuzzer, handleOutcome)
             haveOutcome = True
             crashCount += 1
@@ -513,10 +431,10 @@ def realMain(config):
         bin_crashes.minimize(config)
 
     if func == "replay":
-        replay(config, sys.argv[2], sys.argv[3])
+        replay.replay(config, sys.argv[2], sys.argv[3])
 
     if func == "replayall":
-        replayall(config, sys.argv[2])
+        replay.replayall(config, sys.argv[2])
 
     if func == "fuzz":
         useCurses = False
