@@ -28,6 +28,15 @@ GLOBAL = {
     "prev_seed": 0,
 }
 
+GLOBAL_SLEEP = {
+    # how long to wait after server start
+    # can be high as it is not happening so often
+    "sleep_after_server_start": 1,
+
+    # how long to wait after server start
+    # should be more like short because its used on every outcome
+    "sleep_replay_after_server_start": 1,
+}
 
 # Global cache of inputs
 _inputs = []
@@ -163,11 +172,12 @@ def printConfig(config):
     
 
 def _runTarget(config):
+    global GLOBAL_SLEEP
     popenArg = getInvokeTargetArgs(config)
     # create devnull so we can us it to surpress output of the server (2.7 specific)
     DEVNULL = open(os.devnull, 'wb')
     p = subprocess.Popen(popenArg, stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL)
-    time.sleep(1) # wait a bit so we are sure server is really started
+    time.sleep( GLOBAL_SLEEP["sleep_after_server_start"] ) # wait a bit so we are sure server is really started
     return p
 
 
@@ -208,6 +218,8 @@ def testServerConnection(config):
     return True
 
 
+# has to return False on error
+# so crash can be detected
 def sendDataToServer(config, file):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_address = ('localhost', config["target_port"])
@@ -219,7 +231,10 @@ def sendDataToServer(config, file):
         return False
 
     if config["sendInitialDataFunction"] is not None:
-        config["sendInitialDataFunction"](sock)
+        res = config["sendInitialDataFunction"](sock)
+        # could not send, so already crash?
+        if not res: 
+            return False
 
     # sock.setblocking(0)
     file = open(file, "r")
@@ -262,8 +277,6 @@ def minimizeCrashes(config):
     pass
 
 
-
-
 def replayFindFile(config, index):
     outcomes = sorted(glob.glob(os.path.join(config["outcome_dir"], '*.raw')), key=os.path.getctime)
     return outcomes[int(index)]
@@ -279,12 +292,13 @@ def replay(config, port, file):
 
 
 def replayall(config, port):
+    global GLOBAL_SLEEP
     print "Replay all files from directory: " + config["outcome_dir"]
 
     outcomes = sorted(glob.glob(os.path.join(config["outcome_dir"], '*.raw')), key=os.path.getctime)
     n = 0
     for outcome in outcomes: 
-        time.sleep(1) # this is required, or replay is fucked. maybe use keyboard?
+        time.sleep( GLOBAL_SLEEP["sleep_replay_after_server_start"] ) # this is required, or replay is fucked. maybe use keyboard?
         sys.stdout.write("%5d: " % n)
         if not replay(config, port, outcome):
             print "could not connect"
@@ -378,6 +392,8 @@ def doActualFuzz(config, threadId, queue):
     checkForCrash=_checkForCrash
     handleOutcome=_handleOutcome
 
+    global GLOBAL_SLEEP
+
     seed = 0
     count = 0
     outcome = None
@@ -442,13 +458,11 @@ def doActualFuzz(config, threadId, queue):
             crashCount += 1
             startServer(config)
 
-        # check if server crashed (does not really work)
+        # check if server crashed (does not really work ?)
         if not haveOutcome and not isAlive(): 
-            #getServerCrashInfo(config, outFile)
             handleOutcome(config, outcome, inFile, seed, outFile, count)
             haveOutcome = True
             crashCount += 1
-
             startServer(config)
 
         # restart server periodically
@@ -459,8 +473,9 @@ def doActualFuzz(config, threadId, queue):
                 crashCount += 1
 
             stopServer()
-            time.sleep(1)
+            time.sleep(GLOBAL_SLEEP["sleep_after_server_start"])
             startServer(config)
+            time.sleep(GLOBAL_SLEEP["sleep_after_server_start"])
 
         # Delete the output file
         try:
