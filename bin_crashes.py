@@ -146,8 +146,6 @@ def getAsanOutput(config, pid):
 
 
 def minimizeOutcome(config, outcome, queue_sync, queue_out):
-
-
     # start server in background
     p = Process(target=startServer, args=(config, queue_sync, queue_out))
     p.start()
@@ -248,6 +246,7 @@ def minimize(config):
         # wait for child to exit
         #p.join()
 
+    print "Number of outcomes: " + str(len(outcomes))
     print "Number of no crashes: " + str(noCrash)
     # manage all these crashes
     for crash in crashes:
