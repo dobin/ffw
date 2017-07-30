@@ -2,8 +2,52 @@
 
 Fuzzes network servers. 
 
+## Requirements
+
+* A network server which does not fork and accepts a port on the command line
+* Data to be sent to the server in `inputs`
+
+## Modes
+
+Modes: 
+* fuzz
+* minimize
+* replayall
+* replay
+
+### Fuzz
+
+* Fuzzes the program. 
+* creates .raw files in `outcome_dir`
+
+### Minimize
+
+* Goes through all .raw outcome files in `outcome_dir` 
+* Sends it to the server (`target_bin`), and looks for a crash
+* If a crash is detecte, creates a `.crashdata.txt` file for that outome
+* After all files have been processed: shows unique crashes (based on IP and other things)
 
 
+### replaying 
+
+Send results in outcome to a dedicated server (e.g. in gdb). 
+If pre-requests / initial data are sent in the fuzzing, it is not just possible to 
+blindly send the `.raw` file in `outcome_dir`, as that request has also to be sent. 
+This replay functionality exists to reproduce crashes in an easy way. 
+
+#### Replayall
+
+* Sends all outcomes in `outcome_dir/*.raw` to a server
+* User has to start server by themself (e.g. in gdb)
+* Used to check all outcomes
+
+#### Replay 
+
+* Send a specific outcome in `outcome_dir` to the server
+* either:
+  * by its FULL path (.raw file)
+  * or by its index (based on create time, as seen by replayall)
+* User has to start server by themself (e.g. in gdb)
 
 ## Example config
 
