@@ -21,6 +21,7 @@ import glob
 from multiprocessing import Process, Queue
 
 import bin_crashes
+import gui
 
 GLOBAL = {
     "process": 0,
@@ -136,7 +137,6 @@ def _handleOutcome(config, event, inputFile, seed, outputFile, count):
         f.write("Fuzzer: %s\n" % config["fuzzer"])
         f.write("Target: %s\n" % config["target_bin"])
         f.write("Time: %s\n" % time.strftime("%c"))
-
 
         if hasattr(event, "signum") and event.signum:
             f.write("Signal: %d\n" % event.signum)
@@ -294,7 +294,7 @@ def replayall(config, port):
 
 # start subprocesses
 # this is the main entry point for project fuzzers
-def doFuzz(config):
+def doFuzz(config, useCurses):
     q = Queue()
     # have to remove sigint handler before forking children
     # so ctlr-c works
@@ -312,6 +312,46 @@ def doFuzz(config):
     # restore signal handler
     signal.signal(signal.SIGINT, orig)
 
+    if useCurses:
+        fuzzCurses(config, q, procs)
+    else: 
+        fuzzConsole(config, q, procs)
+
+def fuzzCurses(config, q, procs):
+    screen, boxes = gui.initGui( config["processes"] )
+
+    data = [None] * config["processes"]
+    n = 0
+    while n < config["processes"]:
+        print "init: " + str(n)
+        data[n] = {
+            "testspersecond": 0,
+            "testcount": 0,
+            "crashcount": 0,
+        }
+        n += 1
+
+    while True: 
+        try: 
+            r = q.get()
+            data[r[0]] = {
+                "testspersecond": r[1],
+                "testcount": r[2],
+                "crashcount": r[3],                      
+            }
+            gui.updateGui(screen, boxes, data)
+            #print "%d: %4d  %8d  %5d" % r
+        except KeyboardInterrupt:
+            # handle ctrl-c
+            for p in procs: 
+                p.terminate()
+                p.join()
+
+            gui.cleanup()
+
+            break
+
+def fuzzConsole(config, q, procs):
     while True: 
         try: 
             r = q.get()
@@ -404,7 +444,7 @@ def doActualFuzz(config, threadId, queue):
 
         # check if server crashed (does not really work)
         if not haveOutcome and not isAlive(): 
-            getServerCrashInfo(config, outFile)
+            #getServerCrashInfo(config, outFile)
             handleOutcome(config, outcome, inFile, seed, outFile, count)
             haveOutcome = True
             crashCount += 1
@@ -457,11 +497,11 @@ def realMain(config):
         replayall(config, sys.argv[2])
 
     if func == "fuzz":
-        try:
-            doFuzz(config)
-        except KeyboardInterrupt as e:
-            return 0
+        useCurses = False
+        if len(sys.argv) == 3 and sys.argv[2] == "curses":
+            useCurses = True
 
+        doFuzz(config, useCurses)
 
 
 def corpus_destillation():
