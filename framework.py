@@ -36,6 +36,10 @@ GLOBAL_SLEEP = {
     # how long to wait after server start
     # should be more like short because its used on every outcome
     "sleep_replay_after_server_start": 1,
+
+    # send update interval from child to parent
+    # via queue
+    "communicate_interval": 3
 }
 
 # Global cache of inputs
@@ -306,8 +310,9 @@ def replayall(config, port):
         n += 1
 
 
-# start subprocesses
-# this is the main entry point for project fuzzers
+# Fuzzing main parent
+#   this is the main entry point for project fuzzers
+#   receives data from fuzzing-children via queues
 def doFuzz(config, useCurses):
     q = Queue()
     # have to remove sigint handler before forking children
@@ -381,8 +386,10 @@ def fuzzConsole(config, q, procs):
     print("Finished")
 
 
+# Fuzzer child
 # The main fuzzing loop
 # all magic is performed here
+# sends results via queue to the parent
 def doActualFuzz(config, threadId, queue):
     setupEnvironment=_setupEnvironment
     chooseInput=_chooseInput
@@ -422,7 +429,7 @@ def doActualFuzz(config, threadId, queue):
         # stats
         currTime = time.time()
         diffTime = currTime - startTime
-        if diffTime > 5:
+        if diffTime > GLOBAL_SLEEP["communicate_interval"]:
             fuzzps = epochCount / diffTime
             # send fuzzing information to parent process
             queue.put( (threadId, fuzzps, count, crashCount) )
