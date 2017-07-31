@@ -6,7 +6,27 @@ import select
 import sys
 import pickle 
 
-# based on: https://gist.github.com/sivachandran/1969859
+"""
+	Interceptor.py, standalone binary
+
+	it perform a man-in-the-middle attack
+	the client has to connect to the specific port of this tool
+	all data will be forwarded to the server, and vice-versa
+
+	interceptor will also record all transmitted data, split up between
+	read()'s, and split between server and client
+
+	It will store the data in files with the name data_<connid>.pickle,
+	serialized python objects as pickle
+
+	This can be used later to fuzz server (or client) with ffw interceptor mode, 
+	which excpects pickle file recorded here. 
+
+	A recorded connection can be replayed to test it. 
+"""
+
+
+# based on: https://gist.github.com/sivachandran/1969859 (no license)
 
 terminateAll = False
 
@@ -30,7 +50,7 @@ class ClientThread(threading.Thread):
 		
 
 	def run(self):
-		print "Client Thread" + self.__threadId + " started"
+		print "Client Thread" + str(self.__threadId) + " started"
 		
 		self.__clientSocket.setblocking(0)
 		
@@ -104,21 +124,11 @@ class ClientThread(threading.Thread):
 
 		# store all the stuff
 		print "Got " + str(len(self.data)) + " packets"
-		with open("data_" + str(threadId) + ".pickle", 'wb') as f:
+		with open("data_" + str(self.__threadId) + ".pickle", 'wb') as f:
 			pickle.dump(self.data, f)
 
 
-if __name__ == '__main__':
-	if len(sys.argv) != 5:
-		print 'Usage:\n\tpython %s <host> <port> <remote host> <remote port>' % sys.argv[0]
-		print 'Example:\n\tpython %s localhost 8080 www.google.com 80' % sys.argv[0]
-		sys.exit(0)		
-	
-	localHost = sys.argv[1]
-	localPort = int(sys.argv[2])
-	targetHost = sys.argv[3]
-	targetPort = int(sys.argv[4])
-		
+def performIntercept(localHost, localPort, targetHost, targetPort):
 	serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	serverSocket.bind((localHost, localPort))
 	serverSocket.listen(5)
@@ -136,3 +146,18 @@ if __name__ == '__main__':
 		threadId += 1
 		
 	serverSocket.close()
+
+
+if __name__ == '__main__':
+	if len(sys.argv) != 5:
+		print 'Usage:\n\tpython %s <host> <port> <remote host> <remote port>' % sys.argv[0]
+		print 'Example:\n\tpython %s localhost 8080 www.google.com 80' % sys.argv[0]
+		sys.exit(0)		
+	
+	localHost = sys.argv[1]
+	localPort = int(sys.argv[2])
+	targetHost = sys.argv[3]
+	targetPort = int(sys.argv[4])
+
+	performIntercept(localHost, localPort, targetHost, targetPort)
+
