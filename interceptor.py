@@ -6,6 +6,8 @@ import select
 import sys
 import pickle 
 
+import ffwchild
+
 """
 	Interceptor.py, standalone binary
 
@@ -124,15 +126,17 @@ class ClientThread(threading.Thread):
 
 		# store all the stuff
 		print "Got " + str(len(self.data)) + " packets"
-		with open("data_" + str(self.__threadId) + ".pickle", 'wb') as f:
+		fileName = config["inputs"] + "/" + "data_" + str(self.__threadId) + ".pickle"
+		with open(fileName, 'wb') as f:
 			pickle.dump(self.data, f)
 
 
 def performIntercept(localHost, localPort, targetHost, targetPort):
 	serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	serverSocket.bind((localHost, localPort))
+	serverSocket.bind((localHost, int(localPort)))
 	serverSocket.listen(5)
-	print "Waiting for client..."
+	print "Forwarding everything to %s:%s" % (targetHost, targetPort)
+	print "Waiting for client on port: " + str(localPort)
 	threadId = 0
 	while True:
 		try:
@@ -148,6 +152,22 @@ def performIntercept(localHost, localPort, targetHost, targetPort):
 	serverSocket.close()
 
 
+# called from ffw
+def doIntercept(config, localPort):
+	localHost = "localhost"
+	targetHost = "localhost"
+
+	targetPort = int(localPort) + 1
+	config["target_port"] = targetPort
+
+	# run the server, as configured in config
+	ffwchild._runTarget(config)
+
+	# start mitm server
+	performIntercept(localHost, localPort, targetHost, targetPort)
+
+
+# manual start
 if __name__ == '__main__':
 	if len(sys.argv) != 5:
 		print 'Usage:\n\tpython %s <host> <port> <remote host> <remote port>' % sys.argv[0]

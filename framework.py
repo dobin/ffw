@@ -21,7 +21,7 @@ import replay
 import bin_crashes
 import gui
 import network
-
+import interceptor
 import ffwchild
 
 def printConfig(config):
@@ -129,6 +129,9 @@ def realMain(config):
 
     if func == "replayall":
         replay.replayall(config, sys.argv[2])
+
+    if func == "interceptor":
+        interceptor.doIntercept(config, sys.argv[2])
 
     if func == "fuzz":
         useCurses = False
