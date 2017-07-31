@@ -9,6 +9,7 @@ import subprocess
 import time
 import random
 import shutil
+import pickle
 
 import bin_crashes
 import network
@@ -54,7 +55,6 @@ fuzzers = {
 # sends results via queue to the parent
 def doActualFuzz(config, threadId, queue):
     setupEnvironment=_setupEnvironment
-    chooseInput=_chooseInput
     generateSeed=_generateSeed
     runFuzzer=_runFuzzer
     runTarget=_runTarget,
@@ -77,6 +77,13 @@ def doActualFuzz(config, threadId, queue):
     config["threadId"] = threadId
     config["target_port"] = config["baseport"] + config["threadId"]
     setupEnvironment(config)
+
+    if config["mode"] == "raw": 
+        chooseInput = _chooseInputRaw
+        sendDataToServer = network.sendDataToServerRaw
+    elif config["mode"] == "interceptor":
+        chooseInput = _chooseInputInterceptor
+        sendDataToServer = network.sendDataToServerInterceptor
 
     # start server
     startServer(config)
@@ -121,7 +128,7 @@ def doActualFuzz(config, threadId, queue):
 
         # Send to server
         # if it has crashed, the previous seed made it crash. handle it.
-        if not network.sendDataToServer(config, outFile):
+        if not sendDataToServer(config, outFile):
             handlePrevCrash(config, outExt, inFile, outcome, runFuzzer, handleOutcome)
             haveOutcome = True
             crashCount += 1
@@ -190,7 +197,7 @@ def getInvokeTargetArgs(config):
     return cmdArr
 
 
-def _chooseInput(config):
+def _chooseInputRaw(config):
     """
     Chooses an input from the inputs directory specified in the configuration
     """
@@ -203,6 +210,29 @@ def _chooseInput(config):
         sys.exit(0)
 
     return os.path.join(config["inputs"], random.choice(_inputs))
+
+def _chooseInputInterceptor(config):
+    if not "_inputs" in config:
+        with open(config["inputs"] + "/data_1.pickle",'rb') as f:
+            config["_inputs"] = pickle.load(f)
+
+            # write all datas to the fs
+            n = 0
+            for inp in config["_inputs"]:
+                fileName = config["inputs"] + "/input_" + str(n) + ".raw"
+                file = open(fileName, 'wb')
+                file.write(inp["data"])
+                file.close()
+                inp["filename"] = fileName
+                n += 1
+
+    choice = random.choice(config["_inputs"])
+    while choice["from"] != "cli": 
+        choice = random.choice(config["_inputs"])
+        
+    config["current_choice"] = choice
+
+    return choice["filename"]
 
 
 def _generateSeed(config):
@@ -272,6 +302,7 @@ def _handleOutcome(config, event, inputFile, seed, outputFile, count):
     except Exception as e:
         print "Failed to copy output file:", outputFile
         print "E: " + str(e)
+
 
 def _runTarget(config):
     global GLOBAL_SLEEP

@@ -47,7 +47,6 @@ config = {
     "target_args": "%(port)i", # separate arguments by space
 
     # Directory of input files
-    "inputs_raw": PROJDIR + "in_raw", # TODO not yet used
     "inputs" : PROJDIR + "in",
 
     # if you have multiple ffw fuzzers active,
@@ -68,19 +67,31 @@ config = {
     "crash_minimize_time": 3, # number of new crashes
 
     # TODO
-    # Note: can also be manually started
-    "corpus_destillation": False,
-
-    # TODO
     # e.g. boofuzz
     "additional_fuzzer": False,
 
+    # how many fuzzing instances should we start
+    "processes": 2,
+
+
+    # mode
+
+    # Which fuzzing mode are we using
+    # raw: have some raw input file data
+    # interceptor: pickle files from interceptor
+    "mode": "raw",
+
+    ## raw
+
+    # for mode: raw
     # send data before the actual fuzzing packet
     # e.g. authentication
     "sendInitialDataFunction": sendInitialData,
 
-    # how many fuzzing instances should we start
-    "processes": 2,
+    # for mode: raw
+    # Note: can also be manually started
+    "corpus_destillation": False,
+
 }
 
 
