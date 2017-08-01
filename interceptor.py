@@ -5,6 +5,8 @@ import threading
 import select
 import sys
 import pickle 
+import glob 
+import os
 
 import ffwchild
 
@@ -165,6 +167,44 @@ def doIntercept(config, localPort):
 
 	# start mitm server
 	performIntercept(localHost, localPort, targetHost, targetPort)
+
+
+def replayAll(config):
+	print "Replay all files from " + config["inputs"]
+
+	config["target_port"] = config["baseport"]
+
+	# find files
+	files = sorted(glob.glob(os.path.join(config["inputs"], '*.pickle')), key=os.path.getctime)
+	print "Replay %i files" % len(files)
+
+	# start server
+	ffwchild._runTarget(config)
+
+	for file in files:
+		replayIntercept(config, file)
+
+
+def replayIntercept(config, fileName):
+	print "Replay: " + fileName
+	with open(fileName,'rb') as f:
+		datas = pickle.load(f)
+		f.close()
+
+	targetHostSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	targetHostSocket.connect(("localhost", config["target_port"]))
+
+	for data in datas:
+		if data["from"] == "cli":
+			print "  Send: " + str(len(data["data"]))
+			targetHostSocket.send(data["data"])
+		else:
+			print "  Receive"
+			print "    expect: " + str(len(data["data"]))
+			d = targetHostSocket.recv(2048)
+			print "    Got:    " + str(len(d))
+
+	targetHostSocket.close()
 
 
 # manual start

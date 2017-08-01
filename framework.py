@@ -13,7 +13,6 @@ import shutil
 import shlex
 import signal 
 import sys
-import glob
 
 from multiprocessing import Process, Queue
 
@@ -132,6 +131,9 @@ def realMain(config):
 
     if func == "interceptor":
         interceptor.doIntercept(config, sys.argv[2])
+
+    if func == "interceptorreplay":
+        interceptor.replayAll(config)
 
     if func == "fuzz":
         useCurses = False
