@@ -1,8 +1,111 @@
 Todo
+----
 
-- Do not make it file based
+
+interceptor:
+-> do i need read(), or can i just send() everything?
+-> just store msg to fuzzin config for now FIXME CHANGE
+-> fuzz client?
+- replayintercept callable
+- out (in) files should not be overwritten
+- (server): find all .pickle files, and use them individually 
+- 
+
+21:30 - 3 = 18:30 -> 18:00
+
+
+------------------------------------------------------
+
+- 2: corpus destillation 
+
++ nice curses gui or something
+
+
+- 1: create example config folder for github
+- 2: split a bit framework.py
+  - main loop: exteranlize stats, serverrestart
+
+
+fuzzing: 
+- 1: output is fuxxored even before curses is started, fix?
+- 1: save output of:
+  - parent
+  - all childs 
+  - the executed servers
++ put timeouts into config
 - integrate several fuzzers
+  + dumb
+  + radamsa
+  - boofuzz
+- 2: reliably check if bind() or similar failed:
+  - check if process exits quickly?
+  - always no-connection?
+
+network interceptor:
+- make a proxy
+- log all traffic, in sequence
+- replay certain traffic at certain stages
+
+
+overall:
+- 2: better argument handling
++ make port specification everywhere the same, e.g. binbing (no arg there atm)
++ get basedir from current cwd and config/dir addr
++ better make it just a config in each project folder (no main)
+
+binning:
+- write OS version and ASLR status
+- recover from failed bind on binning
+- binning: store in a date-folder in out?
++ on ctrl-c, make sure all the servers are killed
+- bining: store one instance of each to re-send (all in one)
++ put timeouts separately
++ store data
++ wait 0.2s: Just test connection, retry until it is up
++ handle pre-send stable
++ also store asan output
+- show stats: number of crashes, number of non-crashes, ...
+
+
+replaying: 
++ use index for crash replaying, sort by create time
+
+
+-----------------------------
+
+low prio: 
+
+- Do not make it file based [not much perfomance gain]
+  - only for radamsa (optional)
+  - not for dumb fuzzer
+
+
 - do authentication-awareness
-- cache all input files (leave them open)
-- crash bining
-- corpus destillation 
+  + send()
+  - string return() ? [dont know if this really works, test it first]
+
+
+-----------------------------
+
+Directory structure:
+
+
+./								framework
+./mongoose_mqtt					project
+				in				input files
+				in_distilled	minimized input files
+				out				testcases which crash
+				out_unique		minimized out files
+
+
+migrate away from files:
+
+doActualFuzz:
+- select filein
+- select fileout
+- give filein, fileout to fuzzer
+- fuzzer stores in fileout
+- open fileout
+- send to server
+
+
