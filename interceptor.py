@@ -44,8 +44,9 @@ class ClientThread(threading.Thread):
 		return data
 
 
-	def __init__(self, clientSocket, targetHost, targetPort, threadId):
+	def __init__(self, config, clientSocket, targetHost, targetPort, threadId):
 		threading.Thread.__init__(self)
+                self.config = config
 		self.__clientSocket = clientSocket
 		self.__targetHost = targetHost
 		self.__targetPort = targetPort
@@ -128,12 +129,12 @@ class ClientThread(threading.Thread):
 
 		# store all the stuff
 		print "Got " + str(len(self.data)) + " packets"
-		fileName = config["inputs"] + "/" + "data_" + str(self.__threadId) + ".pickle"
+		fileName = self.config["inputs"] + "/" + "data_" + str(self.__threadId) + ".pickle"
 		with open(fileName, 'wb') as f:
 			pickle.dump(self.data, f)
 
 
-def performIntercept(localHost, localPort, targetHost, targetPort):
+def performIntercept(config, localHost, localPort, targetHost, targetPort):
 	serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	serverSocket.bind((localHost, int(localPort)))
 	serverSocket.listen(5)
@@ -148,7 +149,7 @@ def performIntercept(localHost, localPort, targetHost, targetPort):
 			terminateAll = True
 			break
 
-		ClientThread(clientSocket, targetHost, targetPort, threadId).start()
+		ClientThread(config, clientSocket, targetHost, targetPort, threadId).start()
 		threadId += 1
 		
 	serverSocket.close()
@@ -166,7 +167,7 @@ def doIntercept(config, localPort):
 	ffwchild._runTarget(config)
 
 	# start mitm server
-	performIntercept(localHost, localPort, targetHost, targetPort)
+	performIntercept(config, localHost, localPort, targetHost, targetPort)
 
 
 def replayAll(config):
