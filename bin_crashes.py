@@ -20,6 +20,7 @@ from ptrace.debugger.ptrace_signal import ProcessSignal
 
 from multiprocessing import Process, Queue
 
+import ffwchild
 import framework
 import network
 
@@ -68,7 +69,7 @@ def startServer(config, queue_sync, queue_out):
     # create child via ptrace debugger
     # API: createChild(arguments[], no_stdout, env=None)
     pid = createChild(
-        framework.getInvokeTargetArgs(config),
+        ffwchild.getInvokeTargetArgs(config),
         False,
         None,
     )
@@ -160,7 +161,7 @@ def minimizeOutcome(config, outcome, queue_sync, queue_out):
         time.sleep(0.1) # wait a bit till server is ready
     
     print "M: Send"
-    network.sendDataToServer(config, outcome)
+    network.sendDataToServerRaw(config, outcome)
 
     # get crash result data
     # or empty if server did not crash
@@ -221,7 +222,7 @@ def minimize(config):
     outcomesDir = os.path.abspath(config["outcome_dir"])
     outcomes = glob.glob(os.path.join(outcomesDir, '*.raw'))
 
-    framework._setupEnvironment(config)
+    ffwchild._setupEnvironment(config)
     print "Processing %d outcomes" % len(outcomes)
 
     try: 

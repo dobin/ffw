@@ -144,7 +144,7 @@ def doActualFuzz(config, threadId, queue):
         # restart server periodically
         if count > 0 and count % 10000 == 0:
             print "Restart server"
-            if not testServerConnection(config):
+            if not network.testServerConnection(config):
                 handlePrevCrash(config, outExt, inFile, outcome, runFuzzer, handleOutcome)
                 crashCount += 1
 
@@ -213,7 +213,7 @@ def _chooseInputRaw(config):
 
 def _chooseInputInterceptor(config):
     if not "_inputs" in config:
-        with open(config["inputs"] + "/data_1.pickle",'rb') as f:
+        with open(config["inputs"] + "/data_0.pickle",'rb') as f:
             config["_inputs"] = pickle.load(f)
 
             # write all datas to the fs
