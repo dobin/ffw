@@ -26,7 +26,7 @@ GLOBAL_SLEEP = {
 
     # send update interval from child to parent
     # via queue
-    "communicate_interval": 3
+    "communicate_interval": 3,
 }
 
 
@@ -142,7 +142,7 @@ def doActualFuzz(config, threadId, queue):
             startServer(config)
 
         # restart server periodically
-        if count > 0 and count % 10000 == 0:
+        if count > 0 and count % config["server_restart_rate"] == 0:
             print "Restart server"
             if not network.testServerConnection(config):
                 handlePrevCrash(config, outExt, inFile, outcome, runFuzzer, handleOutcome)
@@ -309,6 +309,7 @@ def _runTarget(config):
     popenArg = getInvokeTargetArgs(config)
     # create devnull so we can us it to surpress output of the server (2.7 specific)
     DEVNULL = open(os.devnull, 'wb')
+    os.chdir(os.path.dirname( config["target_bin"] ))
     p = subprocess.Popen(popenArg, stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL)
     time.sleep( GLOBAL_SLEEP["sleep_after_server_start"] ) # wait a bit so we are sure server is really started
     return p

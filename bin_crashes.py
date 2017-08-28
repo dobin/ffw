@@ -156,9 +156,17 @@ def minimizeOutcome(config, outcome, queue_sync, queue_out):
     serverPid = data[1]
     print "M: Server pid: " + str(serverPid)
     time.sleep(sleeptimes["wait_time_for_server_rdy"]) # wait a bit till server is ready
+    notRdyCount = 0
     while not network.testServerConnection(config):
         print "Server not ready, waiting and retrying"
-        time.sleep(0.1) # wait a bit till server is ready
+        time.sleep(0.2) # wait a bit till server is ready
+        notRdyCount += 1
+
+        if notRdyCount > 32:
+            os.kill(serverPid, signal.SIGTERM)
+            print "Server not getting ready, cancel!!!!!!"
+            return None, None
+
     
     print "M: Send"
     network.sendDataToServerRaw(config, outcome)

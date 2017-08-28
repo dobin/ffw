@@ -7,6 +7,14 @@ Fuzzes network servers.
 * A network server which does not fork and accepts a port on the command line
 * Data to be sent to the server in `inputs`
 
+## Config
+
+```
+ sysctl net.core.somaxconn=4096
+ ulimit -c 999999
+```
+
+
 ## Modes
 
 Modes: 
@@ -114,6 +122,12 @@ config = {
 
 ```
 
+## Compile targets
+
+Use:
+```
+CFLAGS="-fsanitize=address -fno-omit-frame-pointer"
+```
 
 # FAQ
 

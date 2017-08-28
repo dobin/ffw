@@ -51,7 +51,7 @@ config = {
 
     # if you have multiple ffw fuzzers active,
     # change this between them
-    "baseport": 30000,
+    "baseport": 40000,
 
     # analyze response for information leak? (slow)
     "response_analysis": False,
@@ -71,7 +71,7 @@ config = {
     "additional_fuzzer": False,
 
     # how many fuzzing instances should we start
-    "processes": 2,
+    "processes": 32,
 
 
     # mode
@@ -79,7 +79,11 @@ config = {
     # Which fuzzing mode are we using
     # raw: have some raw input file data
     # interceptor: pickle files from interceptor
-    "mode": "raw",
+    "mode": "interceptor",
+
+    ## interceptor
+    "receive_answer": False,
+
 
     ## raw
 

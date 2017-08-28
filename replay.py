@@ -24,7 +24,15 @@ def replay(config, port, file):
 
     config["target_port"] = int(port)
     print "File: " + file
-    return network.sendDataToServer(config, file)
+
+    if config["mode"] == "raw":
+   	 return network.sendDataToServerRaw(config, file)
+    elif config["mode"] == "interceptor":
+   	 return network.sendDataToServerInterceptor(config, file)
+    else:
+         return None
+
+    #return network.sendDataToServer(config, file)
 
 
 def replayall(config, port):

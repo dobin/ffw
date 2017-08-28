@@ -157,7 +157,7 @@ def performIntercept(config, localHost, localPort, targetHost, targetPort):
 
 # called from ffw
 def doIntercept(config, localPort):
-	localHost = "localhost"
+	localHost = "0.0.0.0"
 	targetHost = "localhost"
 
 	targetPort = int(localPort) + 1
