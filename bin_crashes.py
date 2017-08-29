@@ -2,7 +2,7 @@
 #
 # Process crashes to determine uniqueness
 #
-# Based on: 
+# Based on:
 #   Framework for fuzzing things
 #   author: Chris Bisnett
 
@@ -98,8 +98,10 @@ def startServer(config, queue_sync, queue_out):
             if event.signum == signal.SIGCHLD:
                 # Ignore these signals and continue waiting
                 continue
-            #elif event.signum == signal.SIGTERM:
-            #    event = None
+            elif event.signum == signal.SIGTERM:
+                # server cannot be started, return
+                event = None
+                queue_sync.put( ("err", event.signum) )
 
         break
 
@@ -107,11 +109,11 @@ def startServer(config, queue_sync, queue_out):
     # Note: If the server does not crash, we kill it in the parent.
     #       This will still generate a (unecessary) "crash" message and will be sent here
     # TODO fixme maybe
-    if event is not None and event.signum != 15: 
+    if event is not None and event.signum != 15:
         print "T: Crash"
         data = getCrashDetails(event)
         queue_sync.put( ("data", data) )
-    else: 
+    else:
         data = ()
         print "T: NO crash"
         queue_sync.put( ("data", data) )
@@ -120,7 +122,7 @@ def startServer(config, queue_sync, queue_out):
 
 
 def getAsanOutput(config, pid):
-    global sleeptimes 
+    global sleeptimes
 
     # as we cannot get stdout/stderr of child process, we store asan
     # output in the temp folder in the format: asan.<pid>
@@ -156,18 +158,17 @@ def minimizeOutcome(config, outcome, queue_sync, queue_out):
     serverPid = data[1]
     print "M: Server pid: " + str(serverPid)
     time.sleep(sleeptimes["wait_time_for_server_rdy"]) # wait a bit till server is ready
-    notRdyCount = 0
     while not network.testServerConnection(config):
         print "Server not ready, waiting and retrying"
-        time.sleep(0.2) # wait a bit till server is ready
-        notRdyCount += 1
+        time.sleep(0.1) # wait a bit till server is ready
+        try:
+            data = queue_sync.get(True, 0.2)
+            if (data[0] == "err"):
+                # TODO return error so parent retries
+                return None, None
+        except:
+            pass
 
-        if notRdyCount > 32:
-            os.kill(serverPid, signal.SIGTERM)
-            print "Server not getting ready, cancel!!!!!!"
-            return None, None
-
-    
     print "M: Send"
     network.sendDataToServerRaw(config, outcome)
 
@@ -201,12 +202,12 @@ def minimizeOutcome(config, outcome, queue_sync, queue_out):
         # kill it, and receive the unecessary data
         # TODO: If os.kill throws an exception, it could not kill it, therefore
         #       the start of the server failed. Retry
-        try: 
+        try:
             os.kill(serverPid, signal.SIGTERM)
         except:
             print "  M: !!!!!!!!!!! Exception: Could not kill :-("
 
-        try: 
+        try:
             notneeded1 = queue_sync.get(True, 1)
             crashOutput = queue_out.get(True, 1)
         except:
@@ -233,7 +234,7 @@ def minimize(config):
     ffwchild._setupEnvironment(config)
     print "Processing %d outcomes" % len(outcomes)
 
-    try: 
+    try:
         for outcome in outcomes:
             print "\nNow: " + str(n) + ": " + outcome
             config["target_port"] = config["baseport"] + n + 100
@@ -247,7 +248,7 @@ def minimize(config):
 
     except KeyboardInterrupt:
         # cleanup on ctrl-c
-        try: 
+        try:
             os.kill(serverPid, signal.SIGTERM)
         except:
             pass
@@ -309,4 +310,3 @@ def getCrashDetails(event):
         details = event._analyze().text
 
     return (faultOffset, module, sig, details)
-

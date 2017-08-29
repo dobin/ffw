@@ -1,6 +1,6 @@
 #!/usr/local/bin/python
 
-import signal 
+import signal
 import queue
 import logging
 import os
@@ -26,7 +26,7 @@ GLOBAL_SLEEP = {
 
     # send update interval from child to parent
     # via queue
-    "communicate_interval": 3,
+    "communicate_interval": 3
 }
 
 
@@ -34,13 +34,13 @@ GLOBAL_SLEEP = {
 _inputs = []
 
 fuzzers = {
-    "Dumb": 
+    "Dumb":
     {
         "name": "Dumb",
         "file": "fuzzer_dumb.py",
         "args": '%(seed)s "%(input)s" %(output)s',
     },
-    "Radamsa": 
+    "Radamsa":
     {
         "name": "Radamsa",
         "file": "radamsa/bin/radamsa",
@@ -55,8 +55,6 @@ fuzzers = {
 # sends results via queue to the parent
 def doActualFuzz(config, threadId, queue):
     setupEnvironment=_setupEnvironment
-    generateSeed=_generateSeed
-    runFuzzer=_runFuzzer
     runTarget=_runTarget,
     checkForCrash=_checkForCrash
     handleOutcome=_handleOutcome
@@ -73,17 +71,19 @@ def doActualFuzz(config, threadId, queue):
     print "Setup fuzzing.."
     signal.signal(signal.SIGINT, signal_handler)
 
-    # setup 
+    # setup
     config["threadId"] = threadId
     config["target_port"] = config["baseport"] + config["threadId"]
     setupEnvironment(config)
 
-    if config["mode"] == "raw": 
+    if config["mode"] == "raw":
         chooseInput = _chooseInputRaw
         sendDataToServer = network.sendDataToServerRaw
+        readFuzzedData = _readFuzzedDataRaw
     elif config["mode"] == "interceptor":
         chooseInput = _chooseInputInterceptor
         sendDataToServer = network.sendDataToServerInterceptor
+        readFuzzedData = _readFuzzedDataInterceptor
 
     # start server
     startServer(config)
@@ -104,45 +104,38 @@ def doActualFuzz(config, threadId, queue):
             queue.put( (threadId, fuzzps, count, crashCount) )
             startTime = currTime
             epochCount = 0
-        else: 
-            epochCount += 1 
+        else:
+            epochCount += 1
 
-        if crashCountAnalLast + config["crash_minimize_time"] < crashCount: 
+        if crashCountAnalLast + config["crash_minimize_time"] < crashCount:
             #minimizeCrashes(config)
             crashCountAnalLast = crashCount
 
         haveOutcome = False
 
-        # Step 2: Choose an input file
-        inFile = chooseInput(config)
+        # Step 2: Choose an input file / msg
+        fuzzIterConfig = chooseInput(config)
 
-        # Step 3: Generate a seed
-        seed = generateSeed(config)
-
-        # Generate a name for the output file
-        outExt = os.path.splitext(inFile)[1]
-        outFile = os.path.join(config["temp_dir"], str(seed) + outExt)
-
-        # Step 4: Run fuzzer
-        runFuzzer(config, inFile, seed, outFile, count)
+        # fuzz and load again
+        fuzzInputData(config, fuzzIterConfig, readFuzzedData)
 
         # Send to server
         # if it has crashed, the previous seed made it crash. handle it.
-        if not sendDataToServer(config, outFile):
-            handlePrevCrash(config, outExt, inFile, outcome, runFuzzer, handleOutcome)
+        if not sendDataToServer(config, fuzzIterConfig):
+            handlePrevCrash(config, outExt, fuzzIterConfig["inFile"], outcome, runFuzzer, handleOutcome)
             haveOutcome = True
             crashCount += 1
             startServer(config)
 
         # check if server crashed (does not really work ?)
-        if not haveOutcome and not isAlive(): 
-            handleOutcome(config, outcome, inFile, seed, outFile, count)
+        if not haveOutcome and not isAlive():
+            handleOutcome(config, outcome, fuzzIterConfig["inFile"], seed, outFile, count)
             haveOutcome = True
             crashCount += 1
             startServer(config)
 
         # restart server periodically
-        if count > 0 and count % config["server_restart_rate"] == 0:
+        if count > 0 and count % 10000 == 0:
             print "Restart server"
             if not network.testServerConnection(config):
                 handlePrevCrash(config, outExt, inFile, outcome, runFuzzer, handleOutcome)
@@ -153,11 +146,9 @@ def doActualFuzz(config, threadId, queue):
             startServer(config)
             time.sleep(GLOBAL_SLEEP["sleep_after_server_start"])
 
-        # Delete the output file
-        try:
-            os.remove(outFile)
-        except:
-            print "Failed to remove file %s!" % outFile
+        if config["debug"]:
+            # lets sleep a bit
+            time.sleep(3)
 
         # save current state in case we detect a crash on next iteration
         GLOBAL["prev_count"] = count
@@ -168,18 +159,42 @@ def doActualFuzz(config, threadId, queue):
 
     # all done, terminate server
     stopServer()
-    
+
+
+def fuzzInputData(config, fuzzIterConfig, readFuzzedData):
+    # Step 3: Generate a seed
+    seed = _generateSeed(config)
+
+    # Generate a name for the output file
+    outExt = os.path.splitext(fuzzIterConfig["inFile"])[1]
+    outFile = os.path.join(config["temp_dir"], str(seed) + outExt)
+
+    # Step 4: Run fuzzer process
+    _runFuzzer(config, fuzzIterConfig["inFile"], seed, outFile)
+
+    # Read result back
+    file = open(outFile, "r")
+    data = file.read()
+    file.close()
+    readFuzzedData(config, fuzzIterConfig, data)
+
+    # Delete the output file
+    try:
+        os.remove(outFile)
+    except:
+        print "Failed to remove file %s!" % outFile
+
 
 def _setupEnvironment(config):
     """
     Performs one-time setup tasks before starting the fuzzer
     """
     # Silence warnings from the ptrace library
-    logging.getLogger().setLevel(logging.ERROR)
+    #logging.getLogger().setLevel(logging.ERROR)
 
     # Most important is to set log_path so we have access to the asan logs
-    asanOpts = "" 
-    asanOpts += "color=never:verbosity=0:leak_check_at_exit=false:" 
+    asanOpts = ""
+    asanOpts += "color=never:verbosity=0:leak_check_at_exit=false:"
     asanOpts += "abort_on_error=true:log_path=" + config["temp_dir"] + "/asan"
     os.environ["ASAN_OPTIONS"] = asanOpts
 
@@ -188,11 +203,11 @@ def _setupEnvironment(config):
 
 
 # create an array of the binary path and its parameters
-# used to start the process with popen() etc. 
+# used to start the process with popen() etc.
 def getInvokeTargetArgs(config):
     args = config["target_args"] % ( { "port": config["target_port"] } )
     argsArr = args.split(" ")
-    cmdArr = [ config["target_bin"] ] 
+    cmdArr = [ config["target_bin"] ]
     cmdArr.extend( argsArr )
     return cmdArr
 
@@ -209,30 +224,39 @@ def _chooseInputRaw(config):
         print "No input files"
         sys.exit(0)
 
-    return os.path.join(config["inputs"], random.choice(_inputs))
+    fuzzIterConfig = {
+        "inFile": os.path.join(config["inputs"], random.choice(_inputs)),
+    }
+
+    return fuzzIterConfig
+
+
+def _readFuzzedDataRaw(config, fuzzIterConfig, data):
+    fuzzIterConfig["data"] = data
+
 
 def _chooseInputInterceptor(config):
-    if not "_inputs" in config:
-        with open(config["inputs"] + "/data_0.pickle",'rb') as f:
-            config["_inputs"] = pickle.load(f)
-
-            # write all datas to the fs
-            n = 0
-            for inp in config["_inputs"]:
-                fileName = config["inputs"] + "/input_" + str(n) + ".raw"
-                file = open(fileName, 'wb')
-                file.write(inp["data"])
-                file.close()
-                inp["filename"] = fileName
-                n += 1
-
+    # TODO make this nicer..
     choice = random.choice(config["_inputs"])
-    while choice["from"] != "cli": 
+    while choice["from"] != "cli":
         choice = random.choice(config["_inputs"])
-        
-    config["current_choice"] = choice
 
-    return choice["filename"]
+    choice["toFuzz"] = True
+    logging.debug("selected input: " + str(choice))
+
+    fuzzIterConfig = {
+        "inFile": choice["filename"],
+        "current_choice": choice,
+    }
+
+    return fuzzIterConfig
+
+
+def _readFuzzedDataInterceptor(config, fuzzIterConfig, data):
+    fuzzIterConfig["data"] = data
+
+    logging.debug("  Original data: " + str(fuzzIterConfig["current_choice"]["data"]))
+    logging.debug("  Fuzzed data:   " + str(data))
 
 
 def _generateSeed(config):
@@ -242,21 +266,22 @@ def _generateSeed(config):
     return random.randint(0, 2**64 - 1)
 
 
-def _runFuzzer(config, inputFile, seed, outputFile, count):
+def _runFuzzer(config, inputFile, seed, outputFile):
     """
     Run the fuzzer specified in the configuration
     """
     fuzzerData = fuzzers[ config["fuzzer"] ]
     if not fuzzerData:
         print "Could not find fuzzer with name: " + config["fuzzer"]
-        sys.exit(0)
+        return False
 
     args = fuzzerData["args"] % ({
-        "seed" : seed, 
+        "seed" : seed,
         "input" : inputFile,
-        "output" : outputFile, 
-        "count" : count})
+        "output" : outputFile})
     subprocess.call(config["basedir"] + "/" + fuzzerData["file"] + " " + args, shell=True)
+
+    return True
 
 
 def _checkForCrash(config, event):
@@ -295,7 +320,7 @@ def _handleOutcome(config, event, inputFile, seed, outputFile, count):
         f.write("Asanoutput: %s\n" % asanOutput)
 
     # Save the output
-    # copy from temp/ to out/. It will be deleted later. 
+    # copy from temp/ to out/. It will be deleted later.
     try:
         shutil.copy(outputFile, os.path.join(config["outcome_dir"],
             os.path.basename(outputFile)))
@@ -307,9 +332,10 @@ def _handleOutcome(config, event, inputFile, seed, outputFile, count):
 def _runTarget(config):
     global GLOBAL_SLEEP
     popenArg = getInvokeTargetArgs(config)
+    logging.info("Starting server with args: " + str(popenArg))
+
     # create devnull so we can us it to surpress output of the server (2.7 specific)
     DEVNULL = open(os.devnull, 'wb')
-    os.chdir(os.path.dirname( config["target_bin"] ))
     p = subprocess.Popen(popenArg, stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL)
     time.sleep( GLOBAL_SLEEP["sleep_after_server_start"] ) # wait a bit so we are sure server is really started
     return p
@@ -331,7 +357,7 @@ def signal_handler(signal, frame):
 
 
 def isAlive():
-    if GLOBAL["process"].poll() == None: 
+    if GLOBAL["process"].poll() == None:
         return True
     else:
         return False
@@ -346,5 +372,5 @@ def handlePrevCrash(config, outExt, inFile, outcome, runFuzzer, handleOutcome):
     # start fuzzer with previous seed
     runFuzzer(config, inFile, GLOBAL["prev_seed"], outFilePrev, GLOBAL["prev_count"])
 
-    # handle the result 
+    # handle the result
     handleOutcome(config, outcome, inFile, GLOBAL["prev_seed"], outFilePrev, GLOBAL["prev_count"])
