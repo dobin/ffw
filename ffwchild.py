@@ -57,11 +57,9 @@ def doActualFuzz(config, threadId, queue):
     setupEnvironment=_setupEnvironment
     runTarget=_runTarget,
     checkForCrash=_checkForCrash
-    handleOutcome=_handleOutcome
 
     global GLOBAL_SLEEP
 
-    seed = 0
     count = 0
     outcome = None
     crashCount = 0 # number of crashes, absolute
@@ -122,14 +120,14 @@ def doActualFuzz(config, threadId, queue):
         # Send to server
         # if it has crashed, the previous seed made it crash. handle it.
         if not sendDataToServer(config, fuzzIterConfig):
-            handlePrevCrash(config, outExt, fuzzIterConfig["inFile"], outcome, runFuzzer, handleOutcome)
+            handlePrevCrash(config, GLOBAL["prev_fuzzIterConfig"], outcome)
             haveOutcome = True
             crashCount += 1
             startServer(config)
 
         # check if server crashed (does not really work ?)
         if not haveOutcome and not isAlive():
-            handleOutcome(config, outcome, fuzzIterConfig["inFile"], seed, outFile, count)
+            handleOutcome(config, outcome, fuzzIterConfig["inFile"], fuzzIterConfig["seed"], fuzzIterConfig["outFile"], count, fuzzIterConfig)
             haveOutcome = True
             crashCount += 1
             startServer(config)
@@ -138,7 +136,7 @@ def doActualFuzz(config, threadId, queue):
         if count > 0 and count % 10000 == 0:
             print "Restart server"
             if not network.testServerConnection(config):
-                handlePrevCrash(config, outExt, inFile, outcome, runFuzzer, handleOutcome)
+                handlePrevCrash(config, fuzzIterConfig, outcome)
                 crashCount += 1
 
             stopServer()
@@ -152,7 +150,8 @@ def doActualFuzz(config, threadId, queue):
 
         # save current state in case we detect a crash on next iteration
         GLOBAL["prev_count"] = count
-        GLOBAL["prev_seed"] = seed
+        GLOBAL["prev_seed"] = fuzzIterConfig["seed"]
+        GLOBAL["prev_fuzzIterConfig"] = fuzzIterConfig
 
         # Update the counter and display the visual feedback
         count += 1
@@ -164,10 +163,14 @@ def doActualFuzz(config, threadId, queue):
 def fuzzInputData(config, fuzzIterConfig, readFuzzedData):
     # Step 3: Generate a seed
     seed = _generateSeed(config)
+    fuzzIterConfig["seed"] = seed
 
     # Generate a name for the output file
     outExt = os.path.splitext(fuzzIterConfig["inFile"])[1]
     outFile = os.path.join(config["temp_dir"], str(seed) + outExt)
+
+    fuzzIterConfig["outExt"] = outExt
+    fuzzIterConfig["outFile"] = outFile
 
     # Step 4: Run fuzzer process
     _runFuzzer(config, fuzzIterConfig["inFile"], seed, outFile)
@@ -241,12 +244,11 @@ def _chooseInputInterceptor(config):
     while choice["from"] != "cli":
         choice = random.choice(config["_inputs"])
 
-    choice["toFuzz"] = True
-    logging.debug("selected input: " + str(choice))
+    logging.debug("selected input: " + str(choice["data"]))
 
     fuzzIterConfig = {
         "inFile": choice["filename"],
-        "current_choice": choice,
+        "current_choice": choice.copy(),
     }
 
     return fuzzIterConfig
@@ -255,8 +257,13 @@ def _chooseInputInterceptor(config):
 def _readFuzzedDataInterceptor(config, fuzzIterConfig, data):
     fuzzIterConfig["data"] = data
 
-    logging.debug("  Original data: " + str(fuzzIterConfig["current_choice"]["data"]))
-    logging.debug("  Fuzzed data:   " + str(data))
+#    logging.debug("  Original data: " + str(fuzzIterConfig["current_choice"]["data"]))
+#    logging.debug("  Fuzzed data:   " + str(data))
+
+    fuzzIterConfig["repro"] = list(config["_inputs"])
+    m = fuzzIterConfig["repro"].index(fuzzIterConfig["current_choice"])
+    fuzzIterConfig["repro"][m]["data"] = data
+#    logging.debug("  Fuzzed data:   " + str(fuzzIterConfig["repro"]))
 
 
 def _generateSeed(config):
@@ -295,12 +302,16 @@ def _checkForCrash(config, event):
     return None
 
 
-def _handleOutcome(config, event, inputFile, seed, outputFile, count):
+def handleOutcome(config, event, inputFile, seed, outputFile, count, fuzzIterConfig):
     """
     Save the output from the fuzzer for replay and make a note of the outcome
     """
 
+    logging.info("Handle Outcome")
     asanOutput = bin_crashes.getAsanOutput(config, GLOBAL["process"].pid)
+    
+    with open(os.path.join(config["outcome_dir"], str(seed)+".pickle"), "w") as f:
+        pickle.dump(fuzzIterConfig["current_choice"], f)
 
     # Save a log
     with open(os.path.join(config["outcome_dir"], str(seed)+".txt"), "w") as f:
@@ -363,14 +374,20 @@ def isAlive():
         return False
 
 
-def handlePrevCrash(config, outExt, inFile, outcome, runFuzzer, handleOutcome):
+def handlePrevCrash(config, fuzzIterConfig, outcome):
+#def handlePrevCrash(config, fuzzIterConfig, outExt, inFile, outcome, runFuzzer, handleOutcome):
     # regenerate old outFile
+
+    logging.info("Handle Previus Crash")
+
+    outExt = fuzzIterConfig["outExt"]
+    inFile = fuzzIterConfig["inFile"]
 
     # old filename
     outFilePrev = os.path.join(config["temp_dir"], str(GLOBAL["prev_seed"]) + outExt)
 
     # start fuzzer with previous seed
-    runFuzzer(config, inFile, GLOBAL["prev_seed"], outFilePrev, GLOBAL["prev_count"])
+    _runFuzzer(config, inFile, GLOBAL["prev_seed"], outFilePrev)
 
     # handle the result
-    handleOutcome(config, outcome, inFile, GLOBAL["prev_seed"], outFilePrev, GLOBAL["prev_count"])
+    handleOutcome(config, outcome, inFile, GLOBAL["prev_seed"], outFilePrev, GLOBAL["prev_count"], fuzzIterConfig)

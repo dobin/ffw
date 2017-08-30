@@ -74,8 +74,10 @@ def sendDataToServerInterceptor(config, fuzzIterConfig):
         if message == fuzzIterConfig["current_choice"]:
             break
 
-        # this should not fail
-        sock.sendall(message["data"])
+        try: 
+            sock.sendall(message["data"])
+        except socket.error, exc:
+            return False
 
         # if config["receive_ansewrs"]:
             # if next msg is from server:
