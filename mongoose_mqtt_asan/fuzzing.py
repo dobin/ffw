@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Based on: 
+# Based on:
 #   Framework for fuzzing things
 #   author: Chris Bisnett
 
@@ -20,10 +20,10 @@ BASEDIR = os.path.realpath(PROJDIR + "/../")
 def sendInitialData(socket):
     authData = "\x10\x16\x00\x04\x4d\x51\x54\x54\x04\x02\x00\x00\x00\x0a\x6d\x79\x63\x6c\x69\x65\x6e\x74\x69\x64"
 
-    try: 
+    try:
         socket.sendall(authData)
     except socket.error, exc:
-        return False 
+        return False
 
     return True
 
@@ -63,7 +63,7 @@ config = {
 
     # perform automatic crash analysis?
     # Note: Can also be manually started with argument "minimize"
-    "crash_minimize": False, 
+    "crash_minimize": False,
     "crash_minimize_time": 3, # number of new crashes
 
     # TODO
@@ -71,10 +71,11 @@ config = {
     "additional_fuzzer": False,
 
     # how many fuzzing instances should we start
-    "processes": 32,
+    "processes": 2,
 
 
     # mode
+    "debug": True,
 
     # Which fuzzing mode are we using
     # raw: have some raw input file data
@@ -105,4 +106,3 @@ def main():
 
 if __name__ == '__main__':
     sys.exit(main())
-

@@ -20,10 +20,6 @@ GLOBAL = {
 }
 
 GLOBAL_SLEEP = {
-    # how long to wait after server start
-    # can be high as it is not happening so often
-    "sleep_after_server_start": 1,
-
     # send update interval from child to parent
     # via queue
     "communicate_interval": 3
@@ -309,7 +305,7 @@ def handleOutcome(config, event, inputFile, seed, outputFile, count, fuzzIterCon
 
     logging.info("Handle Outcome")
     asanOutput = bin_crashes.getAsanOutput(config, GLOBAL["process"].pid)
-    
+
     with open(os.path.join(config["outcome_dir"], str(seed)+".pickle"), "w") as f:
         pickle.dump(fuzzIterConfig["current_choice"], f)
 

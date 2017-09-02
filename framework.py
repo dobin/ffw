@@ -23,7 +23,7 @@ import bin_crashes
 import gui
 import network
 import interceptor
-import ffwchild
+import worker
 
 def printConfig(config):
     print "Config:  "
@@ -50,7 +50,7 @@ def doFuzz(config, useCurses):
     n = 0
     while n < config["processes"]:
         print "Start child: " + str(n)
-        p = Process(target=ffwchild.doActualFuzz, args=(config, n, q))
+        p = Process(target=worker.doActualFuzz, args=(config, n, q))
         procs.append(p)
         p.start()
         n += 1
@@ -142,8 +142,7 @@ def realMain(config):
     if config["debug"]:
         print "Debug mode enabled"
         logging.basicConfig(level=logging.DEBUG)
-        config["processes"] = 1 
-
+        config["processes"] = 1
 
     if len(sys.argv) > 1:
         func = sys.argv[1]

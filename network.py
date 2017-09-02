@@ -3,9 +3,9 @@
 import socket
 
 
-def testServerConnection(config):
+def testServerConnection(config, targetPort):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_address = ('localhost', config["target_port"])
+    server_address = ('localhost', targetPort)
 
     try:
         sock.connect(server_address)
@@ -74,7 +74,7 @@ def sendDataToServerInterceptor(config, fuzzIterConfig):
         if message == fuzzIterConfig["current_choice"]:
             break
 
-        try: 
+        try:
             sock.sendall(message["data"])
         except socket.error, exc:
             return False
@@ -88,7 +88,7 @@ def sendDataToServerInterceptor(config, fuzzIterConfig):
     except socket.error, exc:
         return False
 
-    # TODO: send the rest 
+    # TODO: send the rest
 
     if config["response_analysis"]:
         sock.settimeout(0.1)
