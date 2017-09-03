@@ -19,9 +19,8 @@ import logging
 from multiprocessing import Process, Queue
 
 import replay
-import bin_crashes
+import minimizer
 import gui
-import network
 import interceptor
 import worker
 
@@ -151,7 +150,8 @@ def realMain(config):
         corpus_destillation()
 
     if func == "minimize":
-        bin_crashes.minimize(config)
+        mini = minimizer.Minimizer(config)
+        mini.minimizeOutDir()
 
     if func == "replay":
         replay.replay(config, sys.argv[2], sys.argv[3])

@@ -7,7 +7,7 @@ import subprocess
 import socket
 
 import network
-import bin_crashes
+import serverutils
 
 GLOBAL_SLEEP = {
     # how long to wait after server start
@@ -29,7 +29,7 @@ class ServerManager(object):
 		self.process = None
 		self.sock = None
 	 	self.targetPort = self.config["baseport"] + threadId
-		self._setupEnvironment()
+		serverutils.setupEnvironment(self.config)
 
 
 	def start(self):
@@ -55,9 +55,10 @@ class ServerManager(object):
 
 	def isAliveSlow(self):
 		"""Return true if the server is alive"""
-		return network.testServerConnection(self.config, self.targetPort)
+		return network.testServerConnection(self.targetPort)
 
 
+    ##################
 	def openConnection(self):
 		"""
 		Opens a TCP connection to the server
@@ -105,7 +106,7 @@ class ServerManager(object):
 		    return False, None
 
 		return True, data
-
+    ##################
 
 	def _waitForServer(self):
 		"""
@@ -120,7 +121,7 @@ class ServerManager(object):
 		or None if it has not crashed (should not happen)
 		"""
 		crashData = {
-			"asanOutput": bin_crashes.getAsanOutput(self.config, self.process.pid),
+			"asanOutput": serverutils.getAsanOutput(self.config, self.process.pid),
 			"signum": 0,
 			"exitcode": 0,
 		}
@@ -128,30 +129,12 @@ class ServerManager(object):
 		return crashData
 
 
-	def _setupEnvironment(self):
-		"""
-		Prepare the environment before the server is started
-		(e.g. working directory)
-		"""
-		# Silence warnings from the ptrace library
-		#logging.getLogger().setLevel(logging.ERROR)
-
-		# Most important is to set log_path so we have access to the asan logs
-		asanOpts = ""
-		asanOpts += "color=never:verbosity=0:leak_check_at_exit=false:"
-		asanOpts += "abort_on_error=true:log_path=" + self.config["temp_dir"] + "/asan"
-		os.environ["ASAN_OPTIONS"] = asanOpts
-
-		# Tell Glibc to abort on heap corruption but not dump a bunch of output
-		os.environ["MALLOC_CHECK_"] = "2"
-
-
 	def _runTarget(self):
 		"""
 		Start the server
 		"""
 		global GLOBAL_SLEEP
-		popenArg = self._getInvokeTargetArgs()
+		popenArg = serverutils.getInvokeTargetArgs(self.config, self.targetPort)
 		logging.info("Starting server with args: " + str(popenArg))
 
 		# create devnull so we can us it to surpress output of the server (2.7 specific)
@@ -161,13 +144,3 @@ class ServerManager(object):
 		logging.info("  Pid: " + str(p.pid) )
 
 		return p
-
-
-	# create an array of the binary path and its parameters
-	# used to start the process with popen() etc.
-	def _getInvokeTargetArgs(self):
-	    args = self.config["target_args"] % ( { "port": self.targetPort } )
-	    argsArr = args.split(" ")
-	    cmdArr = [ self.config["target_bin"] ]
-	    cmdArr.extend( argsArr )
-	    return cmdArr
