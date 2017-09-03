@@ -5,6 +5,7 @@ import time
 import logging
 import queue
 import random
+import sys
 
 import servermanager
 import fuzzingiterationdata
@@ -40,8 +41,8 @@ def updateStats(iterStats, queue, threadId):
 
 
 def signal_handler(signal, frame):
-    print "Terminating pid: " + str(GLOBAL["process"].pid)
-    stopServer()
+    # TODO fixme make object so i can kill server
+    #stopServer()
     sys.exit(0)
 
 
@@ -104,6 +105,7 @@ def doActualFuzz(config, threadId, queue, initialSeed):
             crashData = serverManager.getCrashData()
             crashData["fuzzerPos"] = "B"
             previousFuzzingIterationData.export(crashData)
+            serverManager.closeConnection()
             serverManager.restart()
             continue
 
@@ -114,14 +116,15 @@ def doActualFuzz(config, threadId, queue, initialSeed):
             crashData = serverManager.getCrashData()
             crashData["fuzzerPos"] = "C"
             fuzzingIterationData.export(crashData)
+            serverManager.closeConnection()
             serverManager.restart()
             continue
 
         # restart server periodically
-        if iterStats["count"] > 0 and iterStats["count"] % 10000 == 0:
+        if iterStats["count"] > 0 and iterStats["count"] % config["restart_server_every"] == 0:
             logging.info("Restart server")
             serverManager.restart()
-            if not serverManager.testServerConnection(config):
+            if not serverManager.isAliveSlow():
                 logging.error("Error")
                 return
 

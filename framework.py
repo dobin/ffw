@@ -143,7 +143,7 @@ def realMain(config):
     if config["debug"]:
         print "Debug mode enabled"
         logging.basicConfig(level=logging.DEBUG)
-        config["processes"] = 1
+        config["processes"] = 2
 
     if len(sys.argv) > 1:
         func = sys.argv[1]

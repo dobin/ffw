@@ -75,6 +75,7 @@ class ServerManager(object):
 		    self.sock.connect(server_address)
 		except socket.error, exc:
 			# server down
+			self.sock.close()
 			logging.info("  Could not connect! Server is down.")
 			return False
 
@@ -82,7 +83,7 @@ class ServerManager(object):
 
 
 	def closeConnection(self):
-		socket.close()
+		self.sock.close()
 
 
 	def sendData(self, data):

@@ -1,5 +1,6 @@
 #!/bin/python
 
+import urllib
 import random
 import logging
 import os
@@ -82,7 +83,7 @@ class FuzzingIterationData(object):
 		"""Write the data to be fuzzed to a file"""
 		file = open(self.fuzzingInFile, "w")
 		file.write(self.choice["data"])
-		logging.debug("WRITE: " + str(self.choice["data"]))
+		#logging.debug("urllib.quote_plus: " + str(self.choice["data"]))
 		file.close()
 
 		return True
@@ -99,7 +100,7 @@ class FuzzingIterationData(object):
 		self.choice["data"] = data
 		self.choice["isFuzzed"] = True
 
-		logging.debug("OUTPUT: " + str(self.choice["data"]))
+		logging.debug("OUTPUT: " + urllib.quote_plus(self.choice["data"]))
 
 		try:
 		    os.remove(self.fuzzingInFile)
@@ -112,7 +113,7 @@ class FuzzingIterationData(object):
 
     def _runFuzzer(self):
         """Call external fuzzer"""
-        logging.info("Call fuzzer")
+        logging.error("Call fuzzer, seed: " + str(self.seed))
         fuzzerData = fuzzers[ self.config["fuzzer"] ]
         if not fuzzerData:
             print "Could not find fuzzer with name: " + self.config["fuzzer"]
@@ -138,7 +139,7 @@ class FuzzingIterationData(object):
 
         s = 'selected input: %s  from: %s  len: %s' % ( str(self.fuzzedData.index(self.choice)), self.choice["from"], str(len(self.choice["data"]) ) )
         logging.debug(s)
-        logging.debug("INPUT: " + str(self.choice["data"]))
+        logging.debug("INPUT: " + urllib.quote_plus(self.choice["data"]))
 
 
     def export(self, crashData):
