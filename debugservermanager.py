@@ -159,8 +159,8 @@ class DebugServerManager(object):
         try:
             os.kill(self.pid, signal.SIGTERM)
         except:
-            print "  M: !!!!!!!!!!! Exception: Could not kill :-("
-
+            # is already dead...
+            pass
 
     def _waitForCrash(self):
         event = None

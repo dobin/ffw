@@ -28,6 +28,8 @@ class Minimizer(object):
         self.config = config
         self.queue_sync = Queue()
         self.queue_out = Queue()
+        self.serverPid = None
+        self.p = None
         self.outcomesDir = os.path.abspath(self.config["outcome_dir"])
         self.outcomesFiles = glob.glob(os.path.join(self.outcomesDir, '*.pickle'))
 
@@ -55,27 +57,18 @@ class Minimizer(object):
         logging.info("Minimizer: Waited long enough, NO crash. ")
         self.debugServerManager.stop()
 
-        # timeout waiting for the data, which means the server did not crash
-        # kill it, and receive the unecessary data
-        # TODO: If os.kill throws an exception, it could not kill it, therefore
-        #       the start of the server failed. Retry
-
-        #try:
-        #    notneeded1 = queue_sync.get(True, 1)
-        #    crashOutput = queue_out.get(True, 1)
-        #except:
-        #    print "  Minimizer: !!!!!!!!!!! Exception: No data to get for non-crash :-("
-
 
     def minimizeOutcome(self, outcome, targetPort):
         # start server in background
         self.debugServerManager = debugservermanager.DebugServerManager(self.config, self.queue_sync, self.queue_out, targetPort)
         p = Process(target=self.debugServerManager.startAndWait, args=())
         p.start()
+        self.p = p
 
         # wait for ok (pid) from child that the server has started
         data = self.queue_sync.get()
         serverPid = data[1]
+        self.serverPid = serverPid
         logging.info("Minimizer: Server pid: " + str(serverPid))
         time.sleep(sleeptimes["wait_time_for_server_rdy"]) # wait a bit till server is ready
         self.debugServerManager.waitForServerReadyness()
@@ -129,9 +122,9 @@ class Minimizer(object):
         except KeyboardInterrupt:
             # cleanup on ctrl-c
             try:
-                os.kill(serverPid, signal.SIGTERM)
-            except:
-                pass
+                self.p.terminate()
+            except Exception as error:
+                print "Exception: " + str(error)
 
             # wait for child to exit
             #p.join()
@@ -139,8 +132,8 @@ class Minimizer(object):
         print "Number of outcomes: " + str(len(self.outcomesFiles))
         print "Number of no crashes: " + str(noCrash)
         # manage all these crashes
-        for crash in crashes:
-            offset, mod, sig = crash
-            details = crashes[crash]
-            print "Crash: %s+0x%x (signal %d)" % (mod, offset, sig)
-            print "\t%s" % details["gdbdetails"]
+        #for crash in crashes:
+        #    offset, mod, sig = crash
+        #    details = crashes[crash]
+        #    print "Crash: %s+0x%x (signal %d)" % (mod, offset, sig)
+        #    print "\t%s" % details["gdbdetails"]

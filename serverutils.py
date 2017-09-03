@@ -52,6 +52,8 @@ def getAsanOutput(config, pid):
     if not os.path.isfile(fileName):
         logging.info("Did not find ASAN output file.")
         return "No ASAN file found (path: " + fileName + ")"
+    else:
+        logging.info("Found ASAN output file. Good.")
 
     # it may not exist, which aint bad (e.g. no asan support)
     file = open(fileName, "r")
