@@ -4,7 +4,9 @@ import time
 import os
 import glob
 from multiprocessing import Process, Queue
+import logging
 
+import serverutils
 import debugservermanager
 import network
 import utils
@@ -30,12 +32,8 @@ class Minimizer(object):
         self.outcomesFiles = glob.glob(os.path.join(self.outcomesDir, '*.pickle'))
 
 
-    def handleCrashData(crashData):
-        print "M: Crash!"
-
+    def handleCrash(self, crashData, crashOutput, asanOutput):
         crashData = crashData[1]
-        crashOutput = queue_out.get()
-        asanOutput = getAsanOutput(self.config, serverPid)
         details = crashData[3]
         signature = ( crashData[0], crashData[1], crashData[2] )
         details = {
@@ -45,13 +43,16 @@ class Minimizer(object):
             "gdbdetails": crashData[3],
             "output": crashOutput,
             "asan": asanOutput,
-            "file": outcome,
         }
-        storeValidCrash(self.config, signature, details)
+        self.storeValidCrash(self.config, signature, details)
+
+
+    def storeValidCrash(self, config, signature, details):
+        logging.info("Minimizer: Store crash")
 
 
     def handleNoCrash(self):
-        print "M: Waited long enough, NO crash. "
+        logging.info("Minimizer: Waited long enough, NO crash. ")
         self.debugServerManager.stop()
 
         # timeout waiting for the data, which means the server did not crash
@@ -63,7 +64,7 @@ class Minimizer(object):
         #    notneeded1 = queue_sync.get(True, 1)
         #    crashOutput = queue_out.get(True, 1)
         #except:
-        #    print "  M: !!!!!!!!!!! Exception: No data to get for non-crash :-("
+        #    print "  Minimizer: !!!!!!!!!!! Exception: No data to get for non-crash :-("
 
 
     def minimizeOutcome(self, outcome, targetPort):
@@ -75,12 +76,12 @@ class Minimizer(object):
         # wait for ok (pid) from child that the server has started
         data = self.queue_sync.get()
         serverPid = data[1]
-        print "M: Server pid: " + str(serverPid)
+        logging.info("Minimizer: Server pid: " + str(serverPid))
         time.sleep(sleeptimes["wait_time_for_server_rdy"]) # wait a bit till server is ready
         self.debugServerManager.waitForServerReadyness()
 
         if not self.debugServerManager.openConnection():
-            logging.error("Could not connect to server")
+            logging.error("Minimizer: Could not connect to server")
 
         self.debugServerManager.sendMessages(outcome)
         self.debugServerManager.closeConnection()
@@ -88,32 +89,32 @@ class Minimizer(object):
         # get crash result data
         # or empty if server did not crash
         try:
-            print "M: Wait for crash data"
+            logging.info("Minimizer: Wait for crash data")
             crashData = self.queue_sync.get(True, sleeptimes["max_server_run_time"])
-            self.handleCrash(crashData)
-            return signature, details
+
+            logging.info("Minimizer: Get a crash")
+            crashOutput = self.queue_out.get()
+            asanOutput = serverutils.getAsanOutput(self.config, serverPid)
+            self.handleCrash(crashData, crashOutput, asanOutput)
+            return None, None
         except Exception as error:
-            print "exception: " + str(error)
+            logging.error("Minimizer: EXCEPTION: " + str(error))
             self.handleNoCrash()
             return None, None
 
 
-    def handleCrash(self, crashData):
-        print "---------- Handle Crash: " + str(crashData)
-        print "RIP: " + str(hex(crashData[0]))
-
     def minimizeOutDir(self):
-        print "Crash minimize"
+        logging.info("Crash minimize")
 
         crashes = dict()
         n = 0
         noCrash = 0
 
-        print "Processing %d outcome files" % len(self.outcomesFiles)
+        print("Processing %d outcome files" % len(self.outcomesFiles))
 
         try:
             for outcomeFile in self.outcomesFiles:
-                print "\nNow: " + str(n) + ": " + outcomeFile
+                print("Now processing: " + str(n) + ": " + outcomeFile)
                 targetPort = self.config["baseport"] + n + 100
 
                 outcome = utils.readPickleFile(outcomeFile)

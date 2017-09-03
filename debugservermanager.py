@@ -117,7 +117,7 @@ class DebugServerManager(object):
 
         self.queue_out.put("Dummy")
         # do not remove print, parent excepts something
-        print "Start Server"
+        logging.info("DebugServer: Start Server")
         #sys.stderr.write("Stderr")
 
         self._startServer()
@@ -130,7 +130,7 @@ class DebugServerManager(object):
         else:
             crashData = ()
 
-        print "____________ SEND TO QUEUE"
+        logging.debug("DebugServer: send to queue_sync")
         self.queue_sync.put( ("data", crashData) )
 
         self.dbg.quit()
@@ -165,7 +165,7 @@ class DebugServerManager(object):
     def _waitForCrash(self):
         event = None
         while True:
-            print "T: Wait for process"
+            logging.info("DebugServer: Waiting for process event")
             event = self.dbg.waitProcessEvent()
 
             # If this is a process exit we need to check if it was abnormal
@@ -187,14 +187,17 @@ class DebugServerManager(object):
             break
 
         if event is not None and event.signum != 15:
-            print("__________ Result: Crash")
+            logging.info("DebugServer: Event Result: Crash")
             self.crashEvent = event
             return True
         else:
-            print("___________ Result: No crash")
+            logging.info("DebugServer: Event Result: No crash")
             self.crashEvent = None
             return False
 
+
+    def getAsanOutput(self):
+        return serverutils.getAsanOutput(self.config, self.pid)
 
     def getCrashDetails(self, event):
         # Get the address where the crash occurred
