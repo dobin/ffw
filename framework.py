@@ -15,6 +15,7 @@ import signal
 import sys
 import pickle
 import logging
+import random
 
 from multiprocessing import Process, Queue
 
@@ -49,7 +50,8 @@ def doFuzz(config, useCurses):
     n = 0
     while n < config["processes"]:
         print "Start child: " + str(n)
-        p = Process(target=worker.doActualFuzz, args=(config, n, q))
+        r = random.randint(0, 2**32-1)
+        p = Process(target=worker.doActualFuzz, args=(config, n, q, r))
         procs.append(p)
         p.start()
         n += 1

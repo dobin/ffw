@@ -26,10 +26,10 @@ class Minimizer(object):
 
     def __init__(self, config):
         self.config = config
-        self.queue_sync = Queue()
-        self.queue_out = Queue()
-        self.serverPid = None
-        self.p = None
+        self.queue_sync = Queue() # connection to servermanager
+        self.queue_out = Queue() # connection to servermanager
+        self.serverPid = None # pid of the server started by servermanager (not servermanager)
+        self.p = None # serverManager
         self.outcomesDir = os.path.abspath(self.config["outcome_dir"])
         self.outcomesFiles = glob.glob(os.path.join(self.outcomesDir, '*.pickle'))
 
@@ -79,8 +79,8 @@ class Minimizer(object):
         self.debugServerManager.sendMessages(outcome)
         self.debugServerManager.closeConnection()
 
-        # get crash result data
-        # or empty if server did not crash
+        # get crash result data from child
+        #   or empty if server did not crash
         try:
             logging.info("Minimizer: Wait for crash data")
             crashData = self.queue_sync.get(True, sleeptimes["max_server_run_time"])
@@ -92,6 +92,7 @@ class Minimizer(object):
             return None, None
         except Exception as error:
             logging.error("Minimizer: EXCEPTION: " + str(error))
+            # TODO: Kill server
             self.handleNoCrash()
             return None, None
 

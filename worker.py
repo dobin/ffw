@@ -4,6 +4,7 @@ import signal
 import time
 import logging
 import queue
+import random
 
 import servermanager
 import fuzzingiterationdata
@@ -48,9 +49,9 @@ def signal_handler(signal, frame):
 # The main fuzzing loop
 # all magic is performed here
 # sends results via queue to the parent
-def doActualFuzz(config, threadId, queue):
+def doActualFuzz(config, threadId, queue, initialSeed):
     global GLOBAL_SLEEP
-
+    random.seed(initialSeed)
     logging.info("Setup fuzzing..")
     signal.signal(signal.SIGINT, signal_handler)
     serverManager = servermanager.ServerManager(config, threadId)
