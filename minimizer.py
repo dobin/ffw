@@ -3,12 +3,14 @@
 import time
 import os
 import glob
-from multiprocessing import Process, Queue
+import multiprocessing
+import Queue
 import logging
+import sys
 
 import serverutils
 import debugservermanager
-import network
+import networkmanager
 import utils
 
 sleeptimes = {
@@ -26,27 +28,28 @@ class Minimizer(object):
 
     def __init__(self, config):
         self.config = config
-        self.queue_sync = Queue() # connection to servermanager
-        self.queue_out = Queue() # connection to servermanager
+        self.queue_sync = multiprocessing.Queue() # connection to servermanager
+        self.queue_out = multiprocessing.Queue() # connection to servermanager
         self.serverPid = None # pid of the server started by servermanager (not servermanager)
         self.p = None # serverManager
         self.outcomesDir = os.path.abspath(self.config["outcome_dir"])
         self.outcomesFiles = glob.glob(os.path.join(self.outcomesDir, '*.pickle'))
 
 
-    def handleCrash(self, crashData, crashOutput, asanOutput):
-        crashData = crashData[1]
-        details = crashData[3]
-        signature = ( crashData[0], crashData[1], crashData[2] )
-        details = {
-            "faultOffset": crashData[0],
-            "module": crashData[1],
-            "signature": crashData[2],
-            "gdbdetails": crashData[3],
-            "output": crashOutput,
-            "asan": asanOutput,
-        }
-        self.storeValidCrash(self.config, signature, details)
+    def handleCrash(self, crashData, crashOutput):
+        print "Handlecrash"
+        fileName = os.path.join(config["outcome_dir"], crashDetail["file"] + ".crashdata.txt")
+        print "fileName: " + fileName
+        with open(fileName, "w") as f:
+            f.write("Offset: %s\n" % crashDetail["faultOffset"])
+            f.write("Module: %s\n" % crashDetail["module"])
+            f.write("Signature: %s\n" % crashDetail["sig"])
+            f.write("Details: %s\n" % crashDetail["details"])
+            f.write("Time: %s\n" % time.strftime("%c"))
+            f.write("Child Output:\n %s\n" % crashDetail["stdOutput"])
+            f.write("\n")
+            f.write("ASAN Output:\n %s\n" % crashDetail["asanOutput"])
+            f.close()
 
 
     def storeValidCrash(self, config, signature, details):
@@ -55,15 +58,29 @@ class Minimizer(object):
 
     def handleNoCrash(self):
         logging.info("Minimizer: Waited long enough, NO crash. ")
-        self.debugServerManager.stop()
+        self.stopChild()
+
+
+    def startChild(self):
+        p = multiprocessing.Process(target=self.debugServerManager.startAndWait, args=())
+        p.start()
+        self.p = p
+
+
+    def stopChild(self):
+        try:
+            self.p.terminate()
+        except:
+            pass
+        self.p = None
 
 
     def minimizeOutcome(self, outcome, targetPort):
         # start server in background
         self.debugServerManager = debugservermanager.DebugServerManager(self.config, self.queue_sync, self.queue_out, targetPort)
-        p = Process(target=self.debugServerManager.startAndWait, args=())
-        p.start()
-        self.p = p
+        self.networkManager = networkmanager.NetworkManager(self.config, targetPort)
+
+        self.startChild()
 
         # wait for ok (pid) from child that the server has started
         data = self.queue_sync.get()
@@ -71,30 +88,39 @@ class Minimizer(object):
         self.serverPid = serverPid
         logging.info("Minimizer: Server pid: " + str(serverPid))
         time.sleep(sleeptimes["wait_time_for_server_rdy"]) # wait a bit till server is ready
-        self.debugServerManager.waitForServerReadyness()
+        self.networkManager.waitForServerReadyness()
 
-        if not self.debugServerManager.openConnection():
+        if not self.networkManager.openConnection():
             logging.error("Minimizer: Could not connect to server")
 
-        self.debugServerManager.sendMessages(outcome)
-        self.debugServerManager.closeConnection()
+        self.networkManager.sendMessages(outcome)
+        self.networkManager.closeConnection()
 
         # get crash result data from child
         #   or empty if server did not crash
         try:
             logging.info("Minimizer: Wait for crash data")
-            crashData = self.queue_sync.get(True, sleeptimes["max_server_run_time"])
+            (t, crashData) = self.queue_sync.get(True, sleeptimes["max_server_run_time"])
+            serverStdout = self.queue_out.get()
 
-            logging.info("Minimizer: Get a crash")
-            crashOutput = self.queue_out.get()
-            asanOutput = serverutils.getAsanOutput(self.config, serverPid)
-            self.handleCrash(crashData, crashOutput, asanOutput)
-            return None, None
-        except Exception as error:
-            logging.error("Minimizer: EXCEPTION: " + str(error))
-            # TODO: Kill server
+            # it may be that the debugServer detects a process exit
+            # (e.g. port already used), and therefore sends an
+            # empty result. has to be handled.
+            if crashData is not None:
+                logging.info("Minimizer: I've got a crash")
+                crashData["stdOutput"] = serverStdout
+                self.handleCrash(crashData, serverStdout)
+            else:
+                logging.error("Some server error:")
+                logging.error("Output: " + serverStdout)
+
+            return crashData
+        except Queue.Empty:
+            self.stopChild()
             self.handleNoCrash()
-            return None, None
+            return None
+
+        return None
 
 
     def minimizeOutDir(self):
@@ -112,12 +138,12 @@ class Minimizer(object):
                 targetPort = self.config["baseport"] + n + 100
 
                 outcome = utils.readPickleFile(outcomeFile)
-                sig, details = self.minimizeOutcome(outcome, targetPort)
+                crashDetails = self.minimizeOutcome(outcome, targetPort)
 
-                if sig is not None:
-                    crashes[sig] = details
-                else:
-                    noCrash += 1
+                #if sig is not None:
+                #    crashes[sig] = details
+                #else:
+                #    noCrash += 1
                 n += 1
 
         except KeyboardInterrupt:

@@ -9,7 +9,7 @@ import sys
 
 import servermanager
 import fuzzingiterationdata
-
+import networkmanager
 
 GLOBAL_SLEEP = {
     # how long to wait after server start
@@ -52,10 +52,14 @@ def signal_handler(signal, frame):
 # sends results via queue to the parent
 def doActualFuzz(config, threadId, queue, initialSeed):
     global GLOBAL_SLEEP
+
     random.seed(initialSeed)
     logging.info("Setup fuzzing..")
     signal.signal(signal.SIGINT, signal_handler)
-    serverManager = servermanager.ServerManager(config, threadId)
+    targetPort = config["baseport"] + threadId
+    serverManager = servermanager.ServerManager(config, threadId, targetPort)
+    networkManager = networkmanager.NetworkManager(config, targetPort)
+
     iterStats = {
         "count": 0,
         "crashCount": 0, # number of crashes, absolute
@@ -71,7 +75,7 @@ def doActualFuzz(config, threadId, queue, initialSeed):
 
     # start server
     serverManager.start()
-    if not serverManager.isAliveSlow():
+    if not networkManager.testServerConnection():
         logging.error("Error")
         return
 
@@ -84,7 +88,7 @@ def doActualFuzz(config, threadId, queue, initialSeed):
         logging.debug("A fuzzing loop...")
 
         # previous fuzz generated a crash
-        if not serverManager.openConnection():
+        if not networkManager.openConnection():
             logging.info("Detected Crash (A)")
             iterStats["crashCount"] += 1
             crashData = serverManager.getCrashData()
@@ -98,25 +102,25 @@ def doActualFuzz(config, threadId, queue, initialSeed):
             logging.error("Could not fuzz the data")
             return
 
-        sendDataResult = sendPreData(serverManager, fuzzingIterationData)
+        sendDataResult = sendPreData(networkManager, fuzzingIterationData)
         if not sendDataResult:
             logging.info("Detected Crash (B)")
             iterStats["crashCount"] += 1
             crashData = serverManager.getCrashData()
             crashData["fuzzerPos"] = "B"
             previousFuzzingIterationData.export(crashData)
-            serverManager.closeConnection()
+            networkManager.closeConnection()
             serverManager.restart()
             continue
 
-        sendDataResult = sendData(serverManager, fuzzingIterationData)
+        sendDataResult = sendData(networkManager, fuzzingIterationData)
         if not sendDataResult:
             logging.info("Detected Crash (C)")
             iterStats["crashCount"] += 1
             crashData = serverManager.getCrashData()
             crashData["fuzzerPos"] = "C"
             fuzzingIterationData.export(crashData)
-            serverManager.closeConnection()
+            networkManager.closeConnection()
             serverManager.restart()
             continue
 
@@ -124,7 +128,7 @@ def doActualFuzz(config, threadId, queue, initialSeed):
         if iterStats["count"] > 0 and iterStats["count"] % config["restart_server_every"] == 0:
             logging.info("Restart server")
             serverManager.restart()
-            if not serverManager.isAliveSlow():
+            if not networkManager.testServerConnection():
                 logging.error("Error")
                 return
 
@@ -148,7 +152,7 @@ def printFuzzData(fuzzData):
         print "    FROM: " + str( message["from"] )
 
 
-def sendPreData(serverManager, fuzzingIterationData):
+def sendPreData(networkManager, fuzzingIterationData):
     logging.info("Send pre data: ")
     for message in fuzzingIterationData.fuzzedData:
         if message["from"] != "cli":
@@ -158,7 +162,7 @@ def sendPreData(serverManager, fuzzingIterationData):
             break;
 
         logging.debug("  Sending pre message: " + str(fuzzingIterationData.fuzzedData.index(message)))
-        ret = serverManager.sendData(message["data"])
+        ret = networkManager.sendData(message["data"])
         if not ret:
             logging.debug("  server not reachable")
             return False
@@ -166,7 +170,7 @@ def sendPreData(serverManager, fuzzingIterationData):
     return True
 
 
-def sendData(serverManager, fuzzingIterationData):
+def sendData(networkManager, fuzzingIterationData):
     logging.info("Send data: ")
     # skip pre messages
     s = False
@@ -179,7 +183,7 @@ def sendData(serverManager, fuzzingIterationData):
 
         if s:
             logging.debug("  Sending message: " + str(fuzzingIterationData.fuzzedData.index(message)))
-            res = serverManager.sendData(message["data"])
+            res = networkManager.sendData(message["data"])
             if res == False:
                 return False
 

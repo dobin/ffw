@@ -10,7 +10,7 @@ from ptrace.debugger.process_event import ProcessExit
 from ptrace.debugger.ptrace_signal import ProcessSignal
 
 import serverutils
-import network
+import networkmanager
 import socket
 
 # This is a Queue that behaves like stdout
@@ -41,74 +41,9 @@ class DebugServerManager(object):
         stdoutQueue = StdoutQueue(queue_out)
         serverutils.setupEnvironment(config)
 
-    ################
 
-    def openConnection(self):
-    	"""
-    	Opens a TCP connection to the server
-    	True if successful
-    	False if not (server down)
-
-    	Note: This is also used to test if the server
-    	has crashed
-    	"""
-    	self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    	server_address = ('localhost', self.targetPort)
-    	logging.info("Open connection on localhost:" + str(self.targetPort))
-    	try:
-    	    self.sock.connect(server_address)
-    	except socket.error, exc:
-    		# server down
-    		logging.info("  Could not connect! Server is down.")
-    		return False
-
-    	return True
-
-
-    def closeConnection(self):
-    	self.sock.close()
-
-
-    def sendData(self, data):
-    	"""Send data to the server"""
-    	try:
-    		logging.debug("  Send data to server. len: " + str(len(data)))
-    		self.sock.sendall(data)
-    	except socket.error, exc:
-    		logging.debug("Send data exception")
-    		return False
-
-    	return True
-
-
-    def receiveData(self):
-    	"""Receive data from the server"""
-    	socket.settimeout(0.1)
-    	try:
-    	    data = self.sock.recv(1024)
-    	except Exception,e:
-    	    return False, None
-
-    	return True, data
-
-
-    def sendMessages(self, msgArr):
-        self.openConnection()
-        for message in msgArr:
-            if message["from"] != "cli":
-                continue
-
-            self.sendData(message["data"])
-
-        self.closeConnection()
-
-    ##################
-
-    def waitForServerReadyness(self):
-        while not network.testServerConnection(self.targetPort):
-            print "Server not ready, waiting and retrying"
-            time.sleep(0.1) # wait a bit till server is ready
-
+    # entry function for process
+    # should be the only public function
     def startAndWait(self):
         # Sadly this does not apply to child processes started via
         # createChild(), so we can only capture output of this python process
@@ -126,18 +61,14 @@ class DebugServerManager(object):
         self.queue_sync.put( ("pid", self.pid) )
 
         if self._waitForCrash():
-            crashData = self.getCrashDetails(self.crashEvent)
+            crashData = self._getCrashDetails(self.crashEvent)
         else:
-            crashData = ()
+            crashData = None
 
         logging.debug("DebugServer: send to queue_sync")
         self.queue_sync.put( ("data", crashData) )
 
         self.dbg.quit()
-
-
-    def stop(self):
-        self._stopServer()
 
 
     def _startServer(self):
@@ -162,12 +93,12 @@ class DebugServerManager(object):
             # is already dead...
             pass
 
+
     def _waitForCrash(self):
-        event = None
         while True:
             logging.info("DebugServer: Waiting for process event")
             event = self.dbg.waitProcessEvent()
-
+            logging.info("DebugServer: Got event: " + str(event))
             # If this is a process exit we need to check if it was abnormal
             if type(event) == ProcessExit:
                 if event.signum is None or event.exitcode == 0:
@@ -196,10 +127,7 @@ class DebugServerManager(object):
             return False
 
 
-    def getAsanOutput(self):
-        return serverutils.getAsanOutput(self.config, self.pid)
-
-    def getCrashDetails(self, event):
+    def _getCrashDetails(self, event):
         # Get the address where the crash occurred
         faultAddress = event.process.getInstrPointer()
 
@@ -234,4 +162,12 @@ class DebugServerManager(object):
         if event._analyze() is not None:
             details = event._analyze().text
 
-        return (faultOffset, module, sig, details)
+        crashData = {
+            "faultOffset": faultOffset,
+            "module": module,
+            "sig": sig,
+            "details": details,
+        }
+        crashData["asanOutput"] = serverutils.getAsanOutput(self.config, self.pid)
+
+        return crashData

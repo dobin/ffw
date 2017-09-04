@@ -5,7 +5,7 @@ import glob
 import os
 import time
 
-import network
+import networkmanager
 
 GLOBAL_SLEEP_REPLAY = {
     # how long to wait after server start
@@ -41,7 +41,7 @@ def replayall(config, port):
 
     outcomes = sorted(glob.glob(os.path.join(config["outcome_dir"], '*.raw')), key=os.path.getctime)
     n = 0
-    for outcome in outcomes: 
+    for outcome in outcomes:
         time.sleep( GLOBAL_SLEEP_REPLAY["sleep_replay_after_server_start"] ) # this is required, or replay is fucked. maybe use keyboard?
         sys.stdout.write("%5d: " % n)
         if not replay(config, port, outcome):
