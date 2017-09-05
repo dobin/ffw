@@ -6,6 +6,7 @@ import os
 import time
 import pickle
 import logging
+import utils
 
 import networkmanager
 
@@ -20,35 +21,38 @@ def replayFindFile(config, index):
     return outcomes[int(index)]
 
 
+def replayMessages(port, messages):
+    networkManager = networkmanager.NetworkManager(None, port)
+    networkManager.sendMessages(messages)
+
+
 def replay(port, file):
     logging.basicConfig(level=logging.INFO)
     print "File: " + file
     print "Port: " + str(port)
+
     messages = None
-
-    with open(file,'rb') as f:
-        messages = pickle.load(f)
-
-    networkManager = networkmanager.NetworkManager(None, port)
-    networkManager.sendMessages(messages)
+    messages = utils.readPickleFile(file)
+    replayMessages(port, messages)
 
 
 def replayall(config, port):
     global GLOBAL_SLEEP_REPLAY
     print "Replay all files from directory: " + config["outcome_dir"]
 
-    outcomes = sorted(glob.glob(os.path.join(config["outcome_dir"], '*.raw')), key=os.path.getctime)
-    n = 0
-    for outcome in outcomes:
+    outcomeFiles = sorted(glob.glob(os.path.join(config["outcome_dir"], '*.pickle')), key=os.path.getctime)
+    for outcomeFile in outcomeFiles:
         time.sleep( GLOBAL_SLEEP_REPLAY["sleep_replay_after_server_start"] ) # this is required, or replay is fucked. maybe use keyboard?
-        sys.stdout.write("%5d: " % n)
-        if not replay(config, port, outcome):
-            print "could not connect"
-            break
-        n += 1
+        replay(port, outcomeFile)
+
 
 def main():
+    if len(sys.argv) != 3:
+        print "Usage: <picklefile> <serverpot>"
+        return
+
     replay(sys.argv[1], sys.argv[2])
+
 
 if __name__ == '__main__':
     main()

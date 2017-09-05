@@ -159,7 +159,7 @@ def realMain(config):
         replay.replay(config, sys.argv[2], sys.argv[3])
 
     if func == "replayall":
-        replay.replayall(config)
+        replay.replayall(config, sys.argv[2])
 
     if func == "interceptor":
         interceptor.doIntercept(config, sys.argv[2])
