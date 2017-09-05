@@ -7,6 +7,7 @@ import multiprocessing
 import Queue
 import logging
 import sys
+import shutil 
 
 import serverutils
 import debugservermanager
@@ -36,9 +37,9 @@ class Minimizer(object):
         self.outcomesFiles = glob.glob(os.path.join(self.outcomesDir, '*.pickle'))
 
 
-    def handleCrash(self, crashData, crashOutput):
+    def handleCrash(self, crashData, pickleFile):
         print "Handlecrash"
-        fileName = os.path.join(self.config["outcome_dir"], crashData["file"] + ".crashdata.txt")
+        fileName = os.path.join(self.config["verified_dir"], crashData["file"] + ".crashdata.txt")
         print "fileName: " + fileName
         with open(fileName, "w") as f:
             f.write("Offset: %s\n" % crashData["faultOffset"])
@@ -50,6 +51,9 @@ class Minimizer(object):
             f.write("\n")
             f.write("ASAN Output:\n %s\n" % crashData["asanOutput"])
             f.close()
+
+        shutil.copy2(pickleFile, self.config["verified_dir"])
+        shutil.copy2(fileName, self.config["verified_dir"])
 
 
 
@@ -103,15 +107,15 @@ class Minimizer(object):
             logging.info("Minimizer: Wait for crash data")
             (t, crashData) = self.queue_sync.get(True, sleeptimes["max_server_run_time"])
             serverStdout = self.queue_out.get()
-            crashData["file"] = outcomeFile
 
             # it may be that the debugServer detects a process exit
             # (e.g. port already used), and therefore sends an
             # empty result. has to be handled.
             if crashData is not None:
+                crashData["file"] = outcomeFile
                 logging.info("Minimizer: I've got a crash")
                 crashData["stdOutput"] = serverStdout
-                self.handleCrash(crashData, serverStdout)
+                self.handleCrash(crashData, outcomeFile)
             else:
                 logging.error("Some server error:")
                 logging.error("Output: " + serverStdout)
