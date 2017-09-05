@@ -38,18 +38,19 @@ class Minimizer(object):
 
     def handleCrash(self, crashData, crashOutput):
         print "Handlecrash"
-        fileName = os.path.join(config["outcome_dir"], crashDetail["file"] + ".crashdata.txt")
+        fileName = os.path.join(self.config["outcome_dir"], crashData["file"] + ".crashdata.txt")
         print "fileName: " + fileName
         with open(fileName, "w") as f:
-            f.write("Offset: %s\n" % crashDetail["faultOffset"])
-            f.write("Module: %s\n" % crashDetail["module"])
-            f.write("Signature: %s\n" % crashDetail["sig"])
-            f.write("Details: %s\n" % crashDetail["details"])
+            f.write("Offset: %s\n" % crashData["faultOffset"])
+            f.write("Module: %s\n" % crashData["module"])
+            f.write("Signature: %s\n" % crashData["sig"])
+            f.write("Details: %s\n" % crashData["details"])
             f.write("Time: %s\n" % time.strftime("%c"))
-            f.write("Child Output:\n %s\n" % crashDetail["stdOutput"])
+            f.write("Child Output:\n %s\n" % crashData["stdOutput"])
             f.write("\n")
-            f.write("ASAN Output:\n %s\n" % crashDetail["asanOutput"])
+            f.write("ASAN Output:\n %s\n" % crashData["asanOutput"])
             f.close()
+
 
 
     def storeValidCrash(self, config, signature, details):
@@ -75,7 +76,7 @@ class Minimizer(object):
         self.p = None
 
 
-    def minimizeOutcome(self, outcome, targetPort):
+    def minimizeOutcome(self, outcome, targetPort, outcomeFile):
         # start server in background
         self.debugServerManager = debugservermanager.DebugServerManager(self.config, self.queue_sync, self.queue_out, targetPort)
         self.networkManager = networkmanager.NetworkManager(self.config, targetPort)
@@ -102,6 +103,7 @@ class Minimizer(object):
             logging.info("Minimizer: Wait for crash data")
             (t, crashData) = self.queue_sync.get(True, sleeptimes["max_server_run_time"])
             serverStdout = self.queue_out.get()
+            crashData["file"] = outcomeFile
 
             # it may be that the debugServer detects a process exit
             # (e.g. port already used), and therefore sends an
@@ -138,7 +140,7 @@ class Minimizer(object):
                 targetPort = self.config["baseport"] + n + 100
 
                 outcome = utils.readPickleFile(outcomeFile)
-                crashDetails = self.minimizeOutcome(outcome, targetPort)
+                crashDetails = self.minimizeOutcome(outcome, targetPort, outcomeFile)
 
                 #if sig is not None:
                 #    crashes[sig] = details

@@ -113,7 +113,7 @@ class FuzzingIterationData(object):
 
     def _runFuzzer(self):
         """Call external fuzzer"""
-        logging.error("Call fuzzer, seed: " + str(self.seed))
+        logging.info("Call fuzzer, seed: " + str(self.seed))
         fuzzerData = fuzzers[ self.config["fuzzer"] ]
         if not fuzzerData:
             print "Could not find fuzzer with name: " + self.config["fuzzer"]

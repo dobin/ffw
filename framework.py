@@ -12,17 +12,7 @@ import replay
 import minimizer
 import gui
 import interceptor
-import worker
 import fuzzingmaster
-
-def printConfig(config):
-    print "Config:  "
-    print "  Running fuzzer:   ", config["fuzzer"]
-    print "  Outcomde dir:     ", config["outcome_dir"]
-    print "  Target:           ", config["target_bin"]
-    print "  Input dir:        ", config["inputs"]
-    print "  Analyze response: ", config["response_analysis"]
-
 
 def realMain(config):
     func = "fuzz"
@@ -32,11 +22,12 @@ def realMain(config):
         logging.basicConfig(level=logging.DEBUG)
         config["processes"] = 2
 
+
     if len(sys.argv) > 1:
         func = sys.argv[1]
 
-    if func == "corpus_destillation":
-        corpus_destillation()
+    #if func == "corpus_destillation":
+        #corpus_destillation()
 
     if func == "minimize":
         mini = minimizer.Minimizer(config)
@@ -60,7 +51,3 @@ def realMain(config):
             useCurses = True
 
         fuzzingmaster.doFuzz(config, useCurses)
-
-
-def corpus_destillation():
-    print "Corpus destillation"
