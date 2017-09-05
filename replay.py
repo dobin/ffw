@@ -4,6 +4,8 @@ import sys
 import glob
 import os
 import time
+import pickle
+import logging
 
 import networkmanager
 
@@ -18,21 +20,17 @@ def replayFindFile(config, index):
     return outcomes[int(index)]
 
 
-def replay(config, port, file):
-    if file.isdigit():
-        file = replayFindFile(config, file)
-
-    config["target_port"] = int(port)
+def replay(port, file):
+    logging.basicConfig(level=logging.INFO)
     print "File: " + file
+    print "Port: " + str(port)
+    messages = None
 
-    if config["mode"] == "raw":
-   	 return network.sendDataToServerRaw(config, file)
-    elif config["mode"] == "interceptor":
-   	 return network.sendDataToServerInterceptor(config, file)
-    else:
-         return None
+    with open(file,'rb') as f:
+        messages = pickle.load(f)
 
-    #return network.sendDataToServer(config, file)
+    networkManager = networkmanager.NetworkManager(None, port)
+    networkManager.sendMessages(messages)
 
 
 def replayall(config, port):
@@ -48,3 +46,9 @@ def replayall(config, port):
             print "could not connect"
             break
         n += 1
+
+def main():
+    replay(sys.argv[1], sys.argv[2])
+
+if __name__ == '__main__':
+    main()
