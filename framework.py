@@ -13,6 +13,8 @@ import minimizer
 import gui
 import interceptor
 import fuzzingmaster
+import verifier
+
 
 def realMain(config):
     func = "fuzz"
@@ -28,6 +30,10 @@ def realMain(config):
 
     #if func == "corpus_destillation":
         #corpus_destillation()
+
+    if func == "verify":
+        v = verifier.Verifier(config)
+        v.verifyOutDir()
 
     if func == "minimize":
         mini = minimizer.Minimizer(config)
