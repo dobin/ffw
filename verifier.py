@@ -54,10 +54,9 @@ class Verifier(object):
         shutil.copy2(pickleFile, self.config["verified_dir"])
         shutil.copy2(fileName, self.config["verified_dir"])
 
-
-
-    def storeValidCrash(self, config, signature, details):
-        logging.info("Minimizer: Store crash")
+        fileNamePickle = os.path.join(self.config["outcome_dir"], crashData["file"] + ".crashdata.pickle2")
+        with open(fileNamePickle, "wb") as f:
+            pickle.dump(crashData, f)
 
 
     def handleNoCrash(self):
