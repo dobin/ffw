@@ -9,7 +9,7 @@ import logging
 import sys
 import shutil
 import signal
-import pickle 
+import pickle
 
 import serverutils
 import debugservermanager
@@ -118,6 +118,7 @@ class Verifier(object):
             # empty result. has to be handled.
             if crashData is not None:
                 crashData["file"] = outcomeFile
+                crashData["fuzzingiteration"] = outcome
                 logging.info("Minimizer: I've got a crash")
                 crashData["stdOutput"] = serverStdout
                 self.handleCrash(crashData, outcomeFile)
@@ -151,7 +152,7 @@ class Verifier(object):
                 targetPort = self.config["baseport"] + n + 100
 
                 outcome = utils.readPickleFile(outcomeFile)
-                crashDetails = self.verifyOutcome(outcome, targetPort, outcomeFile)
+                self.verifyOutcome(outcome, targetPort, outcomeFile)
 
                 n += 1
 
@@ -163,7 +164,7 @@ class Verifier(object):
                 print "Exception: " + str(error)
 
             # wait for child to exit
-            #p.join()
+            p.join()
 
         print "Number of outcomes: " + str(len(outcomesFiles))
         print "Number of no crashes: " + str(noCrash)
