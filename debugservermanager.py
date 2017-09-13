@@ -3,6 +3,7 @@
 import logging
 import time
 import signal
+import pprint
 
 from ptrace.debugger.debugger import PtraceDebugger
 from ptrace.debugger.child import createChild
@@ -138,6 +139,7 @@ class DebugServerManager(object):
         # crash
         module = None
         faultOffset = 0
+
         try:
             for mapping in event.process.readMappings():
                 if faultAddress >= mapping.start and faultAddress < mapping.end:
@@ -145,7 +147,7 @@ class DebugServerManager(object):
                     faultOffset = faultAddress - mapping.start
                     break
         except Exception as error:
-            #print "getCrashDetails Exception: " + str(error)
+            print "getCrashDetails Exception: " + str(error)
             # it always has a an exception...
             pass
 
@@ -162,11 +164,34 @@ class DebugServerManager(object):
         if event._analyze() is not None:
             details = event._analyze().text
 
+        # more data
+        stackAddr = self.proc.findStack()
+        stackPtr = self.proc.getStackPointer()
+
+        # convert backtrace
+        backtrace = self.proc.getBacktrace()
+        backtraceFrames = []
+        for frame in backtrace.frames:
+            backtraceFrames.append( str(frame) )
+
+        # convert registers from ctype to python
+        registers = self.proc.getregs()
+        pRegisters = {}
+        for field_name, field_type in registers._fields_:
+            regName = str(field_name)
+            regValue = str(getattr(registers, field_name))
+            pRegisters[regName] = regValue
+
         crashData = {
+            "faultAddress": faultAddress,
             "faultOffset": faultOffset,
             "module": module,
             "sig": sig,
             "details": details,
+            "stackPointer": stackPtr,
+            "stackAddr": str(stackAddr),
+            "backtrace": backtraceFrames,
+            "registers": pRegisters,
         }
         crashData["asanOutput"] = serverutils.getAsanOutput(self.config, self.pid)
 

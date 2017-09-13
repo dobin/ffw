@@ -41,13 +41,26 @@ class Verifier(object):
         print "Handlecrash"
         fileName = os.path.join(self.config["verified_dir"], crashData["file"] + ".crashdata.txt")
         print "fileName: " + fileName
+
+        #registerStr = ', '.join(map(str, crashData["registers"]))
+        registerStr = ''.join('{}={} '.format(key, val) for key, val in crashData["registers"].items())
+
+        backtraceStr = '\n'.join(map(str, crashData["backtrace"]))
+        #backtraceStr = ''.join('{}{} '.format(key, val) for key, val in crashData["backtrace"].items())
+
+
         with open(fileName, "w") as f:
-            f.write("Offset: %s\n" % crashData["faultOffset"])
+            f.write("Address: %s\n" % hex(crashData["faultAddress"]))
+            f.write("Offset: %s\n" % hex(crashData["faultOffset"]))
             f.write("Module: %s\n" % crashData["module"])
             f.write("Signature: %s\n" % crashData["sig"])
             f.write("Details: %s\n" % crashData["details"])
+            f.write("Stack Pointer: %s\n" % hex(crashData["stackPointer"]))
+            f.write("Stack Addr: %s\n" % crashData["stackAddr"])
             f.write("Time: %s\n" % time.strftime("%c"))
             f.write("Child Output:\n %s\n" % crashData["stdOutput"])
+            f.write("Registers: %s\n" % registerStr)
+            f.write("Backtrace: %s\n" % backtraceStr)
             f.write("\n")
             f.write("ASAN Output:\n %s\n" % crashData["asanOutput"])
             f.close()
