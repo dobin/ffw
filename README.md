@@ -1,6 +1,6 @@
 # FFW - Fuzzing For Worms
 
-Fuzzes network servers. 
+Fuzzes network servers.
 
 ## Requirements
 
@@ -17,7 +17,7 @@ Fuzzes network servers.
 
 ## Modes
 
-Modes: 
+Modes:
 * fuzz
 * minimize
 * replayall
@@ -25,23 +25,23 @@ Modes:
 
 ### Fuzz
 
-* Fuzzes the program. 
+* Fuzzes the program.
 * creates .raw files in `outcome_dir`
 
 ### Minimize
 
-* Goes through all .raw outcome files in `outcome_dir` 
+* Goes through all .raw outcome files in `outcome_dir`
 * Sends it to the server (`target_bin`), and looks for a crash
 * If a crash is detecte, creates a `.crashdata.txt` file for that outome
 * After all files have been processed: shows unique crashes (based on IP and other things)
 
 
-### replaying 
+### replaying
 
-Send results in outcome to a dedicated server (e.g. in gdb). 
-If pre-requests / initial data are sent in the fuzzing, it is not just possible to 
-blindly send the `.raw` file in `outcome_dir`, as that request has also to be sent. 
-This replay functionality exists to reproduce crashes in an easy way. 
+Send results in outcome to a dedicated server (e.g. in gdb).
+If pre-requests / initial data are sent in the fuzzing, it is not just possible to
+blindly send the `.raw` file in `outcome_dir`, as that request has also to be sent.
+This replay functionality exists to reproduce crashes in an easy way.
 
 #### Replayall
 
@@ -49,7 +49,7 @@ This replay functionality exists to reproduce crashes in an easy way.
 * User has to start server by themself (e.g. in gdb)
 * Used to check all outcomes
 
-#### Replay 
+#### Replay
 
 * Send a specific outcome in `outcome_dir` to the server
 * either:
@@ -99,7 +99,7 @@ config = {
     "gcov_coverage_time": 10000, # in iterations
 
     # crash analysis?
-    "crash_minimize": False, 
+    "crash_minimize": False,
     "crash_minimize_time": 3, # number of new crashes
 
     # TODO
@@ -139,4 +139,17 @@ No
 
 Yes
 
-## 
+# Fix
+
+```
+PROC_MAP_REGEX = re.compile(
+    r'([0-9a-f]+)-([0-9a-f]+) '
+    r'(.{4}) '
+    r'([0-9a-f]+) '
+    r'([0-9a-f]+):([0-9a-f]+) ' #####
+    r'([0-9]+)'
+    r'(?: +(.*))?'
+)
+
+/usr/local/lib/python2.7/dist-packages/ptrace/debugger/memory_mapping.py
+```

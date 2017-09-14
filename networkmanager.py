@@ -84,7 +84,7 @@ class NetworkManager(object):
     def waitForServerReadyness(self):
         while not self.testServerConnection():
             print "Server not ready, waiting and retrying"
-            time.sleep(0.1) # wait a bit till server is ready
+            time.sleep(0.2) # wait a bit till server is ready
 
 
     def testServerConnection(self):

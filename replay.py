@@ -44,7 +44,7 @@ def replayAllFiles(config, port):
 
 def main():
     if len(sys.argv) != 3:
-        print "Usage: <picklefile> <serverpot>"
+        print "Usage: <serverport> <picklefile>"
         return
 
     replayFile(sys.argv[1], sys.argv[2])
