@@ -14,6 +14,34 @@ Fuzzes network servers.
  ulimit -c 999999
 ```
 
+## Install deps
+
+```
+sudo pip install python-ptrace
+```
+
+### Fix ptrace
+
+/usr/local/lib/python2.7/dist-packages/ptrace/debugger/memory_mapping.py
+```
+PROC_MAP_REGEX = re.compile(
+    r'([0-9a-f]+)-([0-9a-f]+) '
+    r'(.{4}) '
+    r'([0-9a-f]+) '
+    r'([0-9a-f]+):([0-9a-f]+) ' ##### fix this
+    r'([0-9]+)'
+    r'(?: +(.*))?'
+)
+```
+
+## install radamsa
+
+```
+$ git clone https://github.com/aoh/radamsa.git
+$ cd radamsa
+$ make
+```
+
 
 ## Modes
 
@@ -140,16 +168,3 @@ No
 Yes
 
 # Fix
-
-```
-PROC_MAP_REGEX = re.compile(
-    r'([0-9a-f]+)-([0-9a-f]+) '
-    r'(.{4}) '
-    r'([0-9a-f]+) '
-    r'([0-9a-f]+):([0-9a-f]+) ' #####
-    r'([0-9]+)'
-    r'(?: +(.*))?'
-)
-
-/usr/local/lib/python2.7/dist-packages/ptrace/debugger/memory_mapping.py
-```
