@@ -42,12 +42,8 @@ class Verifier(object):
         fileName = os.path.join(self.config["verified_dir"], crashData["file"] + ".crashdata.txt")
         print "fileName: " + fileName
 
-        #registerStr = ', '.join(map(str, crashData["registers"]))
         registerStr = ''.join('{}={} '.format(key, val) for key, val in crashData["registers"].items())
-
         backtraceStr = '\n'.join(map(str, crashData["backtrace"]))
-        #backtraceStr = ''.join('{}{} '.format(key, val) for key, val in crashData["backtrace"].items())
-
 
         with open(fileName, "w") as f:
             f.write("Address: %s\n" % hex(crashData["faultAddress"]))
