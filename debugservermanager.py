@@ -1,9 +1,14 @@
 #!/usr/bin/python
 
+"""
+The classes used to implement access to the server.
+
+Related to servermanager.py, but with more debugging.
+"""
+
 import logging
-import time
 import signal
-import pprint
+import os
 
 from ptrace.debugger.debugger import PtraceDebugger
 from ptrace.debugger.child import createChild
@@ -11,15 +16,20 @@ from ptrace.debugger.process_event import ProcessExit
 from ptrace.debugger.ptrace_signal import ProcessSignal
 
 import serverutils
-import networkmanager
-import socket
 
-# This is a Queue that behaves like stdout
+
+
 class StdoutQueue():
-    def __init__(self,*args,**kwargs):
+    """
+    This is a Queue that behaves like stdout.
+
+    Used to capture stdout events of the server/child.
+    """
+
+    def __init__(self, *args, **kwargs):
         self.q = args[0]
 
-    def write(self,msg):
+    def write(self, msg):
         self.q.put(msg)
 
     def flush(self):
@@ -27,6 +37,7 @@ class StdoutQueue():
 
 
 class DebugServerManager(object):
+    """The actual debug-server manager."""
 
     def __init__(self, config, queue_sync, queue_out, targetPort):
         self.config = config
@@ -39,7 +50,7 @@ class DebugServerManager(object):
         self.crashEvent = None
         self.proc = None
 
-        stdoutQueue = StdoutQueue(queue_out)
+        self.stdoutQueue = StdoutQueue(queue_out)
         serverutils.setupEnvironment(config)
 
 
@@ -77,7 +88,7 @@ class DebugServerManager(object):
         # API: createChild(arguments[], no_stdout, env=None)
         self.pid = createChild(
             serverutils.getInvokeTargetArgs(self.config, self.targetPort),
-            True, # no_stdout
+            True,  # no_stdout
             None,
         )
 
@@ -114,7 +125,7 @@ class DebugServerManager(object):
                 elif event.signum == signal.SIGTERM:
                     # server cannot be started, return
                     event = None
-                    queue_sync.put( ("err", event.signum) )
+                    self.queue_sync.put( ("err", event.signum) )
 
             break
 
