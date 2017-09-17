@@ -46,6 +46,8 @@ config = {
 
     "restart_server_every": 10,
 
+    "name": "Mongoose MQTT ASAN Original 1",
+
     # which fuzzer should be used
     "fuzzer": "Radamsa",
 

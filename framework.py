@@ -13,6 +13,7 @@ import minimizer
 import interceptor
 import fuzzingmaster
 import verifier
+import uploader
 
 
 def realMain(config):
@@ -29,6 +30,10 @@ def realMain(config):
 
     #if func == "corpus_destillation":
         #corpus_destillation()
+
+    if func == "upload":
+        u = uploader.Uploader(config)
+        u.uploadVerifyDir()
 
     if func == "verify":
         v = verifier.Verifier(config)

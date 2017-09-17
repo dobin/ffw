@@ -30,7 +30,7 @@ class Minimizer(object):
 
     def minimizeOutDir(self):
         outcomesDir = os.path.abspath(self.config["outcome_dir"])
-        outcomesFiles = glob.glob(os.path.join(outcomesDir, '*.pickle2'))
+        outcomesFiles = glob.glob(os.path.join(outcomesDir, '*.ffw'))
         crashes = dict()
 
         print("Processing %d outcome files" % len(outcomesFiles))
