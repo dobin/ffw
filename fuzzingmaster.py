@@ -1,25 +1,23 @@
-#!/bin/python
+#!/usr/bin/env python2
 
-import sys
-import os
-import subprocess
-import time
-import shutil
-import shlex
 import signal
-import sys
 import pickle
 import logging
 import random
+import gui
 
 from multiprocessing import Process, Queue
 
 import fuzzingslave
 
-# Fuzzing main parent
-#   this is the main entry point for project fuzzers
-#   receives data from fuzzing-children via queues
+
 def doFuzz(config, useCurses):
+    """
+    Fuzzing main parent.
+
+    this is the main entry point for project fuzzers
+    receives data from fuzzing-children via queues
+    """
     q = Queue()
     # have to remove sigint handler before forking children
     # so ctlr-c works
@@ -32,7 +30,7 @@ def doFuzz(config, useCurses):
     n = 0
     while n < config["processes"]:
         print "Start child: " + str(n)
-        r = random.randint(0, 2**32-1)
+        r = random.randint(0, 2**32 - 1)
         p = Process(target=fuzzingslave.doActualFuzz, args=(config, n, q, r))
         procs.append(p)
         p.start()
@@ -48,7 +46,7 @@ def doFuzz(config, useCurses):
 
 
 def prepareInput(config):
-    with open(config["inputs"] + "/data_0.pickle",'rb') as f:
+    with open(config["inputs"] + "/data_0.pickle", 'rb') as f:
         config["_inputs"] = pickle.load(f)
 
 

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python2
 
 import sys
 import glob
@@ -38,7 +38,7 @@ def replayAllFiles(config, port):
 
     outcomeFiles = sorted(glob.glob(os.path.join(config["outcome_dir"], '*.pickle')), key=os.path.getctime)
     for outcomeFile in outcomeFiles:
-        time.sleep( GLOBAL_SLEEP_REPLAY["sleep_replay_after_server_start"] ) # this is required, or replay is fucked. maybe use keyboard?
+        time.sleep( GLOBAL_SLEEP_REPLAY["sleep_replay_after_server_start"] )  # this is required, or replay is fucked. maybe use keyboard?
         replayFile(port, outcomeFile)
 
 

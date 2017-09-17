@@ -83,7 +83,7 @@ class ServerManager(object):
         # create devnull so we can us it to surpress output of the server (2.7 specific)
         DEVNULL = open(os.devnull, 'wb')
         p = subprocess.Popen(popenArg, stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL)
-        time.sleep( GLOBAL_SLEEP["sleep_after_server_start"] ) # wait a bit so we are sure server is really started
+        time.sleep( GLOBAL_SLEEP["sleep_after_server_start"] )  # wait a bit so we are sure server is really started
         logging.info("  Pid: " + str(p.pid) )
 
         return p

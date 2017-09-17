@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 import socket
 import threading
@@ -10,31 +10,32 @@ import os
 import logging
 
 import servermanager
-import fuzzingiterationdata
+
 
 """
-    Interceptor.py, standalone binary
+Interceptor.py, standalone binary
 
-    it perform a man-in-the-middle attack
-    the client has to connect to the specific port of this tool
-    all data will be forwarded to the server, and vice-versa
+it perform a man-in-the-middle attack
+the client has to connect to the specific port of this tool
+all data will be forwarded to the server, and vice-versa
 
-    interceptor will also record all transmitted data, split up between
-    read()'s, and split between server and client
+interceptor will also record all transmitted data, split up between
+read()'s, and split between server and client
 
-    It will store the data in files with the name data_<connid>.pickle,
-    serialized python objects as pickle
+It will store the data in files with the name data_<connid>.pickle,
+serialized python objects as pickle
 
-    This can be used later to fuzz server (or client) with ffw interceptor mode,
-    which excpects pickle file recorded here.
+This can be used later to fuzz server (or client) with ffw interceptor mode,
+which excpects pickle file recorded here.
 
-    A recorded connection can be replayed to test it.
+A recorded connection can be replayed to test it.
 """
 
 
 # based on: https://gist.github.com/sivachandran/1969859 (no license)
 
 terminateAll = False
+
 
 class ClientThread(threading.Thread):
     def createDataEntry(self, frm, data):
@@ -57,87 +58,88 @@ class ClientThread(threading.Thread):
 
 
     def run(self):
-		print "Client Thread" + str(self.__threadId) + " started"
+        print "Client Thread" + str(self.__threadId) + " started"
 
-		self.__clientSocket.setblocking(0)
+        self.__clientSocket.setblocking(0)
 
-		logging.info('Logging into: %s:%i' % (self.__targetHost, self.__targetPort) )
-		targetHostSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		targetHostSocket.connect((self.__targetHost, self.__targetPort))
-		targetHostSocket.setblocking(0)
+        logging.info('Logging into: %s:%i' % (self.__targetHost, self.__targetPort) )
+        targetHostSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        targetHostSocket.connect((self.__targetHost, self.__targetPort))
+        targetHostSocket.setblocking(0)
 
-		clientData = ""
-		targetHostData = ""
-		terminate = False
-		n = 0
-		while not terminate and not terminateAll:
-		    inputs = [self.__clientSocket, targetHostSocket]
-		    outputs = []
+        clientData = ""
+        targetHostData = ""
+        terminate = False
+        n = 0
+        while not terminate and not terminateAll:
+            inputs = [self.__clientSocket, targetHostSocket]
+            outputs = []
 
-		    if len(clientData) > 0:
-		        outputs.append(self.__clientSocket)
+            if len(clientData) > 0:
+                outputs.append(self.__clientSocket)
 
-		    if len(targetHostData) > 0:
-		        outputs.append(targetHostSocket)
+            if len(targetHostData) > 0:
+                outputs.append(targetHostSocket)
 
-		    try:
-		        inputsReady, outputsReady, errorsReady = select.select(inputs, outputs, [], 1.0)
-		    except Exception, e:
-		        print e
-		        break
+            try:
+                inputsReady, outputsReady, errorsReady = select.select(inputs, outputs, [], 1.0)
+            except Exception, e:
+                print e
+                break
 
-		    for inp in inputsReady:
-		        if inp == self.__clientSocket:
-		            try:
-		                data = self.__clientSocket.recv(4096)
-		            except Exception, e:
-		                print e
+            for inp in inputsReady:
+                if inp == self.__clientSocket:
+                    try:
+                        data = self.__clientSocket.recv(4096)
+                    except Exception, e:
+                        print e
 
-		            if data != None:
-		                if len(data) > 0:
-		                    print "Received from client: " + str(self.__threadId) + ": " + str(len(data))
-		                    targetHostData += data
-		                    self.data.append( self.createDataEntry("cli", data) )
-		                    n += 1
-		                else:
-		                    terminate = True
-		        elif inp == targetHostSocket:
-		            try:
-		                data = targetHostSocket.recv(4096)
-		            except Exception, e:
-		                print e
+                    if data is not None:
+                        if len(data) > 0:
+                            print "Received from client: " + str(self.__threadId) + ": " + str(len(data))
+                            targetHostData += data
+                            self.data.append( self.createDataEntry("cli", data) )
+                            n += 1
+                        else:
+                            terminate = True
+                elif inp == targetHostSocket:
+                    try:
+                        data = targetHostSocket.recv(4096)
+                    except Exception, e:
+                        print e
 
-		            if data != None:
-		                if len(data) > 0:
-		                    print "Received from server: " + str(self.__threadId) + ": " + str(len(data))
-		                    clientData += data
-		                    self.data.append( self.createDataEntry("srv", data) )
-		                    n += 1
-		                else:
-		                    terminate = True
+                    if data is not None:
+                        if len(data) > 0:
+                            print "Received from server: " + str(self.__threadId) + ": " + str(len(data))
+                            clientData += data
+                            self.data.append( self.createDataEntry("srv", data) )
+                            n += 1
+                        else:
+                            terminate = True
 
-		    for out in outputsReady:
-		        if out == self.__clientSocket and len(clientData) > 0:
-		            bytesWritten = self.__clientSocket.send(clientData)
-		            if bytesWritten > 0:
-		                clientData = clientData[bytesWritten:]
-		        elif out == targetHostSocket and len(targetHostData) > 0:
-		            bytesWritten = targetHostSocket.send(targetHostData)
-		            if bytesWritten > 0:
-		                targetHostData = targetHostData[bytesWritten:]
+            for out in outputsReady:
+                if out == self.__clientSocket and len(clientData) > 0:
+                    bytesWritten = self.__clientSocket.send(clientData)
+                    if bytesWritten > 0:
+                        clientData = clientData[bytesWritten:]
+                elif out == targetHostSocket and len(targetHostData) > 0:
+                    bytesWritten = targetHostSocket.send(targetHostData)
+                    if bytesWritten > 0:
+                        targetHostData = targetHostData[bytesWritten:]
 
-		self.__clientSocket.close()
-		targetHostSocket.close()
-		print "ClientThread terminating"
+        self.__clientSocket.close()
+        targetHostSocket.close()
+        print "ClientThread terminating"
 
-		# store all the stuff
-		print "Got " + str(len(self.data)) + " packets"
-		fileName = self.config["inputs"] + "/" + "data_" + str(self.__threadId) + ".pickle"
-		with open(fileName, 'wb') as f:
-		    pickle.dump(self.data, f)
+        # store all the stuff
+        print "Got " + str(len(self.data)) + " packets"
+        fileName = self.config["inputs"] + "/" + "data_" + str(self.__threadId) + ".pickle"
+        with open(fileName, 'wb') as f:
+            pickle.dump(self.data, f)
 
 
 def performIntercept(config, localHost, localPort, targetHost, targetPort):
+    global terminateAll
     serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     serverSocket.bind((localHost, int(localPort)))
     serverSocket.listen(5)
@@ -160,42 +162,26 @@ def performIntercept(config, localHost, localPort, targetHost, targetPort):
 
 # called from ffw
 def doIntercept(config, localPort):
-	localHost = "0.0.0.0"
-	targetHost = "localhost"
+    localHost = "0.0.0.0"
+    targetHost = "localhost"
 
-	targetPort = int(localPort) + 1
-	config["baseport"] = targetPort
+    targetPort = int(localPort) + 1
+    config["baseport"] = targetPort
 
-	# run the server, as configured in config
-	serverManager = servermanager.ServerManager(config, 0)
-	serverManager.start()
-	if not serverManager.isAliveSlow():
-		logging.error("Could not start server")
-		return
+    # run the server, as configured in config
+    serverManager = servermanager.ServerManager(config, 0)
+    serverManager.start()
+    if not serverManager.isAliveSlow():
+        logging.error("Could not start server")
+        return
 
-	# start mitm server
-	performIntercept(config, localHost, localPort, targetHost, targetPort)
-
-
-def replayAll(config):
-    print "Replay all files from " + config["inputs"]
-
-    config["target_port"] = config["baseport"]
-
-    # find files
-    files = sorted(glob.glob(os.path.join(config["inputs"], '*.pickle')), key=os.path.getctime)
-    print "Replay %i files" % len(files)
-
-    # start server
-    ffwchild._runTarget(config)
-
-    for file in files:
-        replayIntercept(config, file)
+    # start mitm server
+    performIntercept(config, localHost, localPort, targetHost, targetPort)
 
 
 def replayIntercept(config, fileName):
     print "Replay: " + fileName
-    with open(fileName,'rb') as f:
+    with open(fileName, 'rb') as f:
         datas = pickle.load(f)
         f.close()
 

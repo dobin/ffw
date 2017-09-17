@@ -1,13 +1,17 @@
-#!/bin/python
+#!/usr/bin/env python2
+
 import pickle
 import pprint
 import sys
 
+
 def printpickle():
 	pp = pprint.PrettyPrinter(indent=4)
 
-	with open(sys.argv[1],'rb') as f:
+	with open(sys.argv[1], 'rb') as f:
 		p = pickle.load(f)
 		pp.pprint(p)
 
-printpickle()
+
+if __name__ == '__main__':
+	printpickle()

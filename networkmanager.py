@@ -1,8 +1,9 @@
-#!/bin/python
+#!/usr/bin/env python2
 
 import socket
 import logging
 import time
+
 
 class NetworkManager(object):
     """
@@ -60,7 +61,7 @@ class NetworkManager(object):
         socket.settimeout(0.1)
         try:
             data = self.sock.recv(1024)
-        except Exception,e:
+        except Exception, e:
             return False, None
 
         return True, data
@@ -84,7 +85,7 @@ class NetworkManager(object):
     def waitForServerReadyness(self):
         while not self.testServerConnection():
             print "Server not ready, waiting and retrying"
-            time.sleep(0.2) # wait a bit till server is ready
+            time.sleep(0.2)  # wait a bit till server is ready
 
 
     def testServerConnection(self):

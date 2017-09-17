@@ -5,19 +5,23 @@
 #   author: Chris Bisnett
 
 import sys
-import os.path, sys
+import os.path
 import os
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir))
-
 import framework
 
 
 PROJDIR = os.getcwd() + "/"
 BASEDIR = os.path.realpath(PROJDIR + "/../")
 
-# Has to return False on error
-# so crash can be detected
+
 def sendInitialData(socket):
+    """
+    The initial data to send.
+
+    Has to return False on error
+    so crash can be detected
+    """
     authData = "\x10\x16\x00\x04\x4d\x51\x54\x54\x04\x02\x00\x00\x00\x0a\x6d\x79\x63\x6c\x69\x65\x6e\x74\x69\x64"
 
     try:
@@ -37,17 +41,20 @@ config = {
     "temp_dir": PROJDIR + "temp",
 
     # where are input which crash stuff stored
-    "outcome_dir" : PROJDIR + "out",
+    "outcome_dir": PROJDIR + "out",
+    "verified_dir": PROJDIR + "verified",
+
+    "restart_server_every": 10,
 
     # which fuzzer should be used
     "fuzzer": "Radamsa",
 
     # Path to target
-    "target_bin" : PROJDIR + "bin/mqtt_broker",
-    "target_args": "%(port)i", # separate arguments by space
+    "target_bin": PROJDIR + "bin/mqtt_broker",
+    "target_args": "%(port)i",  # separate arguments by space
 
     # Directory of input files
-    "inputs" : PROJDIR + "in",
+    "inputs": PROJDIR + "in",
 
     # if you have multiple ffw fuzzers active,
     # change this between them
@@ -59,12 +66,12 @@ config = {
     # TODO
     # check code coverage?
     "gcov_coverage": False,
-    "gcov_coverage_time": 10000, # in iterations
+    "gcov_coverage_time": 10000,  # in iterations
 
     # perform automatic crash analysis?
     # Note: Can also be manually started with argument "minimize"
     "crash_minimize": False,
-    "crash_minimize_time": 3, # number of new crashes
+    "crash_minimize_time": 3,  # number of new crashes
 
     # TODO
     # e.g. boofuzz
@@ -82,11 +89,11 @@ config = {
     # interceptor: pickle files from interceptor
     "mode": "interceptor",
 
-    ## interceptor
+    # interceptor
     "receive_answer": False,
 
 
-    ## raw
+    # raw
 
     # for mode: raw
     # send data before the actual fuzzing packet

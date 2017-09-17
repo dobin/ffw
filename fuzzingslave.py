@@ -1,11 +1,12 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python2
 
 import signal
 import time
 import logging
-import queue
 import random
 import sys
+import pickle
+import os
 
 import servermanager
 import fuzzingiterationdata
@@ -46,11 +47,14 @@ def signal_handler(signal, frame):
     sys.exit(0)
 
 
-# Fuzzer child
-# The main fuzzing loop
-# all magic is performed here
-# sends results via queue to the parent
 def doActualFuzz(config, threadId, queue, initialSeed):
+    """
+    The main fuzzing loop.
+
+    all magic is performed here
+    sends results via queue to the parent
+    Only called once, by the fuzzingmaster
+    """
     global GLOBAL_SLEEP
 
     random.seed(initialSeed)
@@ -62,9 +66,9 @@ def doActualFuzz(config, threadId, queue, initialSeed):
 
     iterStats = {
         "count": 0,
-        "crashCount": 0, # number of crashes, absolute
-        "crashCountAnalLast": 0, # when was the last crash analysis
-        "gcovAnalysisLastIter": 0, # when was gcov analysis last performed (in iterations)
+        "crashCount": 0,  # number of crashes, absolute
+        "crashCountAnalLast": 0,  # when was the last crash analysis
+        "gcovAnalysisLastIter": 0,  # when was gcov analysis last performed (in iterations)
         "startTime": time.time(),
         "epochCount": 0,
     }
@@ -93,7 +97,7 @@ def doActualFuzz(config, threadId, queue, initialSeed):
             iterStats["crashCount"] += 1
             crashData = serverManager.getCrashData()
             crashData["fuzzerPos"] = "A"
-            previousFuzzingIterationData.export(crashData)
+            exportFuzzResult(config, crashData, previousFuzzingIterationData)
             serverManager.restart()
             continue
 
@@ -108,7 +112,7 @@ def doActualFuzz(config, threadId, queue, initialSeed):
             iterStats["crashCount"] += 1
             crashData = serverManager.getCrashData()
             crashData["fuzzerPos"] = "B"
-            previousFuzzingIterationData.export(crashData)
+            exportFuzzResult(config, crashData, previousFuzzingIterationData)
             networkManager.closeConnection()
             serverManager.restart()
             continue
@@ -119,7 +123,7 @@ def doActualFuzz(config, threadId, queue, initialSeed):
             iterStats["crashCount"] += 1
             crashData = serverManager.getCrashData()
             crashData["fuzzerPos"] = "C"
-            fuzzingIterationData.export(crashData)
+            exportFuzzResult(config, crashData, fuzzingIterationData)
             networkManager.closeConnection()
             serverManager.restart()
             continue
@@ -145,6 +149,7 @@ def doActualFuzz(config, threadId, queue, initialSeed):
     # all done, terminate server
     serverManager.stopServer()
 
+
 def printFuzzData(fuzzData):
     for message in fuzzData:
         print "  MSG: " + str(fuzzData.index(message))
@@ -159,7 +164,7 @@ def sendPreData(networkManager, fuzzingIterationData):
             continue
 
         if message == fuzzingIterationData.choice:
-            break;
+            break
 
         logging.debug("  Sending pre message: " + str(fuzzingIterationData.fuzzedData.index(message)))
         ret = networkManager.sendData(message["data"])
@@ -179,12 +184,37 @@ def sendData(networkManager, fuzzingIterationData):
             continue
 
         if message == fuzzingIterationData.choice:
-            s = True ;
+            s = True
 
         if s:
             logging.debug("  Sending message: " + str(fuzzingIterationData.fuzzedData.index(message)))
             res = networkManager.sendData(message["data"])
-            if res == False:
+            if res is False:
                 return False
 
     return True
+
+
+def exportFuzzResult(config, crashData, fuzzIter):
+    seed = fuzzIter.seed
+
+    data = {
+        "initialCrashData": crashData,
+        "fuzzIterData": fuzzIter.getData(),
+    }
+
+    # pickle file with everything
+    with open(os.path.join(config["outcome_dir"], str(seed) + ".ffw"), "w") as f:
+        pickle.dump(data, f)
+
+    # Save a txt log
+    with open(os.path.join(config["outcome_dir"], str(seed) + ".txt"), "w") as f:
+        f.write("Seed: %s\n" % seed)
+        f.write("Fuzzer: %s\n" % config["fuzzer"])
+        f.write("Target: %s\n" % config["target_bin"])
+
+        f.write("Time: %s\n" % data["fuzzIterData"]["time"])
+        f.write("Fuzzerpos: %s\n" % crashData["fuzzerPos"])
+        f.write("Signal: %d\n" % crashData["signum"])
+        f.write("Exitcode: %d\n" % crashData["exitcode"])
+        f.write("Asanoutput: %s\n" % crashData["asanOutput"])

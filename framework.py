@@ -10,7 +10,6 @@ import sys
 
 import replay
 import minimizer
-import gui
 import interceptor
 import fuzzingmaster
 import verifier

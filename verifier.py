@@ -1,4 +1,4 @@
-#!/bin/python
+#!/usr/bin/env python2
 
 import time
 import os
@@ -6,12 +6,10 @@ import glob
 import multiprocessing
 import Queue
 import logging
-import sys
 import shutil
 import signal
 import pickle
 
-import serverutils
 import debugservermanager
 import networkmanager
 import utils
@@ -31,17 +29,25 @@ class Verifier(object):
 
     def __init__(self, config):
         self.config = config
-        self.queue_sync = multiprocessing.Queue() # connection to servermanager
-        self.queue_out = multiprocessing.Queue() # connection to servermanager
-        self.serverPid = None # pid of the server started by servermanager (not servermanager)
-        self.p = None # serverManager
+        self.queue_sync = multiprocessing.Queue()  # connection to servermanager
+        self.queue_out = multiprocessing.Queue()  # connection to servermanager
+        self.serverPid = None  # pid of the server started by servermanager (not servermanager)
+        self.p = None  # serverManager
 
 
-    def handleCrash(self, crashData, pickleFile):
+    def handleCrash(self, outcome, crashData):
         print "Handlecrash"
-        fileName = os.path.join(self.config["verified_dir"], crashData["file"] + ".crashdata.txt")
-        print "fileName: " + fileName
 
+        outcome["verifyCrashData"] = crashData
+        # write pickle file
+        fileName = os.path.join(self.config["verified_dir"],
+                                str(outcome["fuzzIterData"]["seed"]) + ".ffw")
+        with open(fileName, "w") as f:
+            pickle.dump(outcome, f)
+
+        # write text file
+        fileName = os.path.join(self.config["verified_dir"],
+                                str(outcome["fuzzIterData"]["seed"]) + ".txt")
         registerStr = ''.join('{}={} '.format(key, val) for key, val in crashData["registers"].items())
         backtraceStr = '\n'.join(map(str, crashData["backtrace"]))
 
@@ -60,13 +66,6 @@ class Verifier(object):
             f.write("\n")
             f.write("ASAN Output:\n %s\n" % crashData["asanOutput"])
             f.close()
-
-        shutil.copy2(pickleFile, self.config["verified_dir"])
-        shutil.copy2(fileName, self.config["verified_dir"])
-
-        fileNamePickle = os.path.join(self.config["outcome_dir"], crashData["file"] + ".crashdata.pickle2")
-        with open(fileNamePickle, "wb") as f:
-            pickle.dump(crashData, f)
 
 
     def handleNoCrash(self):
@@ -94,7 +93,9 @@ class Verifier(object):
         self.serverPid = None
 
 
-    def verifyOutcome(self, outcome, targetPort, outcomeFile):
+    def verifyOutcome(self, targetPort, outcomeFile):
+        outcome = utils.readPickleFile(outcomeFile)
+
         # start server in background
         self.debugServerManager = debugservermanager.DebugServerManager(self.config, self.queue_sync, self.queue_out, targetPort)
         self.networkManager = networkmanager.NetworkManager(self.config, targetPort)
@@ -106,13 +107,12 @@ class Verifier(object):
         serverPid = data[1]
         self.serverPid = serverPid
         logging.info("Minimizer: Server pid: " + str(serverPid))
-        time.sleep(sleeptimes["wait_time_for_server_rdy"]) # wait a bit till server is ready
         self.networkManager.waitForServerReadyness()
 
         if not self.networkManager.openConnection():
             logging.error("Minimizer: Could not connect to server")
 
-        self.networkManager.sendMessages(outcome)
+        self.networkManager.sendMessages(outcome["fuzzIterData"]["fuzzedData"])
         self.networkManager.closeConnection()
 
         # get crash result data from child
@@ -126,11 +126,9 @@ class Verifier(object):
             # (e.g. port already used), and therefore sends an
             # empty result. has to be handled.
             if crashData is not None:
-                crashData["file"] = outcomeFile
-                crashData["fuzzingiteration"] = outcome
                 logging.info("Minimizer: I've got a crash")
                 crashData["stdOutput"] = serverStdout
-                self.handleCrash(crashData, outcomeFile)
+                self.handleCrash(outcome, crashData)
             else:
                 logging.error("Some server error:")
                 logging.error("Output: " + serverStdout)
@@ -148,7 +146,7 @@ class Verifier(object):
         logging.info("Crash verifier")
 
         outcomesDir = os.path.abspath(self.config["outcome_dir"])
-        outcomesFiles = glob.glob(os.path.join(outcomesDir, '*.pickle'))
+        outcomesFiles = glob.glob(os.path.join(outcomesDir, '*.ffw'))
 
         n = 0
         noCrash = 0
@@ -160,8 +158,8 @@ class Verifier(object):
                 print("Now processing: " + str(n) + ": " + outcomeFile)
                 targetPort = self.config["baseport"] + n + 100
 
-                outcome = utils.readPickleFile(outcomeFile)
-                self.verifyOutcome(outcome, targetPort, outcomeFile)
+
+                self.verifyOutcome(targetPort, outcomeFile)
 
                 n += 1
 
@@ -173,7 +171,7 @@ class Verifier(object):
                 print "Exception: " + str(error)
 
             # wait for child to exit
-            p.join()
+            self.p.join()
 
         print "Number of outcomes: " + str(len(outcomesFiles))
         print "Number of no crashes: " + str(noCrash)

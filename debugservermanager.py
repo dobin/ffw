@@ -18,7 +18,6 @@ from ptrace.debugger.ptrace_signal import ProcessSignal
 import serverutils
 
 
-
 class StdoutQueue():
     """
     This is a Queue that behaves like stdout.

@@ -1,11 +1,7 @@
-#!/bin/python
+#!/usr/bin/env python2
 
-import time
 import os
 import glob
-import logging
-import sys
-import pickle
 
 import utils
 
@@ -21,6 +17,12 @@ sleeptimes = {
 
 
 class Minimizer(object):
+    """
+    Minimize existing verified crash datas.
+
+    This should provide an overrview of unique crashes, by parsing the
+    .ffw pickle files with verify data, and aggregating them nicely.
+    """
 
     def __init__(self, config):
         self.config = config
