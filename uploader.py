@@ -8,6 +8,7 @@ import base64
 
 import utils
 
+
 class Uploader(object):
     def __init__(self, config):
         self.config = config
@@ -37,6 +38,7 @@ class Uploader(object):
         r = requests.get(url, params=payload)
 
         j = r.json()
+        print "Response: " + r.text
         j = j[0]  # we get an array atm, so just use first element
         if not j:
             print "project does not exist"
@@ -64,14 +66,19 @@ class Uploader(object):
         url = self.server + "/api/crashdata/"
 
         myMsgList = []
+        n = 0
         for msg in data["fuzzIterData"]["fuzzedData"]:
             m = {
-                "index": 0,
+                "index": n,
                 "sentBy": msg["from"],
                 "msg": base64.b64encode( msg["data"] ),
                 "fuzzed": 0,
             }
             myMsgList.append(m)
+            n += 1
+
+        registers = ''.join('{}={} '.format(key, val) for key, val in data["verifyCrashData"].items())
+        backtraceStr = '\n'.join(map(str, data["verifyCrashData"]["backtrace"]))
 
         payload = {
             "project": self.projectId,
@@ -82,8 +89,16 @@ class Uploader(object):
             "time": "2017-09-09T18:03",
             "stdout": data["verifyCrashData"]["stdOutput"],
             "asanoutput": data["verifyCrashData"]["asanOutput"],
-            "filename": "fuck",
+            "backtrace": backtraceStr,
+
+            "codeoff": data["verifyCrashData"]["faultOffset"],
+            "codeaddr": data["verifyCrashData"]["faultAddress"],
+            "stackoff": 0,  # data["verifyCrashData"]["stackAddr"]
+            "stackaddr": data["verifyCrashData"]["stackPointer"],
+
+            "registers": registers,
             "messageList": myMsgList,
         }
+        #print "JSON: " + json.dumps(payload)
         r = requests.post(url, json=payload)
         print r.text
