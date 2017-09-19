@@ -22,7 +22,7 @@ def realMain(config):
     if config["debug"]:
         print "Debug mode enabled"
         logging.basicConfig(level=logging.DEBUG)
-        config["processes"] = 2
+        config["processes"] = 1
 
 
     if len(sys.argv) > 1:
@@ -32,7 +32,7 @@ def realMain(config):
         #corpus_destillation()
 
     if func == "upload":
-        u = uploader.Uploader(config)
+        u = uploader.Uploader(config, sys.argv[2], sys.argv[3], sys.argv[4])
         u.uploadVerifyDir()
 
     if func == "verify":

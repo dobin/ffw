@@ -80,7 +80,8 @@ def doActualFuzz(config, threadId, queue, initialSeed):
     # start server
     serverManager.start()
     if not networkManager.testServerConnection():
-        logging.error("Error")
+        logging.error("Error: Could not connect to server.")
+        # TODO: better error, because server could not be started. stdout?
         return
 
     print str(threadId) + " Start fuzzing..."
@@ -119,26 +120,38 @@ def doActualFuzz(config, threadId, queue, initialSeed):
 
         sendDataResult = sendData(networkManager, fuzzingIterationData)
         if not sendDataResult:
-            logging.info("Detected Crash (C)")
-            iterStats["crashCount"] += 1
-            crashData = serverManager.getCrashData()
-            crashData["fuzzerPos"] = "C"
-            exportFuzzResult(config, crashData, fuzzingIterationData)
-            networkManager.closeConnection()
-            serverManager.restart()
-            continue
+            logging.info("Could not send, possible crash?")
+            if networkManager.testServerConnection():
+                logging.info("Broken connection")
+            else:
+                logging.info("Detected Crash (C)")
+                iterStats["crashCount"] += 1
+                crashData = serverManager.getCrashData()
+                crashData["fuzzerPos"] = "C"
+                exportFuzzResult(config, crashData, fuzzingIterationData)
+                networkManager.closeConnection()
+                serverManager.restart()
+                continue
 
         # restart server periodically
         if iterStats["count"] > 0 and iterStats["count"] % config["restart_server_every"] == 0:
-            logging.info("Restart server")
+            if not networkManager.testServerConnection():
+                logging.info("Detected Crash (D)")
+                iterStats["crashCount"] += 1
+                crashData = serverManager.getCrashData()
+                crashData["fuzzerPos"] = "D"
+                exportFuzzResult(config, crashData, fuzzingIterationData)
+                networkManager.closeConnection()
+
+            logging.info("Restart server periodically: " + str(iterStats["count"]))
             serverManager.restart()
             if not networkManager.testServerConnection():
-                logging.error("Error")
+                logging.error("Error: Could not connect to server after restart. abort.")
                 return
 
-        if config["debug"]:
+        #if config["debug"]:
             # lets sleep a bit
-            time.sleep(1)
+            #time.sleep(1)
 
         # save this iteration data for future crashes
         previousFuzzingIterationData = fuzzingIterationData
@@ -159,38 +172,46 @@ def printFuzzData(fuzzData):
 
 def sendPreData(networkManager, fuzzingIterationData):
     logging.info("Send pre data: ")
-    for message in fuzzingIterationData.fuzzedData:
-        if message["from"] != "cli":
-            continue
 
+    for message in fuzzingIterationData.fuzzedData:
         if message == fuzzingIterationData.choice:
             break
 
-        logging.debug("  Sending pre message: " + str(fuzzingIterationData.fuzzedData.index(message)))
-        ret = networkManager.sendData(message["data"])
-        if not ret:
-            logging.debug("  server not reachable")
-            return False
+        if message["from"] == "srv":
+            r = networkManager.receiveData()
+            if not r:
+                logging.error("Could not read, crash?!")
+
+        if message["from"] == "cli":
+            logging.debug("  Sending pre message: " + str(fuzzingIterationData.fuzzedData.index(message)))
+            ret = networkManager.sendData(message["data"])
+            if not ret:
+                logging.debug("  server not reachable")
+                return False
 
     return True
 
 
 def sendData(networkManager, fuzzingIterationData):
     logging.info("Send data: ")
-    # skip pre messages
+
     s = False
     for message in fuzzingIterationData.fuzzedData:
-        if message["from"] != "cli":
-            continue
-
+        # skip pre messages
         if message == fuzzingIterationData.choice:
             s = True
 
         if s:
-            logging.debug("  Sending message: " + str(fuzzingIterationData.fuzzedData.index(message)))
-            res = networkManager.sendData(message["data"])
-            if res is False:
-                return False
+            if message["from"] == "srv":
+                r = networkManager.receiveData()
+                if not r:
+                    logging.error("Could not read, crash?!")
+
+            if message["from"] == "cli":
+                logging.debug("  Sending message: " + str(fuzzingIterationData.fuzzedData.index(message)))
+                res = networkManager.sendData(message["data"])
+                if res is False:
+                    return False
 
     return True
 
@@ -217,4 +238,6 @@ def exportFuzzResult(config, crashData, fuzzIter):
         f.write("Fuzzerpos: %s\n" % crashData["fuzzerPos"])
         f.write("Signal: %d\n" % crashData["signum"])
         f.write("Exitcode: %d\n" % crashData["exitcode"])
+        f.write("Reallydead: %s\n" % str(crashData["reallydead"]))
+        f.write("PID: %s\n" % str(crashData["serverpid"]))
         f.write("Asanoutput: %s\n" % crashData["asanOutput"])

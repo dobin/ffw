@@ -5,6 +5,8 @@ import pickle
 import logging
 import random
 import gui
+import os
+import sys
 
 from multiprocessing import Process, Queue
 
@@ -46,7 +48,13 @@ def doFuzz(config, useCurses):
 
 
 def prepareInput(config):
-    with open(config["inputs"] + "/data_0.pickle", 'rb') as f:
+    file = config["inputs"] + "/data_0.pickle"
+
+    if not os.path.isfile(file):
+        logging.error("Could not read input file: " + file)
+        sys.exit(0)
+
+    with open(file, 'rb') as f:
         config["_inputs"] = pickle.load(f)
 
 

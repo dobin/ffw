@@ -5,15 +5,30 @@ import glob
 import requests
 import json
 import base64
+import time
 
 import utils
 
 
 class Uploader(object):
-    def __init__(self, config):
+    def __init__(self, config, server, user, password):
         self.config = config
-        self.server = "http://localhost:8000"
+
         self.projectId = None
+        if server is None:
+            self.server = "http://localhost:8000"
+        else:
+            self.server = server
+
+        self.user = user
+        self.password = password
+        self.auth = ()
+
+        if self.user is not None and self.password is not None:
+            self.auth = (self.user, self.password)
+            print "AUTH: " + str(self.auth)
+
+
 
     def uploadVerifyDir(self):
         outcomesDir = os.path.abspath(self.config["verified_dir"])
@@ -31,14 +46,20 @@ class Uploader(object):
             if data is not None:
                 self.uploadData(data)
 
+            time.sleep(0.1)
+
 
     def projectExistsInCloud(self):
         payload = {'name': self.config["name"]}
         url = self.server + "/api/projects/"
-        r = requests.get(url, params=payload)
+        r = requests.get(url, params=payload, auth=self.auth)
 
+        print "Code: " + str(r.status_code)
         j = r.json()
-        print "Response: " + r.text
+
+        if not j:
+            return False
+
         j = j[0]  # we get an array atm, so just use first element
         if not j:
             print "project does not exist"
@@ -57,7 +78,7 @@ class Uploader(object):
             "name": self.config["name"],
             "comment": "no comment",
         }
-        r = requests.post(url, json=payload)
+        r = requests.post(url, json=payload, auth=self.auth)
         print "Response: " + str(r)
 
 
@@ -100,5 +121,5 @@ class Uploader(object):
             "messageList": myMsgList,
         }
         #print "JSON: " + json.dumps(payload)
-        r = requests.post(url, json=payload)
-        print r.text
+        r = requests.post(url, json=payload, auth=self.auth)
+        print "Code: " + str(r.status_code)

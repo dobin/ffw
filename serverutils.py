@@ -50,7 +50,7 @@ def getAsanOutput(config, pid):
     time.sleep(sleeptimes["sleep_for_asan_file"])  # omg wait for the file to appear
 
     if not os.path.isfile(fileName):
-        logging.info("Did not find ASAN output file.")
+        logging.info("Did not find ASAN output file: " + fileName)
         return "No ASAN file found (path: " + fileName + ")"
     else:
         logging.info("Found ASAN output file. Good.")

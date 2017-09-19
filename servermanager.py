@@ -33,10 +33,12 @@ class ServerManager(object):
     def start(self):
         """Start the server"""
         self.process = self._runTarget()
+        logging.info("Start server PID: " + str(self.process.pid))
 
 
     def stop(self):
         """Stop the server"""
+        logging.info("Stop server PID: " + str(self.process.pid))
         self.process.terminate
 
 
@@ -63,10 +65,18 @@ class ServerManager(object):
         Return the data of the crash
         or None if it has not crashed (should not happen)
         """
+
+        if self.process.poll():
+            logging.error("getCrashData(): get data, but server alive?!")
+        else:
+            logging.info("getCrashData(): ok, server is really crashed")
+
         crashData = {
             "asanOutput": serverutils.getAsanOutput(self.config, self.process.pid),
             "signum": 0,
             "exitcode": 0,
+            "reallydead": self.process.poll(),
+            "serverpid": self.process.pid,
         }
 
         return crashData
