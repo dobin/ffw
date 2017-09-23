@@ -6,6 +6,7 @@ import requests
 import json
 import base64
 import time
+import pprint
 
 import utils
 
@@ -55,6 +56,8 @@ class Uploader(object):
         r = requests.get(url, params=payload, auth=self.auth)
 
         print "Code: " + str(r.status_code)
+        if r.status_code != 200:
+            print "R: " + r.text
         j = r.json()
 
         if not j:
@@ -98,8 +101,12 @@ class Uploader(object):
             myMsgList.append(m)
             n += 1
 
-        registers = ''.join('{}={} '.format(key, val) for key, val in data["verifyCrashData"].items())
+        registers = ''.join('{}={} '.format(key, val) for key, val in data["verifyCrashData"]["registers"].items())
         backtraceStr = '\n'.join(map(str, data["verifyCrashData"]["backtrace"]))
+
+        # temporary fix
+        if "reallydead" not in data["initialCrashData"]:
+            data["initialCrashData"]["reallydead"] = 23
 
         payload = {
             "project": self.projectId,
@@ -112,9 +119,12 @@ class Uploader(object):
             "asanoutput": data["verifyCrashData"]["asanOutput"],
             "backtrace": backtraceStr,
 
+            "fuzzerpos": data["initialCrashData"]["fuzzerPos"],
+            "reallydead": data["initialCrashData"]["reallydead"],
+
             "codeoff": data["verifyCrashData"]["faultOffset"],
             "codeaddr": data["verifyCrashData"]["faultAddress"],
-            "stackoff": 0,  # data["verifyCrashData"]["stackAddr"]
+            "stackoff": 5,  # data["verifyCrashData"]["stackAddr"]
             "stackaddr": data["verifyCrashData"]["stackPointer"],
 
             "registers": registers,
@@ -123,3 +133,6 @@ class Uploader(object):
         #print "JSON: " + json.dumps(payload)
         r = requests.post(url, json=payload, auth=self.auth)
         print "Code: " + str(r.status_code)
+        if r.status_code != 200:
+            #print "R: " + r.text
+            print "RR: " + str(payload)

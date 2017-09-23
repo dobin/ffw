@@ -32,7 +32,10 @@ def realMain(config):
         #corpus_destillation()
 
     if func == "upload":
-        u = uploader.Uploader(config, sys.argv[2], sys.argv[3], sys.argv[4])
+        if len(sys.argv) == 4:
+            u = uploader.Uploader(config, sys.argv[2], sys.argv[3], sys.argv[4])
+        else:
+            u = uploader.Uploader(config, sys.argv[2], None, None)
         u.uploadVerifyDir()
 
     if func == "verify":
