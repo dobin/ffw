@@ -127,8 +127,9 @@ class Verifier(object):
             # empty result. has to be handled.
             if crashData is not None:
                 logging.info("Minimizer: I've got a crash")
-                crashData["stdOutput"] = serverStdout
-                self.handleCrash(outcome, crashData)
+                crashData.setStdOutput(serverStdout)
+                
+                self.handleCrash(outcome, crashData.getData())
             else:
                 logging.error("Some server error:")
                 logging.error("Output: " + serverStdout)

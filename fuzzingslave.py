@@ -97,7 +97,7 @@ def doActualFuzz(config, threadId, queue, initialSeed):
             logging.info("Detected Crash (A)")
             iterStats["crashCount"] += 1
             crashData = serverManager.getCrashData()
-            crashData["fuzzerPos"] = "A"
+            crashData.setFuzzerPos("A")
             exportFuzzResult(config, crashData, previousFuzzingIterationData)
             serverManager.restart()
             continue
@@ -112,7 +112,7 @@ def doActualFuzz(config, threadId, queue, initialSeed):
             logging.info("Detected Crash (B)")
             iterStats["crashCount"] += 1
             crashData = serverManager.getCrashData()
-            crashData["fuzzerPos"] = "B"
+            crashData.setFuzzerPos("B")
             exportFuzzResult(config, crashData, previousFuzzingIterationData)
             networkManager.closeConnection()
             serverManager.restart()
@@ -127,7 +127,7 @@ def doActualFuzz(config, threadId, queue, initialSeed):
                 logging.info("Detected Crash (C)")
                 iterStats["crashCount"] += 1
                 crashData = serverManager.getCrashData()
-                crashData["fuzzerPos"] = "C"
+                crashData.setFuzzerPos("C")
                 exportFuzzResult(config, crashData, fuzzingIterationData)
                 networkManager.closeConnection()
                 serverManager.restart()
@@ -139,7 +139,7 @@ def doActualFuzz(config, threadId, queue, initialSeed):
                 logging.info("Detected Crash (D)")
                 iterStats["crashCount"] += 1
                 crashData = serverManager.getCrashData()
-                crashData["fuzzerPos"] = "D"
+                crashData.setFuzzerPos("D")
                 exportFuzzResult(config, crashData, fuzzingIterationData)
                 networkManager.closeConnection()
 
@@ -216,8 +216,10 @@ def sendData(networkManager, fuzzingIterationData):
     return True
 
 
-def exportFuzzResult(config, crashData, fuzzIter):
+def exportFuzzResult(config, crashDataModel, fuzzIter):
     seed = fuzzIter.seed
+
+    crashData = crashDataModel.getData()
 
     data = {
         "initialCrashData": crashData,

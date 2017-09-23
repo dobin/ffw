@@ -4,9 +4,9 @@ import time
 import logging
 import os
 import subprocess
-import socket
 
 import serverutils
+import initialcrashdata
 
 GLOBAL_SLEEP = {
     # how long to wait after server start
@@ -71,13 +71,14 @@ class ServerManager(object):
         else:
             logging.info("getCrashData(): ok, server is really crashed")
 
-        crashData = {
-            "asanOutput": serverutils.getAsanOutput(self.config, self.process.pid),
-            "signum": 0,
-            "exitcode": 0,
-            "reallydead": self.process.poll(),
-            "serverpid": self.process.pid,
-        }
+        crashData = initialcrashdata.InitialCrashData()
+        crashData.setData(
+            asanOutput=serverutils.getAsanOutput(self.config, self.process.pid),
+            signum=0,
+            exitcode=0,
+            reallydead=self.process.poll(),
+            serverpid=self.process.pid,
+        )
 
         return crashData
 
