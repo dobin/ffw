@@ -40,6 +40,9 @@ class AsanParser:
         if "attempting double-free" in headerLine:
             asanData["cause"] = "DoubleFree"
 
+        if "heap-use-after-free" in headerLine:
+            asanData["cause"] = "UaF"
+
 
         # find "^#1"
         # #0 is usually the asan line where it failed, which does not interest us
