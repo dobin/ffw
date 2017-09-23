@@ -101,12 +101,32 @@ class Uploader(object):
             myMsgList.append(m)
             n += 1
 
+        # convert some ugly data
         registers = ''.join('{}={} '.format(key, val) for key, val in data["verifyCrashData"]["registers"].items())
         backtraceStr = '\n'.join(map(str, data["verifyCrashData"]["backtrace"]))
 
         # temporary fix
         if "reallydead" not in data["initialCrashData"]:
             data["initialCrashData"]["reallydead"] = 23
+
+        # decide which data has precedence for displaying
+        codeaddr = 0
+        cause = ""
+        cause_line = ""
+        backtrace = ""
+        if "asanData" in data["verifyCrashData"]:
+            asanData = data["verifyCrashData"]["asanData"]
+
+            codeaddr = int(asanData["pc"], 16)
+            cause = asanData["cause"]
+            cause_line = asanData["cause_line"]
+            backtrace = asanData["backtrace"]
+        else:
+            codeaddr = data["verifyCrashData"]["faultAddress"]
+            backtrace = backtraceStr
+            cause = "n/a"
+            cause_line = "n/a"
+
 
         payload = {
             "project": self.projectId,
@@ -117,13 +137,16 @@ class Uploader(object):
             "time": "2017-09-09T18:03",
             "stdout": data["verifyCrashData"]["stdOutput"],
             "asanoutput": data["verifyCrashData"]["asanOutput"],
-            "backtrace": backtraceStr,
+            "backtrace": backtrace,
 
             "fuzzerpos": data["initialCrashData"]["fuzzerPos"],
             "reallydead": data["initialCrashData"]["reallydead"],
 
+            "cause": cause,
+            "cause_line": cause_line,
+
             "codeoff": data["verifyCrashData"]["faultOffset"],
-            "codeaddr": data["verifyCrashData"]["faultAddress"],
+            "codeaddr": codeaddr,
             "stackoff": 5,  # data["verifyCrashData"]["stackAddr"]
             "stackaddr": data["verifyCrashData"]["stackPointer"],
 
@@ -134,5 +157,5 @@ class Uploader(object):
         r = requests.post(url, json=payload, auth=self.auth)
         print "Code: " + str(r.status_code)
         if r.status_code != 200:
-            #print "R: " + r.text
-            print "RR: " + str(payload)
+            pprint.pprint(payload)
+            print "R: " + r.text

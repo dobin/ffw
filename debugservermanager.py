@@ -16,6 +16,7 @@ from ptrace.debugger.process_event import ProcessExit
 from ptrace.debugger.ptrace_signal import ProcessSignal
 
 import serverutils
+import asanparser
 
 
 class StdoutQueue():
@@ -204,5 +205,9 @@ class DebugServerManager(object):
             "registers": pRegisters,
         }
         crashData["asanOutput"] = serverutils.getAsanOutput(self.config, self.pid)
+
+        asanParser = asanparser.AsanParser()
+        asanParser.loadData(crashData["asanOutput"])
+        crashData["asanData"] = asanParser.getAsanData()
 
         return crashData
