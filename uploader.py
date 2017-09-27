@@ -4,6 +4,7 @@ import os
 import glob
 import requests
 import json
+import sys
 import base64
 import time
 import pprint
@@ -58,6 +59,7 @@ class Uploader(object):
         print "Code: " + str(r.status_code)
         if r.status_code != 200:
             print "R: " + r.text
+            sys.exit(0)
         j = r.json()
 
         if not j:

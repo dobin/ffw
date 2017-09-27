@@ -14,7 +14,7 @@ import interceptor
 import fuzzingmaster
 import verifier
 import uploader
-
+import tester
 
 def realMain(config):
     func = "fuzz"
@@ -32,11 +32,15 @@ def realMain(config):
         #corpus_destillation()
 
     if func == "upload":
-        if len(sys.argv) == 4:
+        if len(sys.argv) == 5:
             u = uploader.Uploader(config, sys.argv[2], sys.argv[3], sys.argv[4])
         else:
             u = uploader.Uploader(config, sys.argv[2], None, None)
         u.uploadVerifyDir()
+
+    if func == "test":
+        t = tester.Tester(config)
+        t.test()
 
     if func == "verify":
         v = verifier.Verifier(config)

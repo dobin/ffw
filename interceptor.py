@@ -169,11 +169,11 @@ def doIntercept(config, localPort):
     config["baseport"] = targetPort
 
     # run the server, as configured in config
-    serverManager = servermanager.ServerManager(config, 0)
+    serverManager = servermanager.ServerManager(config, 0, targetPort)
     serverManager.start()
-    if not serverManager.isAliveSlow():
-        logging.error("Could not start server")
-        return
+#    if not serverManager.isAliveSlow():
+#       logging.error("Could not start server")
+#        return
 
     # start mitm server
     performIntercept(config, localHost, localPort, targetHost, targetPort)

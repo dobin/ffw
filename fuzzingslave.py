@@ -109,20 +109,28 @@ def doActualFuzz(config, threadId, queue, initialSeed):
 
         sendDataResult = sendPreData(networkManager, fuzzingIterationData)
         if not sendDataResult:
-            logging.info("Detected Crash (B)")
-            iterStats["crashCount"] += 1
-            crashData = serverManager.getCrashData()
-            crashData.setFuzzerPos("B")
-            exportFuzzResult(config, crashData, previousFuzzingIterationData)
-            networkManager.closeConnection()
-            serverManager.restart()
-            continue
+            logging.info(" B Could not send, possible crash? (predata)")
+            if networkManager.testServerConnection():
+                logging.info(" B Broken connection... continue")
+                networkManager.closeConnection()
+                continue
+            else:
+                logging.info("Detected Crash (B)")
+                iterStats["crashCount"] += 1
+                crashData = serverManager.getCrashData()
+                crashData.setFuzzerPos("B")
+                exportFuzzResult(config, crashData, fuzzingIterationData)
+                networkManager.closeConnection()
+                serverManager.restart()
+                continue
 
         sendDataResult = sendData(networkManager, fuzzingIterationData)
         if not sendDataResult:
-            logging.info("Could not send, possible crash?")
+            logging.info(" C Could not send, possible crash? (postdata)")
             if networkManager.testServerConnection():
-                logging.info("Broken connection")
+                logging.info("Broken connection... continue")
+                networkManager.closeConnection()
+                continue
             else:
                 logging.info("Detected Crash (C)")
                 iterStats["crashCount"] += 1

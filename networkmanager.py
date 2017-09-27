@@ -50,7 +50,7 @@ class NetworkManager(object):
             logging.debug("  Send data to server. len: " + str(len(data)))
             self.sock.sendall(data)
         except socket.error, exc:
-            logging.debug("sendData(): Send data exception")
+            logging.debug("  sendData(): Send data exception: " + str(exc))
             return False
 
         return True
@@ -61,11 +61,12 @@ class NetworkManager(object):
         self.sock.settimeout(0.1)
         try:
             data = self.sock.recv(1024)
+            print "  Received: " + str(len(data))
+            return data
         except Exception, e:
             logging.info("ReceiveData err")
-            return False
+            return None
 
-        return True
 
 
     def sendMessages(self, msgArr):
