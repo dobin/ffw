@@ -69,7 +69,7 @@ class Verifier(object):
 
 
     def handleNoCrash(self):
-        logging.info("Minimizer: Waited long enough, NO crash. ")
+        logging.info("Verifier: Waited long enough, NO crash. ")
         self.stopChild()
 
 
@@ -106,11 +106,11 @@ class Verifier(object):
         data = self.queue_sync.get()
         serverPid = data[1]
         self.serverPid = serverPid
-        logging.info("Minimizer: Server pid: " + str(serverPid))
+        logging.info("Verifier: Server pid: " + str(serverPid))
         self.networkManager.waitForServerReadyness()
 
         if not self.networkManager.openConnection():
-            logging.error("Minimizer: Could not connect to server")
+            logging.error("Verifier: Could not connect to server")
 
         self.networkManager.sendMessages(outcome["fuzzIterData"]["fuzzedData"])
         self.networkManager.closeConnection()
@@ -118,7 +118,7 @@ class Verifier(object):
         # get crash result data from child
         #   or empty if server did not crash
         try:
-            logging.info("Minimizer: Wait for crash data")
+            logging.info("Verifier: Wait for crash data")
             (t, crashData) = self.queue_sync.get(True, sleeptimes["max_server_run_time"])
             serverStdout = self.queue_out.get()
 
@@ -126,7 +126,7 @@ class Verifier(object):
             # (e.g. port already used), and therefore sends an
             # empty result. has to be handled.
             if crashData is not None:
-                logging.info("Minimizer: I've got a crash")
+                logging.info("Verifier: I've got a crash")
                 crashData.setStdOutput(serverStdout)
 
                 self.handleCrash(outcome, crashData.getData())

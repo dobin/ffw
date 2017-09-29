@@ -15,7 +15,7 @@ class VerifyCrashData():
         self.stackAddr = None
         self.backtrace = None
         self.registers = None
-        self.asanOuput = None
+        self.asanOutput = None
         self.asanData = None
         self.stdOutput = None
 
@@ -47,6 +47,11 @@ class VerifyCrashData():
 
 
     def getData(self):
+        if not self.asanData:
+            self.asanData = ""
+        if not self.asanOutput:
+            self.asanOutput = ""
+
         crashData = {
             "faultAddress": self.faultAddress,
             "faultOffset": self.faultOffset,

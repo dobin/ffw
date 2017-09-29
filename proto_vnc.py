@@ -10,7 +10,6 @@ import struct
 1: send: protocol (?)
 2: recv: authentication
 3:
-
 """
 
 
@@ -44,7 +43,6 @@ def handshake(key, chall):
     des = DES.new(flipkey, DES.MODE_ECB)
 
     #challenge from server
-
     challenge = chall
 #    challenge= chall.decode("hex")
     response = des.encrypt(challenge)
@@ -52,17 +50,20 @@ def handshake(key, chall):
     return response
 
 
-
 class ProtoVnc:
     def __init__(self):
         self.password = "testtest"
-
+        self.challenge = None
 
     def onPreSend(self, data, index):
+        # encode challenge we received with the password
         if index == 5:
-            print " Encrypt: " + hexdump.dump(self.challenge)
-            data = handshake(self.password, self.challenge)
-            print " Result:  " + hexdump.dump(data)
+            # if did not receive a valid challenge... we just dont care
+            # do nothing, let all else fail
+            if self.challenge is not None and len(self.challenge) == 16:
+                #print " Encrypt: " + hexdump.dump(self.challenge)
+                data = handshake(self.password, self.challenge)
+                #print " Result:  " + hexdump.dump(data)
 
         return data
 
@@ -70,7 +71,7 @@ class ProtoVnc:
     # here we will receive the challenge
     def onPostRecv(self, data, index):
         if index == 4:
-            print "    " + hexdump.dump(data)
+            #print "    " + hexdump.dump(data)
             self.challenge = data
 
         return data

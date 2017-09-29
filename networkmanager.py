@@ -45,15 +45,16 @@ class NetworkManager(object):
             self.sock.close()
 
 
-    def sendData(self, message):
+    def sendData(self, message=None):
         """Send data to the server."""
         if self.sock is None:
             logging.error("Trying to send to a closed socket")
             sys.exit(1)
 
         try:
-            if self.config["protoObj"] is not None:
+            if self.config["protoObj"] is not None and message is not None:
                 message["data"] = self.config["protoObj"].onPreSend(message["data"], message["index"])
+
             self.sock.sendall(message["data"])
         except socket.error, exc:
             logging.debug("  sendData(): Send data exception: " + str(exc))
@@ -80,11 +81,12 @@ class NetworkManager(object):
             return False
 
         for message in msgArr:
-            if message["from"] != "cli":
-                continue
-
-            logging.info("Send message")
-            self.sendData(message["data"])
+            if message["from"] == "srv":
+                #logging.info("Recv message")
+                self.receiveData(message)
+            else:
+                #logging.info("Send message")
+                self.sendData(message)
 
         self.closeConnection()
         return True

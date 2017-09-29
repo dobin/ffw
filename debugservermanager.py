@@ -207,6 +207,8 @@ class DebugServerManager(object):
         )
 
         asanOutput = serverutils.getAsanOutput(self.config, self.pid)
-        vCrashData.setAsan(asanOutput)
+        if asanOutput is not None:
+            vCrashData.setAsan(asanOutput)
+
 
         return vCrashData

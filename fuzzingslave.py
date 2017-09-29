@@ -92,6 +92,10 @@ def doActualFuzz(config, threadId, queue, initialSeed):
         logging.debug("\n\n")
         logging.debug("A fuzzing loop...")
 
+        if config["debug"]:
+            # lets sleep a bit
+            time.sleep(0.5)
+
         # previous fuzz generated a crash
         if not networkManager.openConnection():
             logging.info("Detected Crash (A)")
@@ -156,10 +160,6 @@ def doActualFuzz(config, threadId, queue, initialSeed):
             if not networkManager.testServerConnection():
                 logging.error("Error: Could not connect to server after restart. abort.")
                 return
-
-        #if config["debug"]:
-            # lets sleep a bit
-            #time.sleep(1)
 
         # save this iteration data for future crashes
         previousFuzzingIterationData = fuzzingIterationData

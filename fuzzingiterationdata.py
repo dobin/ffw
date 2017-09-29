@@ -114,7 +114,7 @@ class FuzzingIterationData(object):
         self.choice["data"] = data
         self.choice["isFuzzed"] = True
 
-        logging.debug("OUTPUT: " + urllib.quote_plus(self.choice["data"]))
+        #logging.debug("OUTPUT: " + urllib.quote_plus(self.choice["data"]))
 
         try:
             os.remove(self.fuzzingInFile)
@@ -161,4 +161,4 @@ class FuzzingIterationData(object):
 
         s = 'selected input: %s  from: %s  len: %s' % ( str(self.fuzzedData.index(self.choice)), self.choice["from"], str(len(self.choice["data"]) ) )
         logging.debug(s)
-        logging.debug("INPUT: " + urllib.quote_plus(self.choice["data"]))
+        #logging.debug("INPUT: " + urllib.quote_plus(self.choice["data"]))
