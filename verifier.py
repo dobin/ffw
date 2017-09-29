@@ -128,7 +128,7 @@ class Verifier(object):
             if crashData is not None:
                 logging.info("Minimizer: I've got a crash")
                 crashData.setStdOutput(serverStdout)
-                
+
                 self.handleCrash(outcome, crashData.getData())
             else:
                 logging.error("Some server error:")
@@ -158,10 +158,7 @@ class Verifier(object):
             for outcomeFile in outcomesFiles:
                 print("Now processing: " + str(n) + ": " + outcomeFile)
                 targetPort = self.config["baseport"] + n + 100
-
-
                 self.verifyOutcome(targetPort, outcomeFile)
-
                 n += 1
 
         except KeyboardInterrupt:

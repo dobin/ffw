@@ -1,16 +1,13 @@
 #!/usr/bin/env python2
 
 import signal
-import pickle
-import logging
 import random
 import gui
-import os
-import sys
 
 from multiprocessing import Process, Queue
 
 import fuzzingslave
+import utils
 
 
 def doFuzz(config, useCurses):
@@ -26,7 +23,7 @@ def doFuzz(config, useCurses):
     orig = signal.signal(signal.SIGINT, signal.SIG_IGN)
 
     printConfig(config)
-    prepareInput(config)
+    utils.prepareInput(config)
 
     procs = []
     n = 0
@@ -45,25 +42,6 @@ def doFuzz(config, useCurses):
         fuzzCurses(config, q, procs)
     else:
         fuzzConsole(config, q, procs)
-
-
-def prepareInput(config):
-    file = config["inputs"] + "/data_0.pickle"
-
-    if not os.path.isfile(file):
-        logging.error("Could not read input file: " + file)
-        sys.exit(0)
-
-    with open(file, 'rb') as f:
-        config["_inputs"] = pickle.load(f)
-
-    n = 0
-    for input in config["_inputs"]:
-        input["index"] = n
-        print "A: " + str(input)
-        n += 1
-
-    print config["_inputs"]
 
 
 def fuzzCurses(config, q, procs):

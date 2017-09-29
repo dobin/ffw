@@ -3,6 +3,7 @@
 import socket
 import logging
 import time
+import sys
 
 
 class NetworkManager(object):
@@ -45,11 +46,13 @@ class NetworkManager(object):
 
 
     def sendData(self, message):
-        """Send data to the server"""
+        """Send data to the server."""
+        if self.sock is None:
+            logging.error("Trying to send to a closed socket")
+            sys.exit(1)
+
         try:
-            logging.debug("  Send msg " + str(message["index"]))
-            logging.debug("    to server. len: " + str(len(message["data"])))
-            if self.config["protoObj"] != None:
+            if self.config["protoObj"] is not None:
                 message["data"] = self.config["protoObj"].onPreSend(message["data"], message["index"])
             self.sock.sendall(message["data"])
         except socket.error, exc:
@@ -59,19 +62,17 @@ class NetworkManager(object):
         return True
 
 
-    def receiveData(self, message):
-        """Receive data from the server"""
+    def receiveData(self, message=None):
+        """Receive data from the server."""
         self.sock.settimeout(0.1)
         try:
             data = self.sock.recv(1024)
-            if self.config["protoObj"] != None:
+            if self.config["protoObj"] is not None and message is not None:
                 self.config["protoObj"].onPostRecv(data, message["index"])
-            print "  Received for msg " + message["index"] + ": " + str(len(data))
             return data
         except Exception, e:
-            logging.info("ReceiveData err")
+            logging.info("ReceiveData err: " + str(e))
             return None
-
 
 
     def sendMessages(self, msgArr):

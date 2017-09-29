@@ -1,8 +1,8 @@
+#!/usr/bin/env python2
 
-import os
-import time
-import pickle 
-import logging 
+import logging
+import utils
+import sys
 
 import servermanager
 import networkmanager
@@ -11,6 +11,8 @@ import networkmanager
 class Tester():
     def __init__(self, config):
         self.config = config
+        self.stats = None
+
 
     def test(self):
         targetPort = 20000
@@ -18,50 +20,54 @@ class Tester():
         networkManager = networkmanager.NetworkManager(self.config, targetPort)
 
         serverManager.start()
+        utils.prepareInput(self.config)
 
-	file = self.config["inputs"] + "/data_0.pickle"
-	if not os.path.isfile(file):
-            logging.error("Could not read input file: " + file)
-            sys.exit(0)
-        with open(file, 'rb') as f:
-            self.config["_inputs"] = pickle.load(f)
+        self.stats = {}
+        n = 0
+        while n < len(self.config["_inputs"]):
+            self.stats[n] = 0
+            n += 1
 
-        if not networkManager.openConnection():
-            print "Didnt start"
-            return
-
-        stats = {}
         it = 0
         while it < 3:
-            n = 0
-    	    for message in self.config["_inputs"]:
-                print "Handling msg: " + str(n)
-	    	if message["from"] == "srv":
-                    print "Receive: "
-                    print "  Expect: " + str(len(message["data"]))
-                    ret = networkManager.receiveData()
-                    if len(message["data"]) != len(ret):
-                        print "    FAIL"
-
-                        if n in stats:
-                            stats[n] += 1
-                        else: 
-                            stats[n] = 1
-
-	    	if message["from"] == "cli":
-            	    ret = networkManager.sendData(message["data"])
-            	    if not ret:
-                	logging.debug("  server not reachable")
-                        if n in stats:
-                            stats[n] += 1
-                        else: 
-                            stats[n] = 1
-
-                n += 1
-            it+=1
-            networkManager.closeConnection()
+            print "==== Iteration ====="
             networkManager.openConnection()
+            self.sendMessages(networkManager)
+            networkManager.closeConnection()
+            it += 1
 
-        print "Itercount: " + str(it)
-        for key, value in stats.iteritems():
-            print "Fails at msg #" + str(key) + ": " + str(value)
+        # print "Itercount: " + str(it)
+        # print "Fails:"
+        # if len(self.stats) == 0:
+        #     print "None :-)"
+        # else:
+        #     for key, value in self.stats.iteritems():
+        #         print "Fails at msg #" + str(key) + ": " + str(value)
+
+
+    def sendMessages(self, networkManager):
+        n = 0
+        for message in self.config["_inputs"]:
+            sys.stdout.write("Handling msg: " + str(n) + " ")
+            if message["from"] == "srv":
+                print "Receiving..."
+                print "  Orig: " + str(len(message["data"]))
+                ret = networkManager.receiveData(message)
+
+                if not ret:
+                    print "  Could not receive"
+                    self.stats[n] += 1
+                else:
+                    print "  Real: " + str(len(ret))
+                    if len(message["data"]) != len(ret):
+                        self.stats[n] += 1
+
+            if message["from"] == "cli":
+                print "Sending..."
+                print "  Send: " + str(len(message["data"]))
+                ret = networkManager.sendData(message)
+                if not ret:
+                    logging.debug("  server not reachable")
+                    self.stats[n] += 1
+
+            n += 1
