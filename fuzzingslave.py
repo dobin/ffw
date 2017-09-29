@@ -186,13 +186,13 @@ def sendPreData(networkManager, fuzzingIterationData):
             break
 
         if message["from"] == "srv":
-            r = networkManager.receiveData()
+            r = networkManager.receiveData(message)
             if not r:
                 logging.error("Could not read, crash?!")
 
         if message["from"] == "cli":
             logging.debug("  Sending pre message: " + str(fuzzingIterationData.fuzzedData.index(message)))
-            ret = networkManager.sendData(message["data"])
+            ret = networkManager.sendData(message)
             if not ret:
                 logging.debug("  server not reachable")
                 return False
@@ -211,13 +211,13 @@ def sendData(networkManager, fuzzingIterationData):
 
         if s:
             if message["from"] == "srv":
-                r = networkManager.receiveData()
+                r = networkManager.receiveData(message)
                 if not r:
                     logging.error("Could not read, crash?!")
 
             if message["from"] == "cli":
                 logging.debug("  Sending message: " + str(fuzzingIterationData.fuzzedData.index(message)))
-                res = networkManager.sendData(message["data"])
+                res = networkManager.sendData(message)
                 if res is False:
                     return False
 

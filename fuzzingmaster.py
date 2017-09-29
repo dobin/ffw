@@ -57,6 +57,14 @@ def prepareInput(config):
     with open(file, 'rb') as f:
         config["_inputs"] = pickle.load(f)
 
+    n = 0
+    for input in config["_inputs"]:
+        input["index"] = n
+        print "A: " + str(input)
+        n += 1
+
+    print config["_inputs"]
+
 
 def fuzzCurses(config, q, procs):
     data = [None] * config["processes"]

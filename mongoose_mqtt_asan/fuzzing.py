@@ -45,6 +45,7 @@ config = {
     "verified_dir": PROJDIR + "verified",
 
     "restart_server_every": 10,
+    "proto": "vnc",
 
     "name": "Mongoose MQTT ASAN Original 1",
 

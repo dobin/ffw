@@ -16,6 +16,8 @@ import verifier
 import uploader
 import tester
 
+import proto_vnc
+
 def realMain(config):
     func = "fuzz"
 
@@ -24,6 +26,11 @@ def realMain(config):
         logging.basicConfig(level=logging.DEBUG)
         config["processes"] = 1
 
+    if config["proto"] == "vnc":
+        print "Using protocol: vnc"
+        config["protoObj"] = proto_vnc.ProtoVnc()
+    else:
+        config["protoObj"] = None
 
     if len(sys.argv) > 1:
         func = sys.argv[1]

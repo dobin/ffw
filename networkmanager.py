@@ -44,11 +44,14 @@ class NetworkManager(object):
             self.sock.close()
 
 
-    def sendData(self, data):
+    def sendData(self, message):
         """Send data to the server"""
         try:
-            logging.debug("  Send data to server. len: " + str(len(data)))
-            self.sock.sendall(data)
+            logging.debug("  Send msg " + str(message["index"]))
+            logging.debug("    to server. len: " + str(len(message["data"])))
+            if self.config["protoObj"] != None:
+                message["data"] = self.config["protoObj"].onPreSend(message["data"], message["index"])
+            self.sock.sendall(message["data"])
         except socket.error, exc:
             logging.debug("  sendData(): Send data exception: " + str(exc))
             return False
@@ -56,12 +59,14 @@ class NetworkManager(object):
         return True
 
 
-    def receiveData(self):
+    def receiveData(self, message):
         """Receive data from the server"""
         self.sock.settimeout(0.1)
         try:
             data = self.sock.recv(1024)
-            print "  Received: " + str(len(data))
+            if self.config["protoObj"] != None:
+                self.config["protoObj"].onPostRecv(data, message["index"])
+            print "  Received for msg " + message["index"] + ": " + str(len(data))
             return data
         except Exception, e:
             logging.info("ReceiveData err")
