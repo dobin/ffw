@@ -1,6 +1,20 @@
-#!/bin/python
+#!/usr/bin/env python2
 
 import asanparser
+
+"""
+Data Model used on verify crashes.
+
+Contains all data from a successfuly reproduced crash;
+- address sanitizer output
+- backtrace
+- instruction pointer
+- and more
+
+Used by:
+- DebugServerManager
+- Verifier
+"""
 
 
 class VerifyCrashData():

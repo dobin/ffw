@@ -6,13 +6,29 @@ import glob
 import multiprocessing
 import Queue
 import logging
-import shutil
 import signal
 import pickle
 
 import debugservermanager
 import networkmanager
 import utils
+
+"""
+Crash Verifier
+
+Verify crashes stored in:
+  ./out
+
+And put successfully verified into:
+  ./verified
+
+A successful verification is if:
+we replay the network messages, and the server crashes, which is
+indicated by either:
+  - the process crashed
+  - cannot connect anymore to the server
+"""
+
 
 sleeptimes = {
     # wait between server start and first connection attempt

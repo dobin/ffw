@@ -4,6 +4,17 @@ import time
 import os
 import logging
 
+"""
+Various server utilities.
+
+Functions which makes it possible to start the server (fuzzing target),
+and other similar stuff. Used by:
+* servermanager
+* debugservermanager
+Which are abstractions to the actual server, but both use these
+functions here.
+"""
+
 sleeptimes = {
     # wait time, so the asan file really appears
     # used on every crash, should be short

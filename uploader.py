@@ -3,13 +3,19 @@
 import os
 import glob
 import requests
-import json
 import sys
 import base64
 import time
 import pprint
 
 import utils
+
+"""
+CrashData Uploader to ffweb.
+
+Uploads the (verified- ) CrashData to the ffweb server
+Can use basic authentication.
+"""
 
 
 class Uploader(object):

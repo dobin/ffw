@@ -7,6 +7,19 @@ import sys
 import servermanager
 import networkmanager
 
+"""
+Test (recorded) data
+
+If we recorded data, e.g. by using interceptor, we should test
+if we can replay it correctly. And the server answers us correctly.
+If we have a fail after a certain amount of messages, we need to
+maybe authenticate, or add a cookie. This has to be implemented
+in dedicated proto classes.
+
+If all messages are replayed without issue, we have the perfect
+fuzzing target.
+"""
+
 
 class Tester():
     def __init__(self, config):

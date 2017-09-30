@@ -1,4 +1,4 @@
-#!/bin/python
+#!/usr/bin/env python2
 
 import time
 import logging
@@ -7,6 +7,13 @@ import subprocess
 
 import serverutils
 import initialcrashdata
+
+"""
+Servermanager for fuzzing target
+
+The main interaction with the fuzzing target process. This object
+will start the server (target), stop it etc.
+"""
 
 GLOBAL_SLEEP = {
     # how long to wait after server start

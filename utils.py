@@ -5,6 +5,13 @@ import os
 import logging
 import sys
 
+"""
+Several utility functions.
+
+Mostly related to reading pickle files.
+Shared by different phases of the framework.
+"""
+
 
 def readPickleFile(fileName):
     data = None
