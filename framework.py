@@ -18,6 +18,7 @@ import tester
 
 import proto_vnc
 
+
 def realMain(config):
     func = "fuzz"
 
@@ -58,7 +59,8 @@ def realMain(config):
         mini.minimizeOutDir()
 
     if func == "replay":
-        replay.replayFile(sys.argv[2], sys.argv[3])
+        replayer = replay.Replayer(config)
+        replayer.replayFile(sys.argv[2], sys.argv[3])
 
     if func == "replayall":
         replay.replayAllFiles(config, sys.argv[2])

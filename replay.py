@@ -1,14 +1,22 @@
 #!/usr/bin/env python2
 
-import sys
 import glob
 import os
 import time
-import pickle
 import logging
 import utils
 
 import networkmanager
+
+"""
+Replay verified outcomes.
+
+Used to replay a .ffw file from the verified/ directory.
+This is mainly used to reproduce a crash outcome by running the
+target manually in gdb. The messages have to be resent, including
+proto implementations.
+"""
+
 
 GLOBAL_SLEEP_REPLAY = {
     # how long to wait after server start
@@ -17,38 +25,31 @@ GLOBAL_SLEEP_REPLAY = {
 }
 
 
-def replayMessages(port, messages):
-    networkManager = networkmanager.NetworkManager(None, port)
-    networkManager.sendMessages(messages)
+class Replayer():
+    def __init__(self, config):
+        self.config = config
 
 
-def replayFile(port, file):
-    logging.basicConfig(level=logging.INFO)
-    print "File: " + file
-    print "Port: " + str(port)
-
-    messages = None
-    messages = utils.readPickleFile(file)
-    replayMessages(port, messages)
+    def replayMessages(self, port, messages):
+        networkManager = networkmanager.NetworkManager(self.config, port)
+        networkManager.sendMessages(messages)
 
 
-def replayAllFiles(config, port):
-    global GLOBAL_SLEEP_REPLAY
-    print "Replay all files from directory: " + config["outcome_dir"]
+    def replayFile(self, port, file):
+        #logging.basicConfig(level=logging.INFO)
+        print "File: " + file
+        print "Port: " + str(port)
 
-    outcomeFiles = sorted(glob.glob(os.path.join(config["outcome_dir"], '*.pickle')), key=os.path.getctime)
-    for outcomeFile in outcomeFiles:
-        time.sleep( GLOBAL_SLEEP_REPLAY["sleep_replay_after_server_start"] )  # this is required, or replay is fucked. maybe use keyboard?
-        replayFile(port, outcomeFile)
-
-
-def main():
-    if len(sys.argv) != 3:
-        print "Usage: <serverport> <picklefile>"
-        return
-
-    replayFile(sys.argv[1], sys.argv[2])
+        p = utils.readPickleFile(file)
+        messages = p["fuzzIterData"]["fuzzedData"]
+        self.replayMessages(port, messages)
 
 
-if __name__ == '__main__':
-    main()
+    def replayAllFiles(self, config, port):
+        global GLOBAL_SLEEP_REPLAY
+        print "Replay all files from directory: " + config["outcome_dir"]
+
+        outcomeFiles = sorted(glob.glob(os.path.join(config["outcome_dir"], '*.ffw')), key=os.path.getctime)
+        for outcomeFile in outcomeFiles:
+            time.sleep( GLOBAL_SLEEP_REPLAY["sleep_replay_after_server_start"] )  # this is required, or replay is fucked. maybe use keyboard?
+            self.replayFile(port, outcomeFile)

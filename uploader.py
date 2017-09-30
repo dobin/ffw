@@ -122,7 +122,8 @@ class Uploader(object):
         cause = ""
         cause_line = ""
         backtrace = ""
-        if "asanData" in data["verifyCrashData"]:
+
+        if "asanData" in data["verifyCrashData"] and data["verifyCrashData"]["asanData"] is not "":
             asanData = data["verifyCrashData"]["asanData"]
 
             codeaddr = int(asanData["pc"], 16)
@@ -134,6 +135,7 @@ class Uploader(object):
             backtrace = backtraceStr
             cause = "n/a"
             cause_line = "n/a"
+            data["verifyCrashData"]["asanOutput"] = "n/a"  # FIXME
 
 
         payload = {
