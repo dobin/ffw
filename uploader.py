@@ -87,10 +87,16 @@ class Uploader(object):
         url = self.server + "/api/projects/"
         payload = {
             "name": self.config["name"],
-            "comment": "no comment",
+            "comment": self.config.target_bin + " " + self.config.target_args,
         }
         r = requests.post(url, json=payload, auth=self.auth)
-        print "Response: " + str(r)
+        j = r.json()
+        if not j:
+            print "error?"
+        else:
+            projectId = j["pk"]
+            print "project ID: " + str(projectId)
+            self.projectId = projectId
 
 
     def uploadData(self, data):
@@ -106,6 +112,8 @@ class Uploader(object):
                 "msg": base64.b64encode( msg["data"] ),
                 "fuzzed": 0,
             }
+            if 'isFuzzed' in msg and msg["isFuzzed"]:
+                m["fuzzed"] = 1
             myMsgList.append(m)
             n += 1
 
