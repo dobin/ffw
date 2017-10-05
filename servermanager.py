@@ -74,7 +74,7 @@ class ServerManager(object):
         """
 
         if self.process.poll():
-            logging.error("getCrashData(): get data, but server alive?!")
+            logging.info("getCrashData(): get data, but server alive?!")
         else:
             logging.info("getCrashData(): ok, server is really crashed")
 

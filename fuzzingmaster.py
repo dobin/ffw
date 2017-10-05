@@ -27,10 +27,12 @@ def doFuzz(config, useCurses):
 
     procs = []
     n = 0
+
     while n < config["processes"]:
         print "Start child: " + str(n)
         r = random.randint(0, 2**32 - 1)
-        p = Process(target=fuzzingslave.doActualFuzz, args=(config, n, q, r))
+        fuzzingSlave = fuzzingslave.FuzzingSlave(config, n, q, r)
+        p = Process(target=fuzzingSlave.doActualFuzz, args=())
         procs.append(p)
         p.start()
         n += 1

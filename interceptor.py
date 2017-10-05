@@ -64,7 +64,11 @@ class ClientThread(threading.Thread):
 
         logging.info('Logging into: %s:%i' % (self.__targetHost, self.__targetPort) )
         targetHostSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        targetHostSocket.connect((self.__targetHost, self.__targetPort))
+        try:
+            targetHostSocket.connect((self.__targetHost, self.__targetPort))
+        except Exception as e:
+            print "connect() exception: " + str(e)
+            return
         targetHostSocket.setblocking(0)
 
         clientData = ""
@@ -103,10 +107,13 @@ class ClientThread(threading.Thread):
                         else:
                             terminate = True
                 elif inp == targetHostSocket:
+                    data = None
                     try:
                         data = targetHostSocket.recv(4096)
+                        print "target: recv data"
                     except Exception, e:
-                        print e
+                        print "target recv Exception: " + str(e)
+                        break
 
                     if data is not None:
                         if len(data) > 0:

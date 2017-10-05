@@ -87,7 +87,7 @@ class Uploader(object):
         url = self.server + "/api/projects/"
         payload = {
             "name": self.config["name"],
-            "comment": self.config.target_bin + " " + self.config.target_args,
+            "comment": self.config["target_bin"] + " " + self.config["target_args"],
         }
         r = requests.post(url, json=payload, auth=self.auth)
         j = r.json()
@@ -118,8 +118,10 @@ class Uploader(object):
             n += 1
 
         # convert some ugly data
-        registers = ''.join('{}={} '.format(key, val) for key, val in data["verifyCrashData"]["registers"].items())
-        backtraceStr = '\n'.join(map(str, data["verifyCrashData"]["backtrace"]))
+        #registers = ''.join('{}={} '.format(key, val) for key, val in data["verifyCrashData"]["registers"].items())
+        #backtraceStr = '\n'.join(map(str, data["verifyCrashData"]["backtrace"]))
+        registers = "none"
+        backtraceStr = "none"
 
         # temporary fix
         if "reallydead" not in data["initialCrashData"]:

@@ -155,9 +155,16 @@ class FuzzingIterationData(object):
         self.fuzzedData = copy.deepcopy(self.initialData)
 
         # TODO: make this dependant on seed
-        self.choice = random.choice(self.fuzzedData)
-        while self.choice["from"] != "cli":
+        if self.config["maxmsg"]:
+            idx = random.randint(0, self.config["maxmsg"])
+            self.choice = self.fuzzedData[idx]
+            if self.choice["from"] != "cli":
+                idx = random.randint(0, self.config["maxmsg"])
+                self.choice = self.fuzzedData[idx]
+        else:
             self.choice = random.choice(self.fuzzedData)
+            while self.choice["from"] != "cli":
+                self.choice = random.choice(self.fuzzedData)
 
         s = 'selected input: %s  from: %s  len: %s' % ( str(self.fuzzedData.index(self.choice)), self.choice["from"], str(len(self.choice["data"]) ) )
         logging.debug(s)

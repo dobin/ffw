@@ -33,11 +33,11 @@ indicated by either:
 sleeptimes = {
     # wait between server start and first connection attempt
     # so it can settle-in
-    "wait_time_for_server_rdy": 0.1,
+    "wait_time_for_server_rdy": 0.5,
 
     # how long we let the server run
     # usually it should crash immediately
-    "max_server_run_time": 1,
+    "max_server_run_time": 2,
 }
 
 
@@ -64,8 +64,16 @@ class Verifier(object):
         # write text file
         fileName = os.path.join(self.config["verified_dir"],
                                 str(outcome["fuzzIterData"]["seed"]) + ".txt")
-        registerStr = ''.join('{}={} '.format(key, val) for key, val in crashData["registers"].items())
-        backtraceStr = '\n'.join(map(str, crashData["backtrace"]))
+
+        if crashData["registers"]:
+            registerStr = ''.join('{}={} '.format(key, val) for key, val in crashData["registers"].items())
+        else:
+            registerStr = ""
+
+        if crashData["backtrace"]:
+            backtraceStr = '\n'.join(map(str, crashData["backtrace"]))
+        else:
+            backtraceStr = ""
 
         with open(fileName, "w") as f:
             f.write("Address: %s\n" % hex(crashData["faultAddress"]))
@@ -86,7 +94,6 @@ class Verifier(object):
 
     def handleNoCrash(self):
         logging.info("Verifier: Waited long enough, NO crash. ")
-        self.stopChild()
 
 
     def startChild(self):
@@ -96,14 +103,18 @@ class Verifier(object):
 
 
     def stopChild(self):
+        logging.debug("Terminate child...")
         if self.p is not None:
             self.p.terminate()
 
-        logging.debug("Kill: " + str(self.serverPid))
+        logging.debug("Kill server: " + str(self.serverPid))
 
         if self.serverPid is not None:
-            os.kill(self.serverPid, signal.SIGTERM)
-            os.kill(self.serverPid, signal.SIGKILL)
+            try:
+                os.kill(self.serverPid, signal.SIGTERM)
+                os.kill(self.serverPid, signal.SIGKILL)
+            except Exception as e:
+                logging.error("Kill exception, but child should be alive: " + str(e))
 
         self.p = None
         self.serverPid = None
@@ -113,6 +124,7 @@ class Verifier(object):
         outcome = utils.readPickleFile(outcomeFile)
 
         # start server in background
+        # TODO move this to verifyOutDir (more efficient?)
         self.debugServerManager = debugservermanager.DebugServerManager(self.config, self.queue_sync, self.queue_out, targetPort)
         self.networkManager = networkmanager.NetworkManager(self.config, targetPort)
 
@@ -125,11 +137,8 @@ class Verifier(object):
         logging.info("Verifier: Server pid: " + str(serverPid))
         self.networkManager.waitForServerReadyness()
 
-        if not self.networkManager.openConnection():
-            logging.error("Verifier: Could not connect to server")
-
+        logging.info("Verifier: Sending fuzzed messages")
         self.networkManager.sendMessages(outcome["fuzzIterData"]["fuzzedData"])
-        self.networkManager.closeConnection()
 
         # get crash result data from child
         #   or empty if server did not crash
@@ -141,19 +150,19 @@ class Verifier(object):
             # it may be that the debugServer detects a process exit
             # (e.g. port already used), and therefore sends an
             # empty result. has to be handled.
-            if crashData is not None:
+            if crashData:
                 logging.info("Verifier: I've got a crash")
                 crashData.setStdOutput(serverStdout)
 
                 self.handleCrash(outcome, crashData.getData())
             else:
-                logging.error("Some server error:")
-                logging.error("Output: " + serverStdout)
+                logging.error("Verifier: Some server error:")
+                logging.error("Verifier: Output: " + serverStdout)
 
             return crashData
         except Queue.Empty:
-            self.stopChild()
             self.handleNoCrash()
+            self.stopChild()
             return None
 
         return None

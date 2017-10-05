@@ -56,7 +56,7 @@ def getAsanOutput(config, pid):
     # as we cannot get stdout/stderr of child process, we store asan
     # output in the temp folder in the format: asan.<pid>
     fileName = config["temp_dir"] + "/asan." + str(pid)
-    print "Get asan output: " + str(fileName)
+    logging.info("Get asan output: " + str(fileName))
 
     time.sleep(sleeptimes["sleep_for_asan_file"])  # omg wait for the file to appear
 

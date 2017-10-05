@@ -57,7 +57,7 @@ class NetworkManager(object):
 
             self.sock.sendall(message["data"])
         except socket.error, exc:
-            logging.debug("  sendData(): Send data exception: " + str(exc))
+            logging.debug("  sendData(): Send data exception on msg " + str(message["index"]) + ": " + str(exc))
             return False
 
         return True
@@ -72,7 +72,7 @@ class NetworkManager(object):
                 self.config["protoObj"].onPostRecv(data, message["index"])
             return data
         except Exception, e:
-            logging.info("ReceiveData err: " + str(e))
+            logging.info("ReceiveData err on msg " + str(message["index"]) + ": " + str(e))
             return None
 
 
@@ -82,11 +82,11 @@ class NetworkManager(object):
 
         for message in msgArr:
             if message["from"] == "srv":
-                #logging.info("Recv message")
-                self.receiveData(message)
+                if not self.receiveData(message):
+                    break
             else:
-                #logging.info("Send message")
-                self.sendData(message)
+                if not self.sendData(message):
+                    break
 
         self.closeConnection()
         return True
@@ -94,8 +94,10 @@ class NetworkManager(object):
 
     def waitForServerReadyness(self):
         while not self.testServerConnection():
-            print "Server not ready, waiting and retrying"
+            logging.info("Server not ready, waiting and retrying")
             time.sleep(0.2)  # wait a bit till server is ready
+        time.sleep(0.2)
+        logging.info("Server ready")
 
 
     def testServerConnection(self):
@@ -105,8 +107,6 @@ class NetworkManager(object):
         try:
             sock.connect(server_address)
         except socket.error, exc:
-            # server down
-            logging.info("testServerConnection: Server is DOWN")
             return False
 
         sock.close()

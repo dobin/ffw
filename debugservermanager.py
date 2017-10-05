@@ -9,6 +9,7 @@ Related to servermanager.py, but with more debugging.
 import logging
 import signal
 import os
+import subprocess
 
 from ptrace.debugger.debugger import PtraceDebugger
 from ptrace.debugger.child import createChild
@@ -68,6 +69,7 @@ class DebugServerManager(object):
         #sys.stderr.write("Stderr")
 
         self._startServer()
+        logging.info("Server PID: " + str(self.pid))
 
         # notify parent about the pid
         self.queue_sync.put( ("pid", self.pid) )
@@ -77,8 +79,10 @@ class DebugServerManager(object):
         else:
             crashData = None
 
-        logging.debug("DebugServer: send to queue_sync")
-        self.queue_sync.put( ("data", crashData) )
+        # _getCrashDetails could return None
+        if crashData is not None:
+            #logging.debug("DebugServer: send to queue_sync")
+            self.queue_sync.put( ("data", crashData) )
 
         self.dbg.quit()
 
@@ -107,6 +111,7 @@ class DebugServerManager(object):
 
 
     def _waitForCrash(self):
+        #subprocess.call("echo AAA1; ls -l /proc/" + str(self.pid), shell=True)
         while True:
             logging.info("DebugServer: Waiting for process event")
             event = self.dbg.waitProcessEvent()
@@ -131,6 +136,7 @@ class DebugServerManager(object):
 
         if event is not None and event.signum != 15:
             logging.info("DebugServer: Event Result: Crash")
+            #subprocess.call("echo AAA2; ls -l /proc/" + str(self.pid), shell=True)
             self.crashEvent = event
             return True
         else:
@@ -141,7 +147,13 @@ class DebugServerManager(object):
 
     def _getCrashDetails(self, event):
         # Get the address where the crash occurred
-        faultAddress = event.process.getInstrPointer()
+        faultAddress = 0
+        try:
+            faultAddress = event.process.getInstrPointer()
+        except Exception as e:
+            # process already dead, hmm
+            print("GetCrashDetails exception: " + str(e))
+            #subprocess.call("echo AAA3; ls -l /proc/" + str(self.pid), shell=True)
 
         # Find the module that contains this address
         # Now we need to turn the address into an offset. This way when the process
@@ -172,26 +184,38 @@ class DebugServerManager(object):
 
         # Get the details of the crash
         details = None
-        if event._analyze() is not None:
-            details = event._analyze().text
 
-        # more data
-        stackAddr = self.proc.findStack()
-        stackPtr = self.proc.getStackPointer()
+        details = ""
+        stackAddr = 0
+        stackPtr = 0
+        backtraceFrames = None
+        pRegisters = None
+        try:
+            if event._analyze() is not None:
+                details = event._analyze().text
 
-        # convert backtrace
-        backtrace = self.proc.getBacktrace()
-        backtraceFrames = []
-        for frame in backtrace.frames:
-            backtraceFrames.append( str(frame) )
+            # more data
+            stackAddr = self.proc.findStack()
+            stackPtr = self.proc.getStackPointer()
 
-        # convert registers from ctype to python
-        registers = self.proc.getregs()
-        pRegisters = {}
-        for field_name, field_type in registers._fields_:
-            regName = str(field_name)
-            regValue = str(getattr(registers, field_name))
-            pRegisters[regName] = regValue
+            # convert backtrace
+            backtrace = self.proc.getBacktrace()
+            backtraceFrames = []
+            for frame in backtrace.frames:
+                backtraceFrames.append( str(frame) )
+
+            # convert registers from ctype to python
+            registers = self.proc.getregs()
+            pRegisters = {}
+            for field_name, field_type in registers._fields_:
+                regName = str(field_name)
+                regValue = str(getattr(registers, field_name))
+                pRegisters[regName] = regValue
+
+        except Exception as e:
+            # process already dead, hmm
+            print("GetCrashDetails exception: " + str(e))
+
 
         vCrashData = verifycrashdata.VerifyCrashData()
         vCrashData.setData(
