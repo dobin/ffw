@@ -37,7 +37,7 @@ A recorded connection can be replayed to test it.
 terminateAll = False
 
 
-class ClientThread(threading.Thread):
+class ClientTcpThread(threading.Thread):
     def createDataEntry(self, frm, data):
         data = {
             "from": frm,
@@ -136,7 +136,7 @@ class ClientThread(threading.Thread):
 
         self.__clientSocket.close()
         targetHostSocket.close()
-        print "ClientThread terminating"
+        print "ClientTcpThread terminating"
 
         # store all the stuff
         print "Got " + str(len(self.data)) + " packets"
@@ -145,7 +145,7 @@ class ClientThread(threading.Thread):
             pickle.dump(self.data, f)
 
 
-def performIntercept(config, localHost, localPort, targetHost, targetPort):
+def performTcpIntercept(config, localHost, localPort, targetHost, targetPort):
     global terminateAll
     serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     serverSocket.bind((localHost, int(localPort)))
@@ -161,10 +161,70 @@ def performIntercept(config, localHost, localPort, targetHost, targetPort):
             terminateAll = True
             break
 
-        ClientThread(config, clientSocket, targetHost, targetPort, threadId).start()
+        ClientTcpThread(config, clientSocket, targetHost, targetPort, threadId).start()
         threadId += 1
 
     serverSocket.close()
+
+
+def performUdpIntercept(config, localHost, localPort, targetHost, targetPort):
+    dataArr = []
+    n = 0
+
+    # connect to server
+    sockTarget = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    # listening
+    sockListen = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    print "Listening on: " + str(localHost) + " : " + str(localPort)
+    sockListen.bind((localHost, int(localPort)))
+    #sockListen.settimeout(1.0)
+
+    while True:
+        try:
+            # wait for client msg
+            print "Waiting for client msg..."
+            data, addrCli = sockListen.recvfrom(1024)  # buffer size is 1024 bytes
+            print "cli: received message len: ", str(len(data))
+            print "     from: " + str(addrCli)
+            sockTarget.sendto(data, (targetHost, targetPort))
+
+            d = {
+                "index": n,
+                "data": data,
+                "from": "cli",
+            }
+            dataArr.append(d)
+            n += 1
+
+            # check if server sends answer
+            try:
+                data, addrSrv = sockTarget.recvfrom(1024)
+                if data is not None:
+                    print "Received from server: len: " + str(len(data))
+                    d = {
+                        "index": n,
+                        "data": data,
+                        "from": "srv",
+                    }
+                    dataArr.append(d)
+
+                    print "Forward data from server to: " + str(addrCli)
+                    sockListen.sendto(data, addrCli)
+
+                    n += 1
+            except socket.timeout:
+                print "recv() timeout from server, continuing..."
+
+        except KeyboardInterrupt:
+            print "\nTerminating..."
+            break
+
+    # store all the stuff
+    print "Got " + str(len(dataArr)) + " packets"
+    fileName = config["inputs"] + "/" + "data_0.pickle"
+    with open(fileName, 'wb') as f:
+        pickle.dump(dataArr, f)
 
 
 # called from ffw
@@ -178,46 +238,9 @@ def doIntercept(config, localPort):
     # run the server, as configured in config
     serverManager = servermanager.ServerManager(config, 0, targetPort)
     serverManager.start()
-#    if not serverManager.isAliveSlow():
-#       logging.error("Could not start server")
-#        return
 
     # start mitm server
-    performIntercept(config, localHost, localPort, targetHost, targetPort)
-
-
-def replayIntercept(config, fileName):
-    print "Replay: " + fileName
-    with open(fileName, 'rb') as f:
-        datas = pickle.load(f)
-        f.close()
-
-    targetHostSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    targetHostSocket.connect(("localhost", config["target_port"]))
-
-    for data in datas:
-        if data["from"] == "cli":
-            print "  Send: " + str(len(data["data"]))
-            targetHostSocket.send(data["data"])
-        else:
-            print "  Receive"
-            print "    expect: " + str(len(data["data"]))
-            d = targetHostSocket.recv(2048)
-            print "    Got:    " + str(len(d))
-
-    targetHostSocket.close()
-
-
-# manual start
-if __name__ == '__main__':
-    if len(sys.argv) != 5:
-        print 'Usage:\n\tpython %s <host> <port> <remote host> <remote port>' % sys.argv[0]
-        print 'Example:\n\tpython %s localhost 8080 www.google.com 80' % sys.argv[0]
-        sys.exit(0)
-
-    localHost = sys.argv[1]
-    localPort = int(sys.argv[2])
-    targetHost = sys.argv[3]
-    targetPort = int(sys.argv[4])
-
-    performIntercept(localHost, localPort, targetHost, targetPort)
+    if config["ipproto"] is "tcp":
+        performTcpIntercept(config, localHost, localPort, targetHost, targetPort)
+    else:
+        performUdpIntercept(config, localHost, localPort, targetHost, targetPort)
