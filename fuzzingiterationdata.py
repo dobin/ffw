@@ -155,7 +155,7 @@ class FuzzingIterationData(object):
         self.fuzzedData = copy.deepcopy(self.initialData)
 
         # TODO: make this dependant on seed
-        if self.config["maxmsg"]:
+        if self.config["maxfuzzmsg"]:
             idx = random.randint(0, self.config["maxmsg"])
             self.choice = self.fuzzedData[idx]
             if self.choice["from"] != "cli":

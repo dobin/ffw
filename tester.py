@@ -49,18 +49,21 @@ class Tester():
             networkManager.closeConnection()
             it += 1
 
-        # print "Itercount: " + str(it)
-        # print "Fails:"
-        # if len(self.stats) == 0:
-        #     print "None :-)"
-        # else:
-        #     for key, value in self.stats.iteritems():
-        #         print "Fails at msg #" + str(key) + ": " + str(value)
+        print "Itercount: " + str(it)
+        print "Fails:"
+        if len(self.stats) == 0:
+            print "None :-)"
+        else:
+            for key, value in self.stats.iteritems():
+                print "Fails at msg #" + str(key) + ": " + str(value)
 
 
     def sendMessages(self, networkManager):
         n = 0
         for message in self.config["_inputs"]:
+            if self.config["maxmsg"] and message["index"] > self.config["maxmsg"]:
+                break
+
             sys.stdout.write("Handling msg: " + str(n) + " ")
             if message["from"] == "srv":
                 print "Receiving..."

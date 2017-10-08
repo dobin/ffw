@@ -81,12 +81,17 @@ class NetworkManager(object):
             return False
 
         for message in msgArr:
+            if self.config["maxmsg"] and message["index"] > self.config["maxmsg"]:
+                break
+
             if message["from"] == "srv":
                 if not self.receiveData(message):
                     break
             else:
                 if not self.sendData(message):
                     break
+
+
 
         self.closeConnection()
         return True

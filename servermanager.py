@@ -4,6 +4,7 @@ import time
 import logging
 import os
 import subprocess
+import sys
 
 import serverutils
 import initialcrashdata
@@ -39,6 +40,9 @@ class ServerManager(object):
 
     def start(self):
         """Start the server"""
+        if not os.path.isfile(self.config["target_bin"]):
+            logging.error("Could not find target file: " + str(self.config["target_bin"]))
+            sys.exit(1)
         self.process = self._runTarget()
         logging.info("Start server PID: " + str(self.process.pid))
 
