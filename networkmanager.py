@@ -15,8 +15,26 @@ class NetworkManager(object):
         self.sock = None
         self.targetPort = int(targetPort)
 
+        if config["ipproto"] is "tcp":
+            logging.info("Using: TCP")
+            self.openConnection = self.openConnectionTcp
+            self.closeConnection = self.closeConnectionTcp
+            self.sendData = self.sendDataTcp
+            self.receiveData = self.receiveDataTcp
+            self.testServerConnection = self.testServerConnectionTcp
+        else:
+            logging.info("Using: UDP")
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.sock.settimeout(1.0)
+            self.openConnection = self.openConnectionUdp
+            self.closeConnection = self.closeConnectionUdp
+            self.sendData = self.sendDataUdp
+            self.receiveData = self.receiveDataUdp
+            self.testServerConnection = self.testServerConnectionUdp
 
-    def openConnection(self):
+    ######################################33
+
+    def openConnectionTcp(self):
         """
         Opens a TCP connection to the server
         True if successful
@@ -40,12 +58,12 @@ class NetworkManager(object):
         return True
 
 
-    def closeConnection(self):
+    def closeConnectionTcp(self):
         if self.sock is not None:
             self.sock.close()
 
 
-    def sendData(self, message=None):
+    def sendDataTcp(self, message=None):
         """Send data to the server."""
         if self.sock is None:
             logging.error("Trying to send to a closed socket")
@@ -63,7 +81,7 @@ class NetworkManager(object):
         return True
 
 
-    def receiveData(self, message=None):
+    def receiveDataTcp(self, message=None):
         """Receive data from the server."""
         self.sock.settimeout(0.1)
         try:
@@ -75,6 +93,98 @@ class NetworkManager(object):
             logging.info("ReceiveData err on msg " + str(message["index"]) + ": " + str(e))
             return None
 
+
+    def testServerConnectionTcp(self):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server_address = ('localhost', self.targetPort)
+
+        try:
+            sock.connect(server_address)
+        except socket.error, exc:
+            return False
+
+        sock.close()
+
+        return True
+
+    ######################################33
+
+    def openConnectionUdp(self):
+        #self.closeConnection()
+
+        return self.testServerConnection()
+
+#        dest = ('127.0.0.1', self.targetPort)
+
+#        try:
+#            self.sock.sendto("PING", dest)
+#        except Exception as e:
+#            print "E: " + str(e)
+#            return False
+#
+#        return True
+
+#        result = self.sock.connect_ex(dest)
+#        if result == 0:
+#            return True
+#        else:
+#            return False
+
+
+    def closeConnectionUdp(self):
+        #print "Close"
+        #self.sock.close()
+        pass
+
+
+    def sendDataUdp(self, message=None):
+        """Send data to the server."""
+        if self.sock is None:
+            logging.error("Trying to send to a closed socket")
+            sys.exit(1)
+
+        try:
+            if self.config["protoObj"] is not None and message is not None:
+                message["data"] = self.config["protoObj"].onPreSend(message["data"], message["index"])
+
+            self.sock.sendto(message["data"], ('127.0.0.1', self.targetPort))
+        except socket.error, exc:
+            logging.debug("  sendData(): Send data exception on msg " + str(message["index"]) + ": " + str(exc))
+            return False
+
+        return True
+
+
+    def receiveDataUdp(self, message=None):
+        """Receive data from the server."""
+        try:
+            data, addr = self.sock.recvfrom(1024)
+            if self.config["protoObj"] is not None and message is not None:
+                self.config["protoObj"].onPostRecv(data, message["index"])
+            return data
+        except Exception, e:
+            logging.info("ReceiveData err on msg " + str(message["index"]) + ": " + str(e))
+            return None
+
+
+    def testServerConnectionUdp(self):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        dest = ('127.0.0.1', self.targetPort)
+        logging.debug("testServerConnectionUdp: connect to " + str(dest))
+        sock.connect(dest)
+
+        try:
+            sock.send("PING")
+            sock.send("PING")  # yes, send it two times. once is not enough!
+            sock.close()
+            return True
+        except Exception as e:
+            logging.info("testServerConnection1: Server DOWN! " + str(e))
+            return False
+
+
+    ######################################33
+    # Non-proto specific
 
     def sendMessages(self, msgArr):
         if not self.openConnection():
@@ -91,8 +201,6 @@ class NetworkManager(object):
                 if not self.sendData(message):
                     break
 
-
-
         self.closeConnection()
         return True
 
@@ -103,17 +211,4 @@ class NetworkManager(object):
             time.sleep(0.2)  # wait a bit till server is ready
         time.sleep(0.2)
         logging.info("Server ready")
-
-
-    def testServerConnection(self):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server_address = ('localhost', self.targetPort)
-
-        try:
-            sock.connect(server_address)
-        except socket.error, exc:
-            return False
-
-        sock.close()
-
         return True

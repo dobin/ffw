@@ -10,6 +10,7 @@ import signal
 import pickle
 
 import debugservermanager
+import gdbservermanager
 import networkmanager
 import utils
 
@@ -123,9 +124,26 @@ class Verifier(object):
     def verifyOutcome(self, targetPort, outcomeFile):
         outcome = utils.readPickleFile(outcomeFile)
 
+        print "-----------------------------------------GDB"
+        #self.debugServerManager = gdbservermanager.GdbServerManager(self.config, self.queue_sync, self.queue_out, targetPort)
+        #c1 = self.ver(outcome, targetPort)
+
+        print "-----------------------------------------DEBUG"
+        self.debugServerManager = debugservermanager.DebugServerManager(self.config, self.queue_sync, self.queue_out, targetPort)
+        c2 = self.ver(outcome, targetPort)
+
+        #c1.setAsan(c2.getAsanOutput())
+        #print "AAAAAAAAAAAAAAAAAA: " + c1.p()
+        return c2
+        #return c1
+
+
+    def ver(self, outcome, targetPort):
         # start server in background
         # TODO move this to verifyOutDir (more efficient?)
-        self.debugServerManager = debugservermanager.DebugServerManager(self.config, self.queue_sync, self.queue_out, targetPort)
+
+        #self.debugServerManager = debugservermanager.DebugServerManager(self.config, self.queue_sync, self.queue_out, targetPort)
+
         self.networkManager = networkmanager.NetworkManager(self.config, targetPort)
 
         self.startChild()

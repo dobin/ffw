@@ -47,13 +47,21 @@ class VerifyCrashData():
         self.backtrace = backtrace
         self.registers = registers
 
+    def p(self):
+        print "A: " + self.asanOutput
+        print "B: " + str(self.asanData)
+        return ""
 
     def setAsan(self, asanOutput):
+        print "XXX: " + str(asanOutput)
         asanParser = asanparser.AsanParser()
         asanParser.loadData(asanOutput)
 
         self.asanOutput = asanOutput
         self.asanData = asanParser.getAsanData()
+
+    def getAsanOutput(self):
+        return self.asanOutput
 
 
     def setStdOutput(self, stdout):

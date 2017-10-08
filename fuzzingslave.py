@@ -87,7 +87,7 @@ class FuzzingSlave(object):
 
         # start server
         serverManager.start()
-        if not networkManager.testServerConnection():
+        if not networkManager.waitForServerReadyness():
             logging.error("Error: Could not connect to server.")
             # TODO: better error, because server could not be started. stdout?
             return
@@ -154,7 +154,7 @@ class FuzzingSlave(object):
                     continue
 
             # restart server periodically
-            if iterStats["count"] > 0 and iterStats["count"] % config["restart_server_every"] == 0:
+            if iterStats["count"] > 0 and iterStats["count"] % self.config["restart_server_every"] == 0:
                 if not networkManager.testServerConnection():
                     logging.info("Detected Crash (D)")
                     iterStats["crashCount"] += 1

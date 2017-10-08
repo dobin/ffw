@@ -119,9 +119,9 @@ class Uploader(object):
 
         # convert some ugly data
         #registers = ''.join('{}={} '.format(key, val) for key, val in data["verifyCrashData"]["registers"].items())
-        #backtraceStr = '\n'.join(map(str, data["verifyCrashData"]["backtrace"]))
+        backtraceStr = '\n'.join(map(str, data["verifyCrashData"]["backtrace"]))
         registers = "none"
-        backtraceStr = "none"
+        #backtraceStr = "none"
 
         # temporary fix
         if "reallydead" not in data["initialCrashData"]:
@@ -140,6 +140,10 @@ class Uploader(object):
             cause = asanData["cause"]
             cause_line = asanData["cause_line"]
             backtrace = asanData["backtrace"]
+
+            # if original has better backtrace
+            if len(backtraceStr) > len(backtrace):
+                backtrace = backtraceStr
         else:
             codeaddr = data["verifyCrashData"]["faultAddress"]
             backtrace = backtraceStr

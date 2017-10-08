@@ -55,7 +55,7 @@ class DebugServerManager(object):
         serverutils.setupEnvironment(config)
 
 
-    # entry function for process
+    # entry function for this new process
     # should be the only public function
     def startAndWait(self):
         # Sadly this does not apply to child processes started via
@@ -90,6 +90,7 @@ class DebugServerManager(object):
     def _startServer(self):
         # create child via ptrace debugger
         # API: createChild(arguments[], no_stdout, env=None)
+        logging.debug("START: " + str(serverutils.getInvokeTargetArgs(self.config, self.targetPort),))
         self.pid = createChild(
             serverutils.getInvokeTargetArgs(self.config, self.targetPort),
             True,  # no_stdout
