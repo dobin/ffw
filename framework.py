@@ -52,7 +52,11 @@ def realMain(config):
 
     if func == "verify":
         v = verifier.Verifier(config)
-        v.verifyOutDir()
+        if len(sys.argv) == 2:
+            v.verifyOutDir()
+        else:
+            v.verifyFile(sys.argv[2])
+
 
     if func == "minimize":
         mini = minimizer.Minimizer(config)

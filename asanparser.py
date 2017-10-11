@@ -1,14 +1,19 @@
 #!/usr/bin/python
 
 import sys
+import re
+
+import verifycrashdata
 
 
 class AsanParser:
     def __init__(self):
         self.lines = None
+        self.data = None
 
 
     def loadData(self, data):
+        self.data = data
         self.lines = [s.strip() for s in data.splitlines()]
 
 
@@ -19,6 +24,18 @@ class AsanParser:
 
         # split data into lines
         self.lines = [s.strip() for s in asanData.splitlines()]
+        self.data = asanData
+
+
+    def getAsCrashData(self):
+        asanData = self.getAsanData()
+        crashData = verifycrashdata.VerifyCrashData()
+        crashData.setData(
+            backtrace=asanData["backtrace"],
+            cause=asanData["cause"],
+            output=self.data
+        )
+        return crashData
 
 
     def getAsanData(self):
@@ -71,13 +88,23 @@ class AsanParser:
         # "#1 0x55f0dffae17a in mg_mqtt_destroy_session ../../mongoose.c:10445"
         # "#2 0x55f0dffae1ad in mg_mqtt_close_session ../../mongoose.c:10451"
         # "#3 0x55f0dffaf162 in mg_mqtt_broker ../../mongoose.c:10587"
-        bt = ""
-        end = n + 5
-        while n < end:
+        btStr = ""
+        btArr = []
+        # n already defined
+        while n < len(self.lines):
             lineSplit = self.lines[n].split(" ")
-            bt += lineSplit[3] + " " + lineSplit[4] + "\n"
+            if len(lineSplit) < 4:
+                n += 1
+                continue
+            bt = lineSplit[3] + " " + lineSplit[4]
+
+            # remove most of the path
+            bt = re.sub(r'/.*/', "", bt)
+
+            btStr += bt + "\n"
+            btArr.append(bt)
             n += 1
-        asanData["backtrace"] = bt
+        asanData["backtrace"] = btArr
 
         return asanData
 

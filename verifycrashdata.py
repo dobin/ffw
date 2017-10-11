@@ -27,16 +27,19 @@ class VerifyCrashData():
         self.details = None
         self.stackPointer = None
         self.stackAddr = None
-        self.backtrace = None
         self.registers = None
-        self.asanOutput = None
-        self.asanData = None
         self.stdOutput = None
+
+        self.backtrace = None
+        self.cause = None
+        self.output = None
+
+        self.temp = None
 
 
     def setData(self, faultAddress=None, faultOffset=None, module=None,
                 sig=None, details=None, stackPointer=None, stackAddr=None,
-                backtrace=None, registers=None):
+                registers=None, cause=None, backtrace=None, output=None):
         self.faultAddress = faultAddress
         self.faultOffset = faultOffset
         self.module = module
@@ -44,36 +47,29 @@ class VerifyCrashData():
         self.details = details
         self.stackPointer = stackPointer
         self.stackAddr = stackAddr
-        self.backtrace = backtrace
         self.registers = registers
 
-    def p(self):
-        print "A: " + self.asanOutput
-        print "B: " + str(self.asanData)
-        return ""
+        self.backtrace = backtrace
+        self.cause = cause
+        self.output = output
 
-    def setAsan(self, asanOutput):
-        print "XXX: " + str(asanOutput)
-        asanParser = asanparser.AsanParser()
-        asanParser.loadData(asanOutput)
 
-        self.asanOutput = asanOutput
-        self.asanData = asanParser.getAsanData()
+    def setTemp(self, temp):
+        self.temp = temp
 
-    def getAsanOutput(self):
-        return self.asanOutput
-
+    def getTemp(self):
+        return self.temp
 
     def setStdOutput(self, stdout):
         self.stdOutput = stdout
 
+    def printMe(self, who):
+        print who + " Register : " + str(self.registers)
+        print who + " Backtrace: " + str(self.backtrace)
+        print who + " Cause    : " + str(self.cause)
+
 
     def getData(self):
-        if not self.asanData:
-            self.asanData = ""
-        if not self.asanOutput:
-            self.asanOutput = ""
-
         crashData = {
             "faultAddress": self.faultAddress,
             "faultOffset": self.faultOffset,
@@ -82,10 +78,11 @@ class VerifyCrashData():
             "details": self.details,
             "stackPointer": self.stackPointer,
             "stackAddr": self.stackAddr,
-            "backtrace": self.backtrace,
             "registers": self.registers,
-            "asanOutput": self.asanOutput,
-            "asanData": self.asanData,
             "stdOutput": self.stdOutput,
+
+            "backtrace": self.backtrace,
+            "cause": self.cause,
+            "output": self.output,
         }
         return crashData
