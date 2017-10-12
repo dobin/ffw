@@ -92,8 +92,8 @@ class GdbServerManager(object):
             output=ret,
             cause="GDBSERVERMANAGER: n/a"
         )
-#        asanOutput = serverutils.getAsanOutput(self.config, self.pid)
-#        if asanOutput is not None:
-#            crashData.setAsan(asanOutput)
+        gdbOutput = serverutils.getAsanOutput(self.config, self.pid)
+        if gdbOutput is not None:
+            crashData.setAsan(gdbOutput)
 
         return crashData

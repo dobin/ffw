@@ -149,8 +149,7 @@ class Uploader(object):
             backtrace = backtraceStr
             cause = "n/a"
             cause_line = "n/a"
-            data["verifyCrashData"]["asanOutput"] = "n/a"  # FIXME
-
+            #data["verifyCrashData"]["asanOutput"] = "n/a"  # FIXME
 
         payload = {
             "project": self.projectId,
@@ -160,7 +159,10 @@ class Uploader(object):
             "signal": data["verifyCrashData"]["sig"],
             "time": "2017-09-09T18:03",
             "stdout": data["verifyCrashData"]["stdOutput"],
-            "asanoutput": data["verifyCrashData"]["asanOutput"],
+
+            "asanoutput": data["verifyCrashData"]["outputAsan"],
+            "gdboutput": data["verifyCrashData"]["outputGdb"],
+
             "backtrace": backtrace,
 
             "fuzzerpos": data["initialCrashData"]["fuzzerPos"],
