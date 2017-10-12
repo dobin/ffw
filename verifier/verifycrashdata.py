@@ -60,28 +60,8 @@ class VerifyCrashData():
     def getTemp(self):
         return self.temp
 
-
-    def getDataX(self):
-        crashData = {
-            "faultAddress": self.faultAddress,
-            "faultOffset": self.faultOffset,
-            "module": self.module,
-            "sig": self.sig,
-            "details": self.details,
-            "stackPointer": self.stackPointer,
-            "stackAddr": self.stackAddr,
-            "registers": self.registers,
-            "stdOutput": self.stdOutput,
-
-            "backtrace": self.backtrace,
-            "cause": self.cause,
-            "output": self.output,
-        }
-        return crashData
-
-
     def __repr__(self):
-        return "AAAAAAAAAAAAAAAAAAAAA"
+        return "VerifyCrashData: " + str(self.faultAddress) + str(self.backtrace) + self.cause
 
     def __str__(self):
-        return str(self.faultAddress) + self.backtrace + self.cause
+        return "VerifyCrashData: " + str(self.faultAddress) + str(self.backtrace) + self.cause

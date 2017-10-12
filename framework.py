@@ -13,7 +13,7 @@ import minimizer
 import interceptor
 import fuzzingmaster
 from verifier import verifier
-import uploader
+from uploader import uploader
 import tester
 
 import proto_vnc

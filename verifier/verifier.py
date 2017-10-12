@@ -121,52 +121,52 @@ class Verifier(object):
     def _verifyOutcome(self, targetPort, outcomeFile):
         outcome = utils.readPickleFile(outcomeFile)
 
-        crashData = None
-        crashDataDebug = None
-        crashDataGdb = None
-        crashDataAsan = None
+        verifyCrashData = None
+        debugVerifyCrashData = None
+        gdbVerifyCrashData = None
+        asanVerifyCrashData = None
 
         # get normal PTRACE / ASAN output
         debugServerManager = debugservermanager.DebugServerManager(self.config, self.queue_sync, self.queue_out, targetPort)
-        crashDataDebug = self._verify(outcome, targetPort, debugServerManager)
-        crashDataDebug.printMe("CrashDataDebug")
+        debugVerifyCrashData = self._verify(outcome, targetPort, debugServerManager)
+        debugVerifyCrashData.printMe("debugVerifyCrashData")
 
         # get ASAN (if available), and CORE (if available)
         # WORKAROUND, TODO
-        asanOutput = crashDataDebug.getTemp()
+        asanOutput = debugVerifyCrashData.getTemp()
         if asanOutput:
             asanParser = asanparser.AsanParser()
             asanParser.loadData( asanOutput )
-            crashDataAsan = asanParser.getAsCrashData()
-            crashDataAsan.printMe("CrashDataAsan")
+            asanVerifyCrashData = asanParser.getAsCrashData()
+            asanVerifyCrashData.printMe("asanVerifyCrashData")
 
         # get GDB output
         gdbServerManager = gdbservermanager.GdbServerManager(self.config, self.queue_sync, self.queue_out, targetPort)
-        crashDataGdb = self._verify(outcome, targetPort, gdbServerManager)
-        if crashDataGdb is not None:
-            crashDataGdb.printMe("CrashDataGdb")
+        gdbVerifyCrashData = self._verify(outcome, targetPort, gdbServerManager)
+        if gdbVerifyCrashData is not None:
+            gdbVerifyCrashData.printMe("gdbVerifyCrashData")
 
-        # Default: Lets use crashDataDebug
-        logging.info("V: Use crashDataDebug")
-        crashData = copy.copy(crashDataDebug)
+        # Default: Lets use debugVerifyCrashData
+        logging.info("V: Use debugVerifyCrashData")
+        verifyCrashData = copy.copy(debugVerifyCrashData)
 
         # add backtrace from Gdb
-        if crashDataGdb and crashDataGdb.backtrace is not None:
-            logging.info("V: BT: Use crashDataGdb")
-            crashData.backtrace = crashDataGdb.backtrace
-            crashData.cause = crashDataGdb.cause
+        if gdbVerifyCrashData and gdbVerifyCrashData.backtrace is not None:
+            logging.info("V: BT: Use gdbVerifyCrashData")
+            verifyCrashData.backtrace = gdbVerifyCrashData.backtrace
+            verifyCrashData.cause = gdbVerifyCrashData.cause
 
         # add backtrace from ASAN if exists
-        if crashDataAsan and crashDataAsan.backtrace is not None:
-            logging.info("V: BT: Use crashDataAsan")
-            crashData.backtrace = crashDataAsan.backtrace
-            crashData.cause = crashDataAsan.cause
+        if asanVerifyCrashData and asanVerifyCrashData.backtrace is not None:
+            logging.info("V: BT: Use asanVerifyCrashData")
+            verifyCrashData.backtrace = asanVerifyCrashData.backtrace
+            verifyCrashData.cause = asanVerifyCrashData.cause
 
         verifierResult = verifierresult.VerifierResult(
-            crashDataDebug,
-            crashDataAsan,
-            crashDataGdb,
-            crashData
+            debugVerifyCrashData,
+            asanVerifyCrashData,
+            gdbVerifyCrashData,
+            verifyCrashData
         )
 
         outcome["verifierResult"] = verifierResult
@@ -238,8 +238,6 @@ class Verifier(object):
         gdbVerifyCrashData = verifierResult.gdbVerifyCrashData
         asanVerifyCrashData = verifierResult.asanVerifyCrashData
 
-
-        # write text file
         fileName = os.path.join(self.config["verified_dir"],
                                 str(outcome["fuzzIterData"]["seed"]) + ".txt")
 
@@ -274,7 +272,7 @@ class Verifier(object):
             f.write("Time: %s\n" % time.strftime("%c"))
 
             f.write("\n")
-            f.write("Child Output:\n %s\n" % crashData.processStdout)
+            #f.write("Child Output:\n %s\n" % crashData.processStdout)
             f.write("Backtrace: %s\n" % backtraceStr)
             f.write("\n")
             f.write("ASAN Output:\n %s\n" % asanOutput)

@@ -29,11 +29,10 @@ class AsanParser:
 
     def getAsCrashData(self):
         asanData = self.getAsanData()
-        crashData = verifycrashdata.VerifyCrashData()
-        crashData.setData(
+        crashData = verifycrashdata.VerifyCrashData(
             backtrace=asanData["backtrace"],
             cause=asanData["cause"],
-            output=self.data
+            analyzerOutput=self.data
         )
         return crashData
 
@@ -43,6 +42,7 @@ class AsanParser:
             "cause": "N/A",
             "cause_line": "N/A",
             "pc": 0x0,
+            "backtrace": None,
         }
 
         if not self.lines:

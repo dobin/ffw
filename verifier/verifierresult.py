@@ -14,3 +14,12 @@ class VerifierResult(object):
         self.asanVerifyCrashData = asanVerifyCrashData
         self.gdbVerifyCrashData = gdbVerifyCrashData
         self.verifyCrashData = verifyCrashData
+
+    def __repr__(self):
+        d = ""
+        d += "VerifierResult: "
+        d += str(self.debugVerifyCrashData)
+        d += str(self.asanVerifyCrashData)
+        d += str(self.gdbVerifyCrashData)
+        d += str(self.verifyCrashData)
+        return d
