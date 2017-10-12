@@ -82,11 +82,13 @@ class Verifier(object):
 
 
     def verifyFile(self, filename):
+        """Verify a single file."""
         targetPort = self.config["baseport"] + 100
         self.verifyOutcome(targetPort, filename)
 
 
     def verifyOutDir(self):
+        """Verify all files from the out directory."""
         logging.info("Crash verifier")
 
         outcomesDir = os.path.abspath(self.config["outcome_dir"])

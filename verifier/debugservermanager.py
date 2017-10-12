@@ -10,81 +10,24 @@ import logging
 import signal
 import os
 import subprocess
+import serverutils
 
 from ptrace.debugger.debugger import PtraceDebugger
 from ptrace.debugger.child import createChild
 from ptrace.debugger.process_event import ProcessExit
 from ptrace.debugger.ptrace_signal import ProcessSignal
 
-import serverutils
+
 import verifycrashdata
+from servermanager import ServerManager, StdoutQueue
 
 
-class StdoutQueue():
-    """
-    This is a Queue that behaves like stdout.
-
-    Used to capture stdout events of the server/child.
-    """
-
-    def __init__(self, *args, **kwargs):
-        self.q = args[0]
-
-    def write(self, msg):
-        self.q.put(msg)
-
-    def flush(self):
-        pass
-
-
-class DebugServerManager(object):
-    """The actual debug-server manager."""
-
+class DebugServerManager(ServerManager):
     def __init__(self, config, queue_sync, queue_out, targetPort):
-        self.config = config
-        self.queue_sync = queue_sync
-        self.queue_out = queue_out
-        self.targetPort = targetPort
-
-        self.pid = None
+        ServerManager.__init__(self, config, queue_sync, queue_out, targetPort)
         self.dbg = None
         self.crashEvent = None
         self.proc = None
-
-        self.stdoutQueue = StdoutQueue(queue_out)
-        serverutils.setupEnvironment(config)
-
-
-    # entry function for this new process
-    # should be the only public function
-    def startAndWait(self):
-        # Sadly this does not apply to child processes started via
-        # createChild(), so we can only capture output of this python process
-        #sys.stdout = stdoutQueue
-        #sys.stderr = stdoutQueue
-
-        self.queue_out.put("Dummy")
-        # do not remove print, parent excepts something
-        logging.info("DebugServer: Start Server")
-        #sys.stderr.write("Stderr")
-
-        self._startServer()
-        logging.info("Server PID: " + str(self.pid))
-
-        # notify parent about the pid
-        self.queue_sync.put( ("pid", self.pid) )
-
-        if self._waitForCrash():
-            crashData = self._getCrashDetails(self.crashEvent)
-        else:
-            crashData = None
-
-        # _getCrashDetails could return None
-        if crashData is not None:
-            #logging.debug("DebugServer: send to queue_sync")
-            self.queue_sync.put( ("data", crashData) )
-
-        self.dbg.quit()
 
 
     def _startServer(self):
@@ -105,6 +48,7 @@ class DebugServerManager(object):
 
     def _stopServer(self):
         try:
+            self.dbg.quit()
             os.kill(self.pid, signal.SIGTERM)
         except:
             # is already dead...
@@ -146,7 +90,8 @@ class DebugServerManager(object):
             return False
 
 
-    def _getCrashDetails(self, event):
+    def _getCrashDetails(self):
+        event = self.crashEvent
         # Get the address where the crash occurred
         faultAddress = 0
         try:

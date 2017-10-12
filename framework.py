@@ -12,7 +12,7 @@ import replay
 import minimizer
 import interceptor
 import fuzzingmaster
-import verifier
+from verifier import verifier
 import uploader
 import tester
 
