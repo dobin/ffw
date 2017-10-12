@@ -8,12 +8,14 @@ import Queue
 import logging
 import signal
 import pickle
+import copy
 
 import debugservermanager
 import gdbservermanager
 import networkmanager
 import utils
 import asanparser
+import verifierresult
 
 """
 Crash Verifier
@@ -53,12 +55,8 @@ class Verifier(object):
         self.p = None  # serverManager
 
 
-    def handleNoCrash(self):
-        logging.info("Verifier: Waited long enough, NO crash. ")
-
-
-    def startChild(self):
-        p = multiprocessing.Process(target=self.debugServerManager.startAndWait, args=())
+    def startChild(self, debugServerManager):
+        p = multiprocessing.Process(target=debugServerManager.startAndWait, args=())
         p.start()
         self.p = p
 
@@ -84,7 +82,7 @@ class Verifier(object):
     def verifyFile(self, filename):
         """Verify a single file."""
         targetPort = self.config["baseport"] + 100
-        self.verifyOutcome(targetPort, filename)
+        self._verifyOutcome(targetPort, filename)
 
 
     def verifyOutDir(self):
@@ -103,7 +101,7 @@ class Verifier(object):
             for outcomeFile in outcomesFiles:
                 print("Now processing: " + str(n) + ": " + outcomeFile)
                 targetPort = self.config["baseport"] + n + 100
-                self.verifyOutcome(targetPort, outcomeFile)
+                self._verifyOutcome(targetPort, outcomeFile)
                 n += 1
 
         except KeyboardInterrupt:
@@ -120,7 +118,7 @@ class Verifier(object):
         print "Number of no crashes: " + str(noCrash)
 
 
-    def verifyOutcome(self, targetPort, outcomeFile):
+    def _verifyOutcome(self, targetPort, outcomeFile):
         outcome = utils.readPickleFile(outcomeFile)
 
         crashData = None
@@ -128,12 +126,9 @@ class Verifier(object):
         crashDataGdb = None
         crashDataAsan = None
 
-        outputAsan = ""
-        outputGdb = ""
-
         # get normal PTRACE / ASAN output
-        self.debugServerManager = debugservermanager.DebugServerManager(self.config, self.queue_sync, self.queue_out, targetPort)
-        crashDataDebug = self.ver(outcome, targetPort)
+        debugServerManager = debugservermanager.DebugServerManager(self.config, self.queue_sync, self.queue_out, targetPort)
+        crashDataDebug = self._verify(outcome, targetPort, debugServerManager)
         crashDataDebug.printMe("CrashDataDebug")
 
         # get ASAN (if available), and CORE (if available)
@@ -146,39 +141,46 @@ class Verifier(object):
             crashDataAsan.printMe("CrashDataAsan")
 
         # get GDB output
-        self.debugServerManager = gdbservermanager.GdbServerManager(self.config, self.queue_sync, self.queue_out, targetPort)
-        crashDataGdb = self.ver(outcome, targetPort)
+        gdbServerManager = gdbservermanager.GdbServerManager(self.config, self.queue_sync, self.queue_out, targetPort)
+        crashDataGdb = self._verify(outcome, targetPort, gdbServerManager)
         if crashDataGdb is not None:
             crashDataGdb.printMe("CrashDataGdb")
 
         # Default: Lets use crashDataDebug
         logging.info("V: Use crashDataDebug")
-        crashData = crashDataDebug
+        crashData = copy.copy(crashDataDebug)
 
         # add backtrace from Gdb
         if crashDataGdb and crashDataGdb.backtrace is not None:
             logging.info("V: BT: Use crashDataGdb")
             crashData.backtrace = crashDataGdb.backtrace
             crashData.cause = crashDataGdb.cause
-            outputGdb = crashDataGdb.output
 
         # add backtrace from ASAN if exists
         if crashDataAsan and crashDataAsan.backtrace is not None:
             logging.info("V: BT: Use crashDataAsan")
             crashData.backtrace = crashDataAsan.backtrace
             crashData.cause = crashDataAsan.cause
-            outputAsan = crashDataAsan.output
 
-        self.handleCrash(outcome, crashData, outputAsan, outputGdb)
+        verifierResult = verifierresult.VerifierResult(
+            crashDataDebug,
+            crashDataAsan,
+            crashDataGdb,
+            crashData
+        )
+
+        outcome["verifierResult"] = verifierResult
+
+        self._handleCrash(outcome)
 
 
-    def ver(self, outcome, targetPort):
+    def _verify(self, outcome, targetPort, debugServerManager):
         # start server in background
         # TODO move this to verifyOutDir (more efficient?)
 
         #self.debugServerManager = debugservermanager.DebugServerManager(self.config, self.queue_sync, self.queue_out, targetPort)
         self.networkManager = networkmanager.NetworkManager(self.config, targetPort)
-        self.startChild()
+        self.startChild(debugServerManager)
 
         # wait for ok (pid) from child that the server has started
         data = self.queue_sync.get()
@@ -202,30 +204,27 @@ class Verifier(object):
             # empty result. has to be handled.
             if crashData:
                 logging.info("Verifier: I've got a crash: ")
-                crashData.setStdOutput(serverStdout)
+                crashData.setProcessStdout(serverStdout)
             else:
                 logging.error("Verifier: Some server error:")
                 logging.error("Verifier: Output: " + serverStdout)
 
             return crashData
         except Queue.Empty:
-            self.handleNoCrash()
+            self._handleNoCrash()
             self.stopChild()
             return None
 
         return None
 
 
-    def handleCrash(self, outcome, vCrashData, outputAsan, outputGdb):
-        print "Handlecrash"
-
-        crashData = vCrashData.getData()
-        crashData["outputAsan"] = outputAsan
-        crashData["outputGdb"] = outputGdb
-
-        outcome["verifyCrashData"] = crashData
+    def _handleCrash(self, outcome):
+        logging.info("Handle a crash")
+        self._savePickle(outcome)
+        self._saveTxt(outcome)
 
 
+    def _savePickle(self, outcome):
         # write pickle file
         fileName = os.path.join(self.config["verified_dir"],
                                 str(outcome["fuzzIterData"]["seed"]) + ".ffw")
@@ -233,38 +232,56 @@ class Verifier(object):
             pickle.dump(outcome, f)
 
 
+    def _saveTxt(self, outcome):
+        verifierResult = outcome["verifierResult"]
+        crashData = verifierResult.verifyCrashData
+        gdbVerifyCrashData = verifierResult.gdbVerifyCrashData
+        asanVerifyCrashData = verifierResult.asanVerifyCrashData
+
+
         # write text file
         fileName = os.path.join(self.config["verified_dir"],
                                 str(outcome["fuzzIterData"]["seed"]) + ".txt")
 
         # handle registers
-        if crashData["registers"] is not None:
-            registerStr = ''.join('{}={} '.format(key, val) for key, val in crashData["registers"].items())
+        if crashData.registers is not None:
+            registerStr = ''.join('{}={} '.format(key, val) for key, val in crashData.registers.items())
         else:
             registerStr = ""
 
         # handle backtrace
-        if crashData["backtrace"] is not None:
-            backtraceStr = '\n'.join(map(str, crashData["backtrace"]))
+        if crashData.backtrace is not None:
+            backtraceStr = '\n'.join(map(str, crashData.backtrace))
         else:
             backtraceStr = ""
 
+        asanOutput = ""
+        gdbOutput = ""
+        if asanVerifyCrashData is not None:
+            asanOutput = asanVerifyCrashData.analyzerOutput
+        if gdbVerifyCrashData is not None:
+            gdbOutput = gdbVerifyCrashData.analyzerOutput
+
         with open(fileName, "w") as f:
-            f.write("Address: %s\n" % hex(crashData["faultAddress"]))
-            f.write("Offset: %s\n" % hex(crashData["faultOffset"]))
-            f.write("Module: %s\n" % crashData["module"])
-            f.write("Signature: %s\n" % crashData["sig"])
-            f.write("Details: %s\n" % crashData["details"])
-            f.write("Stack Pointer: %s\n" % hex(crashData["stackPointer"]))
-            f.write("Stack Addr: %s\n" % crashData["stackAddr"])
+            f.write("Address: %s\n" % hex(crashData.faultAddress))
+            f.write("Offset: %s\n" % hex(crashData.faultOffset))
+            f.write("Module: %s\n" % crashData.module)
+            f.write("Signature: %s\n" % crashData.sig)
+            f.write("Details: %s\n" % crashData.details)
+            f.write("Stack Pointer: %s\n" % hex(crashData.stackPointer))
+            f.write("Stack Addr: %s\n" % crashData.stackAddr)
             f.write("Registers: %s\n" % registerStr)
             f.write("Time: %s\n" % time.strftime("%c"))
 
             f.write("\n")
-            f.write("Child Output:\n %s\n" % crashData["stdOutput"])
+            f.write("Child Output:\n %s\n" % crashData.processStdout)
             f.write("Backtrace: %s\n" % backtraceStr)
             f.write("\n")
-            f.write("ASAN Output:\n %s\n" % outputAsan)
+            f.write("ASAN Output:\n %s\n" % asanOutput)
             f.write("\n")
-            f.write("GDB Output:\n %s\n" % outputGdb)
+            f.write("GDB Output:\n %s\n" % gdbOutput)
             f.close()
+
+
+    def _handleNoCrash(self):
+        logging.info("Verifier: Waited long enough, NO crash. ")

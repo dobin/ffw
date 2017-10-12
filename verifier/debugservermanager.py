@@ -9,17 +9,15 @@ Related to servermanager.py, but with more debugging.
 import logging
 import signal
 import os
-import subprocess
-import serverutils
 
 from ptrace.debugger.debugger import PtraceDebugger
 from ptrace.debugger.child import createChild
 from ptrace.debugger.process_event import ProcessExit
 from ptrace.debugger.ptrace_signal import ProcessSignal
 
-
+import serverutils
 import verifycrashdata
-from servermanager import ServerManager, StdoutQueue
+from servermanager import ServerManager
 
 
 class DebugServerManager(ServerManager):
@@ -163,8 +161,7 @@ class DebugServerManager(ServerManager):
             print("GetCrashDetails exception: " + str(e))
 
 
-        vCrashData = verifycrashdata.VerifyCrashData()
-        vCrashData.setData(
+        vCrashData = verifycrashdata.VerifyCrashData(
             faultAddress=faultAddress,
             faultOffset=faultOffset,
             module=module,

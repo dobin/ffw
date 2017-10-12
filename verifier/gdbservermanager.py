@@ -29,10 +29,9 @@ class GdbServerManager(ServerManager):
                 res.append(backtraceFrames[i].rstrip("\n\r"))
             i += 1
 
-        crashData = verifycrashdata.VerifyCrashData()
-        crashData.setData(
+        crashData = verifycrashdata.VerifyCrashData(
             backtrace=res,
-            output=ret,
+            analyzerOutput=ret,
             cause="GDBSERVERMANAGER: n/a"
         )
         gdbOutput = serverutils.getAsanOutput(self.config, self.pid)

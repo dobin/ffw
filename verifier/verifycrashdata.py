@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 
-import asanparser
+import logging
+
 
 """
 Data Model used on verify crashes.
@@ -17,29 +18,15 @@ Used by:
 """
 
 
+
 class VerifyCrashData():
 
-    def __init__(self):
-        self.faultAddress = None
-        self.faultOffset = None
-        self.module = None
-        self.sig = None
-        self.details = None
-        self.stackPointer = None
-        self.stackAddr = None
-        self.registers = None
-        self.stdOutput = None
+    def __init__(self, faultAddress=None, faultOffset=None, module=None,
+                 sig=None, details=None, stackPointer=None, stackAddr=None,
+                 registers=None, processStdout=None,
+                 cause=None, backtrace=None,
+                 analyzerOutput=None, analyzerType=None):
 
-        self.backtrace = None
-        self.cause = None
-        self.output = None
-
-        self.temp = None
-
-
-    def setData(self, faultAddress=None, faultOffset=None, module=None,
-                sig=None, details=None, stackPointer=None, stackAddr=None,
-                registers=None, cause=None, backtrace=None, output=None):
         self.faultAddress = faultAddress
         self.faultOffset = faultOffset
         self.module = module
@@ -51,25 +38,30 @@ class VerifyCrashData():
 
         self.backtrace = backtrace
         self.cause = cause
-        self.output = output
+        self.analyzerOutput = analyzerOutput
+        self.analyzerType = analyzerType
+
+        self.temp = None
+
+
+    def setProcessStdout(self, stdout):
+        self.processStdout = stdout
+
+    def printMe(self, who):
+        logging.debug(who + " Register : " + str(self.registers))
+        logging.debug(who + " Backtrace: " + str(self.backtrace))
+        logging.debug(who + " Cause    : " + str(self.cause))
 
 
     def setTemp(self, temp):
         self.temp = temp
 
+
     def getTemp(self):
         return self.temp
 
-    def setStdOutput(self, stdout):
-        self.stdOutput = stdout
 
-    def printMe(self, who):
-        print who + " Register : " + str(self.registers)
-        print who + " Backtrace: " + str(self.backtrace)
-        print who + " Cause    : " + str(self.cause)
-
-
-    def getData(self):
+    def getDataX(self):
         crashData = {
             "faultAddress": self.faultAddress,
             "faultOffset": self.faultOffset,
@@ -86,3 +78,10 @@ class VerifyCrashData():
             "output": self.output,
         }
         return crashData
+
+
+    def __repr__(self):
+        return "AAAAAAAAAAAAAAAAAAAAA"
+
+    def __str__(self):
+        return str(self.faultAddress) + self.backtrace + self.cause
