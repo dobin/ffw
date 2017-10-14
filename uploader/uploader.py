@@ -6,8 +6,8 @@ import requests
 import sys
 import base64
 import time
+import logging
 import pprint
-import json
 
 import utils
 
@@ -35,8 +35,6 @@ class Uploader(object):
 
         if self.user is not None and self.password is not None:
             self.auth = (self.user, self.password)
-            print "AUTH: " + str(self.auth)
-
 
 
     def uploadVerifyDir(self):
@@ -49,7 +47,7 @@ class Uploader(object):
             self.createProjectInCloud()
 
         for outcomeFile in outcomesFiles:
-            print "Process: " + outcomeFile
+            print "Processing file: " + outcomeFile
             outcome = utils.readPickleFile(outcomeFile)
 
             if outcome is not None:
@@ -61,9 +59,7 @@ class Uploader(object):
         url = self.server + "/api/projects/"
         r = requests.get(url, params=payload, auth=self.auth)
 
-        print "Code: " + str(r.status_code)
         if r.status_code != 200:
-            print "R: " + r.text
             sys.exit(0)
         j = r.json()
 
@@ -72,7 +68,7 @@ class Uploader(object):
 
         j = j[0]  # we get an array atm, so just use first element
         if not j:
-            print "project does not exist"
+            logging.error("project does not exist")
             return False
         else:
             projectId = j["pk"]
@@ -91,7 +87,8 @@ class Uploader(object):
         r = requests.post(url, json=payload, auth=self.auth)
         j = r.json()
         if not j:
-            print "error?"
+            logging.error("Error parsing answer")
+            sys.exit(1)
         else:
             projectId = j["pk"]
             print "project ID: " + str(projectId)
@@ -107,7 +104,6 @@ class Uploader(object):
         verifyCrashData = outcome["verifierResult"].verifyCrashData
         gdbVerifyCrashData = outcome["verifierResult"].gdbVerifyCrashData
         asanVerifyCrashData = outcome["verifierResult"].asanVerifyCrashData
-
 
         myMsgList = []
         n = 0
@@ -126,7 +122,6 @@ class Uploader(object):
         # convert some ugly data into more ugly ones
         registers = ''.join('{}={} '.format(key, val) for key, val in verifyCrashData.registers.items())
         backtraceStr = '\n'.join(map(str, verifyCrashData.backtrace))
-        registers = "none"
 
         asanOut = ""
         gdbOut = ""
@@ -135,40 +130,33 @@ class Uploader(object):
         if gdbVerifyCrashData.analyzerOutput is not None:
             gdbOut = gdbVerifyCrashData.analyzerOutput
 
-        cause_line = "none"
+        cause_line = verifyCrashData.backtrace[0]
 
         payload = {
             "project": self.projectId,
             "seed": fuzzIterData["seed"],
+
             "offset": verifyCrashData.faultOffset,
-            "module": verifyCrashData.module,
-            "signal": verifyCrashData.sig,
             "time": "2017-09-09T18:03",
-            "stdout": "meh",
-
-            "asanoutput": asanOut,
-            "gdboutput": gdbOut,
-
-            "backtrace": backtraceStr,
+            "signal": verifyCrashData.sig,
 
             "fuzzerpos": initialCrashData["fuzzerPos"],
             "reallydead": initialCrashData["reallydead"],
 
+            "stdout": "meh",
+            "asanoutput": asanOut,
+            "gdboutput": gdbOut,
+            "backtrace": backtraceStr,
             "cause": verifyCrashData.cause,
             "cause_line": cause_line,
-
             "codeoff": verifyCrashData.faultOffset,
             "codeaddr": verifyCrashData.faultAddress,
-            "stackoff": verifyCrashData.stackAddr,
-            "stackaddr": verifyCrashData.stackPointer,
-
-            "registers": registers,
             "messageList": myMsgList,
         }
 
-        print "JSON: " + json.dumps(payload)
         r = requests.post(url, json=payload, auth=self.auth)
-        print "Code: " + str(r.status_code)
-        if r.status_code != 200:
+        if r.status_code < 200 or r.status_code > 299:
             pprint.pprint(payload)
-            print "R: " + r.text
+            print "Error response: " + r.text
+        else:
+            print "Uploading seed " + str(fuzzIterData["seed"]) + " successful"

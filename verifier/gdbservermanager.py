@@ -32,7 +32,7 @@ class GdbServerManager(ServerManager):
         crashData = verifycrashdata.VerifyCrashData(
             backtrace=res,
             analyzerOutput=ret,
-            cause="GDBSERVERMANAGER: n/a"
+            cause="gdb"
         )
         gdbOutput = serverutils.getAsanOutput(self.config, self.pid)
         if gdbOutput is not None:
