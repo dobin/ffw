@@ -22,6 +22,13 @@ def readPickleFile(fileName):
     return data
 
 
+def fixMsgs(messages):
+    n = 0
+    for msg in messages:
+        msg["index"] = n
+        n += 1
+
+
 def prepareInput(config):
     file = config["inputs"] + "/data_0.pickle"
 
@@ -35,7 +42,4 @@ def prepareInput(config):
     n = 0
     for input in config["_inputs"]:
         input["index"] = n
-        #print "A: " + str(input)
         n += 1
-
-    #print config["_inputs"]

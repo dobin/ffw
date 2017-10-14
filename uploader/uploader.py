@@ -60,10 +60,13 @@ class Uploader(object):
         r = requests.get(url, params=payload, auth=self.auth)
 
         if r.status_code != 200:
+            logging.error("projectExistsInCloud: " + str(r.status_code))
+            print "Return: " + r.text
             sys.exit(0)
         j = r.json()
 
         if not j:
+            print "Err"
             return False
 
         j = j[0]  # we get an array atm, so just use first element
@@ -99,6 +102,13 @@ class Uploader(object):
         print "Upload data"
         url = self.server + "/api/crashdata/"
 
+        if "fuzzIterData" not in outcome:
+            print "Did not find fuzzIterData"
+
+        if "fuzzerCrashData" not in outcome:
+            print "Did not find fuzzerCrashData"
+
+
         fuzzIterData = outcome["fuzzIterData"]
         fuzzerCrashData = outcome["fuzzerCrashData"]
         verifyCrashData = outcome["verifierResult"].verifyCrashData
@@ -120,14 +130,15 @@ class Uploader(object):
             n += 1
 
         # convert some ugly data into more ugly ones
-        registers = ''.join('{}={} '.format(key, val) for key, val in verifyCrashData.registers.items())
+        # registers are broken, my be None (?)
+        #registers = ''.join('{}={} '.format(key, val) for key, val in verifyCrashData.registers.items())
         backtraceStr = '\n'.join(map(str, verifyCrashData.backtrace))
 
         asanOut = ""
         gdbOut = ""
         if asanVerifyCrashData is not None and asanVerifyCrashData.analyzerOutput is not None:
             asanOut = asanVerifyCrashData.analyzerOutput
-        if gdbVerifyCrashData.analyzerOutput is not None:
+        if gdbVerifyCrashData and gdbVerifyCrashData.analyzerOutput is not None:
             gdbOut = gdbVerifyCrashData.analyzerOutput
 
         cause_line = verifyCrashData.backtrace[0]

@@ -32,7 +32,8 @@ class AsanParser:
         crashData = verifycrashdata.VerifyCrashData(
             backtrace=asanData["backtrace"],
             cause=asanData["cause"],
-            analyzerOutput=self.data
+            analyzerOutput=self.data,
+            faultAddress=asanData["faultAddress"],
         )
         return crashData
 
@@ -41,7 +42,7 @@ class AsanParser:
         asanData = {
             "cause": "N/A",
             "cause_line": "N/A",
-            "pc": 0x0,
+            "faultAddress": 0x0,
             "backtrace": None,
         }
 
@@ -79,7 +80,7 @@ class AsanParser:
         # "==58842==ERROR: AddressSanitizer: heap-buffer-overflow on address
         #   0x60200000eed8 at pc 0x7f2c3ac7b033 bp 0x7ffd1e7630f0 sp 0x7ffd1e762898"
         mainLine = line.split(" ")
-        asanData["pc"] = mainLine[1]
+        asanData["faultAddress"] = int(mainLine[1], 16)
         asanData["cause_line"] = mainLine[3] + " " + mainLine[4]
 
         # backtrace
@@ -93,7 +94,7 @@ class AsanParser:
         # n already defined
         while n < len(self.lines):
             lineSplit = self.lines[n].split(" ")
-            if len(lineSplit) < 4:
+            if len(lineSplit) <= 4:
                 n += 1
                 continue
             bt = lineSplit[3] + " " + lineSplit[4]
@@ -121,12 +122,12 @@ def main():
 
         entry["cause"] = asanData["cause"]
         entry["cause_line"] = asanData["cause_line"]
-        entry["pc"] = asanData["pc"]
+        entry["faultAddress"] = asanData["faultAddress"]
         entry["backtrace"] = asanData["backtrace"]
     else:
         entry["cause"] = "n/a"
         entry["cause_line"] = "n/a"
-        entry["pc"] = entry["codebase"]
+        entry["faultAddress"] = entry["codebase"]
         entry["backtrace"] = "n/a"
 
 

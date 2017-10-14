@@ -21,8 +21,8 @@ Used by:
 
 class VerifyCrashData():
 
-    def __init__(self, faultAddress=None, faultOffset=None, module=None,
-                 sig=None, details=None, stackPointer=None, stackAddr=None,
+    def __init__(self, faultAddress=None, faultOffset=0, module=None,
+                 sig=0, details=None, stackPointer=None, stackAddr=None,
                  registers=None, processStdout=None,
                  cause=None, backtrace=None,
                  analyzerOutput=None, analyzerType=None):
@@ -61,7 +61,47 @@ class VerifyCrashData():
         return self.temp
 
     def __repr__(self):
-        return "VerifyCrashData: " + str(self.faultAddress) + str(self.backtrace) + self.cause
+        d = ""
+        d += "VerifyCrashData: " + "Faultaddress: " + str(self.faultAddress)
+
+        if self.backtrace:
+            d += " Has_Backtrace"
+        else:
+            d += " NO_Backtrace"
+
+        if self.backtrace:
+            d += " Has_Cause"
+        else:
+            d += " NO_Cause"
+
+        if self.analyzerOutput:
+            d += " Has_AnalyzerOutput"
+        else:
+            d += " NO_AnalyzerOutput"
+
+        d += "\n"
+
+        return d
 
     def __str__(self):
-        return "VerifyCrashData: " + str(self.faultAddress) + str(self.backtrace) + self.cause
+        d = ""
+        d += "VerifyCrashData: " + "Faultaddress: " + str(self.faultAddress)
+
+        if self.backtrace:
+            d += " Has_Backtrace"
+        else:
+            d += " NO_Backtrace"
+
+        if self.backtrace:
+            d += " Has_Cause"
+        else:
+            d += " NO_Cause"
+
+        if self.analyzerOutput:
+            d += " Has_AnalyzerOutput"
+        else:
+            d += " NO_AnalyzerOutput"
+
+        d += "\n"
+
+        return d

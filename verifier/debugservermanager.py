@@ -99,7 +99,6 @@ class DebugServerManager(ServerManager):
         except Exception as e:
             # process already dead, hmm
             print("GetCrashDetails exception: " + str(e))
-            #subprocess.call("echo AAA3; ls -l /proc/" + str(self.pid), shell=True)
 
         # Find the module that contains this address
         # Now we need to turn the address into an offset. This way when the process

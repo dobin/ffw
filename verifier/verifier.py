@@ -121,6 +121,14 @@ class Verifier(object):
     def _verifyOutcome(self, targetPort, outcomeFile):
         outcome = utils.readPickleFile(outcomeFile)
 
+        # temporary fix for (old) outcomes
+        if outcome["initialCrashData"]:
+            outcome["fuzzerCrashData"] = outcome["initialCrashData"]
+            del outcome["initialCrashData"]
+
+        # temporary fix for (old) outcomes without index
+        utils.fixMsgs(outcome["fuzzIterData"]["fuzzedData"])
+
         verifyCrashData = None
         debugVerifyCrashData = None
         gdbVerifyCrashData = None
@@ -129,6 +137,10 @@ class Verifier(object):
         # get normal PTRACE / ASAN output
         debugServerManager = debugservermanager.DebugServerManager(self.config, self.queue_sync, self.queue_out, targetPort)
         debugVerifyCrashData = self._verify(outcome, targetPort, debugServerManager)
+
+        # no crash? abort, it will not get better
+        if debugVerifyCrashData is None:
+            return
         debugVerifyCrashData.printMe("debugVerifyCrashData")
 
         # get ASAN (if available), and CORE (if available)
@@ -146,9 +158,17 @@ class Verifier(object):
         if gdbVerifyCrashData is not None:
             gdbVerifyCrashData.printMe("gdbVerifyCrashData")
 
-        # Default: Lets use debugVerifyCrashData
-        logging.info("V: Use debugVerifyCrashData")
-        verifyCrashData = copy.copy(debugVerifyCrashData)
+
+        # Fix for broken debug
+        # sometimes the process quits before python ptrace is able to get
+        # it's data. Have to take the asan in that case
+        if debugVerifyCrashData.faultAddress == 0:
+            logging.info("V: Base: asanVerifyCrashData")
+            verifyCrashData = copy.copy(asanVerifyCrashData)
+        else:
+            # Default: Lets use debugVerifyCrashData
+            logging.info("V: Base: debugVerifyCrashData")
+            verifyCrashData = copy.copy(debugVerifyCrashData)
 
         # add backtrace from Gdb
         if gdbVerifyCrashData and gdbVerifyCrashData.backtrace is not None:
@@ -262,12 +282,16 @@ class Verifier(object):
 
         with open(fileName, "w") as f:
             f.write("Address: %s\n" % hex(crashData.faultAddress))
-            f.write("Offset: %s\n" % hex(crashData.faultOffset))
+
+            if crashData.faultOffset:
+                f.write("Offset: %s\n" % hex(crashData.faultOffset))
             f.write("Module: %s\n" % crashData.module)
             f.write("Signature: %s\n" % crashData.sig)
             f.write("Details: %s\n" % crashData.details)
-            f.write("Stack Pointer: %s\n" % hex(crashData.stackPointer))
-            f.write("Stack Addr: %s\n" % crashData.stackAddr)
+            if crashData.stackPointer:
+                f.write("Stack Pointer: %s\n" % hex(crashData.stackPointer))
+            if crashData.stackAddr:
+                f.write("Stack Addr: %s\n" % crashData.stackAddr)
             f.write("Registers: %s\n" % registerStr)
             f.write("Time: %s\n" % time.strftime("%c"))
 

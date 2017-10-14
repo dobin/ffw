@@ -175,7 +175,7 @@ class NetworkManager(object):
 
         try:
             sock.send("PING")
-            sock.send("PING")  # yes, send it two times. once is not enough!
+            sock.send("PING")  # yes, send it two times. once is not enough to create exception!
             sock.close()
             return True
         except Exception as e:
@@ -206,9 +206,12 @@ class NetworkManager(object):
 
 
     def waitForServerReadyness(self):
+        n = 0
         while not self.testServerConnection():
-            logging.info("Server not ready, waiting and retrying")
-            time.sleep(0.2)  # wait a bit till server is ready
-        time.sleep(0.2)
-        logging.info("Server ready")
+            if n > 10:
+                logging.error("Server not ready after 10 tries.. still continuing")
+            time.sleep(0.2)
+            n += 1
+
+        logging.info("Server is ready (accepting connections)")
         return True
