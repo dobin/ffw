@@ -8,6 +8,7 @@ import sys
 import pickle
 import os
 
+from fuzzingcrashdata import FuzzingCrashData
 import servermanager
 import fuzzingiterationdata
 import networkmanager
@@ -108,7 +109,8 @@ class FuzzingSlave(object):
             if not networkManager.openConnection():
                 logging.info("Detected Crash (A)")
                 iterStats["crashCount"] += 1
-                crashData = serverManager.getCrashData()
+                srvCrashData = serverManager.getCrashData()
+                crashData = FuzzingCrashData(srvCrashData)
                 crashData.setFuzzerPos("A")
                 self.exportFuzzResult(crashData, previousFuzzingIterationData)
                 serverManager.restart()
@@ -129,7 +131,8 @@ class FuzzingSlave(object):
                 else:
                     logging.info("Detected Crash (B)")
                     iterStats["crashCount"] += 1
-                    crashData = serverManager.getCrashData()
+                    srvCrashData = serverManager.getCrashData()
+                    crashData = FuzzingCrashData(srvCrashData)
                     crashData.setFuzzerPos("B")
                     self.exportFuzzResult(crashData, fuzzingIterationData)
                     networkManager.closeConnection()
@@ -146,7 +149,8 @@ class FuzzingSlave(object):
                 else:
                     logging.info("Detected Crash (C)")
                     iterStats["crashCount"] += 1
-                    crashData = serverManager.getCrashData()
+                    srvCrashData = serverManager.getCrashData()
+                    crashData = FuzzingCrashData(srvCrashData)
                     crashData.setFuzzerPos("C")
                     self.exportFuzzResult(crashData, fuzzingIterationData)
                     networkManager.closeConnection()
@@ -158,7 +162,8 @@ class FuzzingSlave(object):
                 if not networkManager.testServerConnection():
                     logging.info("Detected Crash (D)")
                     iterStats["crashCount"] += 1
-                    crashData = serverManager.getCrashData()
+                    srvCrashData = serverManager.getCrashData()
+                    crashData = FuzzingCrashData(srvCrashData)
                     crashData.setFuzzerPos("D")
                     self.exportFuzzResult(crashData, fuzzingIterationData)
                     networkManager.closeConnection()

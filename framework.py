@@ -11,7 +11,7 @@ import sys
 import replay
 import minimizer
 import interceptor
-import fuzzingmaster
+from fuzzer import fuzzingmaster
 from verifier import verifier
 from uploader import uploader
 import tester

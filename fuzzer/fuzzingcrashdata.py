@@ -1,15 +1,14 @@
 #!/bin/python
 
 
-class InitialCrashData():
+class FuzzingCrashData():
 
-    def __init__(self):
-        self.asanOuput = None
-        self.signum = None
-        self.exitcode = None
-        self.reallydead = None
-        self.serverpid = None
-        self.fuzzerPos = None
+    def __init__(self, crashData):
+        self.asanOutput = crashData["asanOutput"]
+        self.signum = crashData["signum"]
+        self.exitcode = crashData["exitcode"]
+        self.reallydead = crashData["reallydead"]
+        self.serverpid = crashData["serverpid"]
 
 
     def setData(self, asanOutput=None, signum=None, exitcode=None, reallydead=None, serverpid=None):
@@ -18,6 +17,7 @@ class InitialCrashData():
         self.exitcode = exitcode
         self.reallydead = reallydead
         self.serverpid = serverpid
+
 
     def setFuzzerPos(self, fuzzerPos):
         self.fuzzerPos = fuzzerPos
@@ -28,6 +28,7 @@ class InitialCrashData():
             "asanOutput": self.asanOutput,
             "signum": self.signum,
             "exitcode": self.exitcode,
+
             "reallydead": self.reallydead,
             "serverpid": self.serverpid,
             "fuzzerPos": self.fuzzerPos,

@@ -7,7 +7,7 @@ import subprocess
 import sys
 
 import serverutils
-import initialcrashdata
+
 
 """
 Servermanager for fuzzing target
@@ -71,29 +71,6 @@ class ServerManager(object):
         """
 
 
-    def getCrashData(self):
-        """
-        Return the data of the crash
-        or None if it has not crashed (should not happen)
-        """
-
-        if self.process.poll():
-            logging.info("getCrashData(): get data, but server alive?!")
-        else:
-            logging.info("getCrashData(): ok, server is really crashed")
-
-        crashData = initialcrashdata.InitialCrashData()
-        crashData.setData(
-            asanOutput=serverutils.getAsanOutput(self.config, self.process.pid),
-            signum=0,
-            exitcode=0,
-            reallydead=self.process.poll(),
-            serverpid=self.process.pid,
-        )
-
-        return crashData
-
-
     def _runTarget(self):
         """
         Start the server
@@ -109,3 +86,25 @@ class ServerManager(object):
         logging.info("  Pid: " + str(p.pid) )
 
         return p
+
+
+    def getCrashData(self):
+        """
+        Return the data of the crash
+        or None if it has not crashed (should not happen)
+        """
+
+        if self.process.poll():
+            logging.info("getCrashData(): get data, but server alive?!")
+        else:
+            logging.info("getCrashData(): ok, server is really crashed")
+
+        crashData = {
+            'asanOutput': serverutils.getAsanOutput(self.config, self.process.pid),
+            'signum': 0,
+            'exitcode': 0,
+            'reallydead': self.process.poll(),
+            'serverpid': self.process.pid,
+        }
+
+        return crashData
