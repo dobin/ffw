@@ -85,7 +85,9 @@ class Uploader(object):
         url = self.server + "/api/projects/"
         payload = {
             "name": self.config["name"],
-            "comment": self.config["target_bin"] + " " + self.config["target_args"],
+            "comment": self.config["comment"],
+            "version": self.config["version"],
+            "commandline": self.config["target_bin"] + " " + self.config["target_args"],
         }
         r = requests.post(url, json=payload, auth=self.auth)
         j = r.json()
@@ -143,6 +145,10 @@ class Uploader(object):
 
         cause_line = verifyCrashData.backtrace[0]
 
+        cause = verifyCrashData.cause
+        if cause is None:
+            cause = "n/a"
+
         payload = {
             "project": self.projectId,
             "seed": fuzzIterData["seed"],
@@ -158,7 +164,7 @@ class Uploader(object):
             "asanoutput": asanOut,
             "gdboutput": gdbOut,
             "backtrace": backtraceStr,
-            "cause": verifyCrashData.cause,
+            "cause": cause,
             "cause_line": cause_line,
             "codeoff": verifyCrashData.faultOffset,
             "codeaddr": verifyCrashData.faultAddress,

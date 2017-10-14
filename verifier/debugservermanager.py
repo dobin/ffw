@@ -9,6 +9,7 @@ Related to servermanager.py, but with more debugging.
 import logging
 import signal
 import os
+import time
 
 from ptrace.debugger.debugger import PtraceDebugger
 from ptrace.debugger.child import createChild
@@ -21,22 +22,22 @@ from servermanager import ServerManager
 import verifycrashdata
 
 
-
 class DebugServerManager(ServerManager):
     def __init__(self, config, queue_sync, queue_out, targetPort):
         ServerManager.__init__(self, config, queue_sync, queue_out, targetPort)
         self.dbg = None
         self.crashEvent = None
         self.proc = None
+        self.p = None
 
 
     def _startServer(self):
         # create child via ptrace debugger
         # API: createChild(arguments[], no_stdout, env=None)
-        logging.debug("START: " + str(serverutils.getInvokeTargetArgs(self.config, self.targetPort),))
+        logging.debug("START: " + str(serverutils.getInvokeTargetArgs(self.config, self.targetPort + 1000)))
         self.pid = createChild(
             serverutils.getInvokeTargetArgs(self.config, self.targetPort),
-            True,  # no_stdout
+            False,  # no_stdout
             None,
         )
 
@@ -44,6 +45,17 @@ class DebugServerManager(ServerManager):
         self.dbg = PtraceDebugger()
         self.proc = self.dbg.addProcess(self.pid, True)
         self.proc.cont()
+
+        time.sleep(1)
+
+        # i dont think this works here...
+        # FIXME
+        event = self.dbg.waitProcessEvent(blocking=False)
+        if event is not None and type(event) == ProcessExit:
+            logging.error("Started server, but it already exited: " + str(event))
+            return False
+
+        return True
 
 
     def _stopServer(self):

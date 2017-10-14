@@ -48,7 +48,11 @@ class ServerManager(object):
         logging.info("DebugServer: Start Server")
         #sys.stderr.write("Stderr")
 
-        self._startServer()
+        ret = self._startServer()
+        while ret is False:
+            logging.info("Retrying to start server...")
+            ret = self._startServer()
+
         logging.info("Server PID: " + str(self.pid))
 
         # notify parent about the pid

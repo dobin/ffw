@@ -198,7 +198,6 @@ class Verifier(object):
         # start server in background
         # TODO move this to verifyOutDir (more efficient?)
 
-        #self.debugServerManager = debugservermanager.DebugServerManager(self.config, self.queue_sync, self.queue_out, targetPort)
         self.networkManager = networkmanager.NetworkManager(self.config, targetPort)
         self.startChild(debugServerManager)
 
@@ -207,7 +206,10 @@ class Verifier(object):
         serverPid = data[1]
         self.serverPid = serverPid
         logging.info("Verifier: Server pid: " + str(serverPid))
-        self.networkManager.waitForServerReadyness()
+
+        res = self.networkManager.waitForServerReadyness()
+        if not res:
+            return None
 
         logging.info("Verifier: Sending fuzzed messages")
         self.networkManager.sendMessages(outcome["fuzzIterData"]["fuzzedData"])
