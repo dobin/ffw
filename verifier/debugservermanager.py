@@ -16,8 +16,10 @@ from ptrace.debugger.process_event import ProcessExit
 from ptrace.debugger.ptrace_signal import ProcessSignal
 
 import serverutils
-import verifycrashdata
 from servermanager import ServerManager
+
+import verifycrashdata
+
 
 
 class DebugServerManager(ServerManager):

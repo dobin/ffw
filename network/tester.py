@@ -4,7 +4,7 @@ import logging
 import utils
 import sys
 
-import servermanager
+from fuzzer import simpleservermanager
 import networkmanager
 
 """
@@ -29,7 +29,7 @@ class Tester():
 
     def test(self):
         targetPort = 20000
-        serverManager = servermanager.ServerManager(self.config, 0, targetPort)
+        serverManager = simpleservermanager.SimpleServerManager(self.config, 0, targetPort)
         networkManager = networkmanager.NetworkManager(self.config, targetPort)
 
         serverManager.start()

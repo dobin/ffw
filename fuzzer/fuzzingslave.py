@@ -9,9 +9,9 @@ import pickle
 import os
 
 from fuzzingcrashdata import FuzzingCrashData
-import servermanager
-import fuzzingiterationdata
 from network import networkmanager
+import fuzzingiterationdata
+import simpleservermanager
 
 GLOBAL_SLEEP = {
     # how long to wait after server start
@@ -70,7 +70,7 @@ class FuzzingSlave(object):
         logging.info("Setup fuzzing..")
         signal.signal(signal.SIGINT, signal_handler)
         targetPort = self.config["baseport"] + self.threadId
-        serverManager = servermanager.ServerManager(self.config, self.threadId, targetPort)
+        serverManager = simpleservermanager.SimpleServerManager(self.config, self.threadId, targetPort)
         networkManager = networkmanager.NetworkManager(self.config, targetPort)
 
         iterStats = {

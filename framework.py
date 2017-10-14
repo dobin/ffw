@@ -12,9 +12,9 @@ from network import replay
 from network import interceptor
 from fuzzer import fuzzingmaster
 from verifier import verifier
+from verifier import minimizer
 from uploader import uploader
 from network import tester
-import minimizer
 from network import proto_vnc
 
 

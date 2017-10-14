@@ -3,13 +3,10 @@
 import socket
 import threading
 import select
-import sys
 import pickle
-import glob
-import os
 import logging
 
-import servermanager
+from fuzzer import simpleservermanager
 
 
 """
@@ -236,7 +233,7 @@ def doIntercept(config, localPort):
     config["baseport"] = targetPort
 
     # run the server, as configured in config
-    serverManager = servermanager.ServerManager(config, 0, targetPort)
+    serverManager = simpleservermanager.SimpleServerManager(config, 0, targetPort)
     serverManager.start()
 
     # start mitm server

@@ -1,11 +1,10 @@
 from subprocess import Popen, PIPE, STDOUT
 import logging
+import re
 
 import serverutils
 import verifycrashdata
-import re
-
-from servermanager import ServerManager, StdoutQueue
+from servermanager import ServerManager
 
 
 class GdbServerManager(ServerManager):

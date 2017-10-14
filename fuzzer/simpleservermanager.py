@@ -23,7 +23,7 @@ GLOBAL_SLEEP = {
 }
 
 
-class ServerManager(object):
+class SimpleServerManager(object):
     """
         Manages all interaction with the server (the fuzzing target)
         This includes:
