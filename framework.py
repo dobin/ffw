@@ -8,15 +8,14 @@
 import logging
 import sys
 
-import replay
-import minimizer
-import interceptor
+from network import replay
+from network import interceptor
 from fuzzer import fuzzingmaster
 from verifier import verifier
 from uploader import uploader
-import tester
-
-import proto_vnc
+from network import tester
+import minimizer
+from network import proto_vnc
 
 
 def realMain(config):

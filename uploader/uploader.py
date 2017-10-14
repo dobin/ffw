@@ -100,7 +100,7 @@ class Uploader(object):
         url = self.server + "/api/crashdata/"
 
         fuzzIterData = outcome["fuzzIterData"]
-        initialCrashData = outcome["initialCrashData"]
+        fuzzerCrashData = outcome["fuzzerCrashData"]
         verifyCrashData = outcome["verifierResult"].verifyCrashData
         gdbVerifyCrashData = outcome["verifierResult"].gdbVerifyCrashData
         asanVerifyCrashData = outcome["verifierResult"].asanVerifyCrashData
@@ -140,8 +140,8 @@ class Uploader(object):
             "time": "2017-09-09T18:03",
             "signal": verifyCrashData.sig,
 
-            "fuzzerpos": initialCrashData["fuzzerPos"],
-            "reallydead": initialCrashData["reallydead"],
+            "fuzzerpos": fuzzerCrashData["fuzzerPos"],
+            "reallydead": fuzzerCrashData["reallydead"],
 
             "stdout": "meh",
             "asanoutput": asanOut,

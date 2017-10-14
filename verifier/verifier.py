@@ -12,7 +12,7 @@ import copy
 
 import debugservermanager
 import gdbservermanager
-import networkmanager
+from network import networkmanager
 import utils
 import asanparser
 import verifierresult

@@ -11,7 +11,7 @@ import os
 from fuzzingcrashdata import FuzzingCrashData
 import servermanager
 import fuzzingiterationdata
-import networkmanager
+from network import networkmanager
 
 GLOBAL_SLEEP = {
     # how long to wait after server start
@@ -245,7 +245,7 @@ class FuzzingSlave(object):
         crashData = crashDataModel.getData()
 
         data = {
-            "initialCrashData": crashData,
+            "fuzzerCrashData": crashData,
             "fuzzIterData": fuzzIter.getData(),
         }
 
