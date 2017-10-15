@@ -3,6 +3,7 @@
 import time
 import os
 import logging
+import defaultconfig
 
 """
 Various server utilities.
@@ -15,16 +16,13 @@ Which are abstractions to the actual server, but both use these
 functions here.
 """
 
-sleeptimes = {
-    # wait time, so the asan file really appears
-    # used on every crash, should be short
-    "sleep_for_asan_file": 0.5,
-}
 
-
-# create an array of the binary path and its parameters
-# used to start the process with popen() etc.
 def getInvokeTargetArgs(config, targetPort):
+    """
+    Create an array of the target binary path and its parameters.
+
+    Used to start the process with popen() etc.
+    """
     args = config["target_args"] % ( { "port": targetPort } )
     argsArr = args.split(" ")
     cmdArr = [ config["target_bin"] ]
@@ -34,7 +32,8 @@ def getInvokeTargetArgs(config, targetPort):
 
 def setupEnvironment(config):
     """
-    Prepare the environment before the server is started
+    Prepare the environment before the server is started.
+
     (e.g. working directory)
     """
     # Silence warnings from the ptrace library
@@ -51,23 +50,22 @@ def setupEnvironment(config):
 
 
 def getAsanOutput(config, pid):
-    global sleeptimes
-
+    """Get ASAN output file based on the pid and config."""
     # as we cannot get stdout/stderr of child process, we store asan
     # output in the temp folder in the format: asan.<pid>
     fileName = config["temp_dir"] + "/asan." + str(pid)
     logging.info("Get asan output: " + str(fileName))
 
-    time.sleep(sleeptimes["sleep_for_asan_file"])  # omg wait for the file to appear
+    # omg wait for the file to appear (necessary?)
+    time.sleep(defaultconfig.DefaultConfig["sleep_for_asan_file"])
 
+    # it may not exist, which aint bad (e.g. no asan support)
     if not os.path.isfile(fileName):
         logging.info("Did not find ASAN output file: " + fileName)
-        #return "No ASAN file found (path: " + fileName + ")"
         return None
     else:
         logging.info("Found ASAN output file. Good.")
 
-    # it may not exist, which aint bad (e.g. no asan support)
     file = open(fileName, "r")
     data = file.read()
     file.close()
