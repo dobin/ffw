@@ -8,14 +8,11 @@ import sys
 import resource
 
 """
-Various server utilities.
+Various target-server utilities.
 
 Functions which makes it possible to start the server (fuzzing target),
-and other similar stuff. Used by:
-* servermanager
-* debugservermanager
-Which are abstractions to the actual server, but both use these
-functions here.
+and other similar stuff. Used by *servermanagers, which are abstractions
+to the actual server, but use these functions here.
 """
 
 
@@ -36,7 +33,7 @@ def setupEnvironment(config):
     """
     Prepare the environment before the server is started.
 
-    (e.g. working directory)
+    For example asan options, working directory, ASLR and ulimit.
     """
     # Silence warnings from the ptrace library
     #logging.getLogger().setLevel(logging.ERROR)
