@@ -106,9 +106,16 @@ class Uploader(object):
 
         if "fuzzIterData" not in outcome:
             print "Did not find fuzzIterData"
+            sys.exit(1)
 
         if "fuzzerCrashData" not in outcome:
             print "Did not find fuzzerCrashData"
+
+            # workaround...
+            if "initialCrashData" in outcome:
+                outcome["fuzzerCrashData"] = outcome["initialCrashData"]
+            else:
+                sys.exit(1)
 
 
         fuzzIterData = outcome["fuzzIterData"]
