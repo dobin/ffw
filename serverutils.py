@@ -4,6 +4,8 @@ import time
 import os
 import logging
 import defaultconfig
+import sys
+import resource
 
 """
 Various server utilities.
@@ -47,6 +49,21 @@ def setupEnvironment(config):
 
     # Tell Glibc to abort on heap corruption but not dump a bunch of output
     os.environ["MALLOC_CHECK_"] = "2"
+
+    # Check ASLR status
+    aslrStatusFile = "/proc/sys/kernel/randomize_va_space"
+    d = ""
+    with open(aslrStatusFile, "r") as f:
+        d = f.read()
+    config["env_aslr_status"] = d
+    if "disable_aslr_check" not in config and d is not "0":
+        logging.error("ASLR Enabled, please disable it:")
+        logging.error(" echo 0 | sudo tee /proc/sys/kernel/randomize_va_space")
+        sys.exit(1)
+
+    # set resources
+    # core file:
+    resource.setrlimit(resource.RLIMIT_CORE, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
 
 
 def getAsanOutput(config, pid):

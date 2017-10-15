@@ -21,7 +21,15 @@ class StdoutQueue():
 
 
 class ServerManager(object):
-    """The actual debug-server manager."""
+    """
+    Abstract servermanager class.
+
+    Actual servermanager for verifier/ will implement this abstract
+    class for their purpose. E.g. a servermanager using either
+    GDB or ptrace().
+    Here we just implement the process-communication stuff with the
+    parent process.
+    """
 
     def __init__(self, config, queue_sync, queue_out, targetPort):
         self.config = config
@@ -35,9 +43,14 @@ class ServerManager(object):
         serverutils.setupEnvironment(config)
 
 
-    # entry function for this new process
-    # should be the only public function
     def startAndWait(self):
+        """
+        Start target-server and wait for results.
+
+        This is the only public function. All other communication
+        is performed via queue_sync and queue_out, as this should be
+        a separate process. No return value here.
+        """
         # Sadly this does not apply to child processes started via
         # createChild(), so we can only capture output of this python process
         #sys.stdout = stdoutQueue
@@ -58,7 +71,11 @@ class ServerManager(object):
         # notify parent about the pid
         self.queue_sync.put( ("pid", self.pid) )
 
+        # block until we have a crash
+        # the client will send the network messages
         if self._waitForCrash():
+            # seems we have a crash. get details, so we
+            # can return it to the parent via queue_sync
             crashData = self._getCrashDetails()
         else:
             crashData = None
