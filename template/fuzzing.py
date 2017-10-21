@@ -1,50 +1,73 @@
 #!/usr/bin/python
 #
-# Based on: 
-#   Framework for fuzzing things
-#   author: Chris Bisnett
 
 import sys
 import os.path, sys
 import os
+
+# import parent dir as pytohn search path
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir))
 
 import framework
 
-
 PROJDIR = os.getcwd() + "/"
 BASEDIR = os.path.realpath(PROJDIR + "/../")
 
-# Has to return False on error
-# so crash can be detected
-def sendInitialData(socket):
-    authData = "\x10\x16\x00\x04\x4d\x51\x54\x54\x04\x02\x00\x00\x00\x0a\x6d\x79\x63\x6c\x69\x65\x6e\x74\x69\x64"
-
-    try: 
-        socket.sendall(authData)
-    except socket.error, exc:
-        return False 
-
-    return True
-
 
 config = {
-    "basedir": BASEDIR,
-    "projdir": PROJDIR,
+    # name of the software we fuzz
+    "name": "",
 
-    # fuzzed files are generated here
-    # also ASAN log files
-    "temp_dir": PROJDIR + "temp",
+    # which version of the software are we fuzzing (optional)
+    "version": "",
 
-    # where are input which crash stuff stored
-    "outcome_dir" : PROJDIR + "out",
-
-    # which fuzzer should be used
-    "fuzzer": "Radamsa",
+    # additional comment about this project (optional)
+    "comment": "",
 
     # Path to target
     "target_bin" : PROJDIR + "bin/mqtt_broker",
-    "target_args": "%(port)i", # separate arguments by space
+    
+    # target arguments
+    # separate arguments by space
+    # keywords: %(port)i   is the port the server will be started on
+    "target_args": "%(port)i",
+
+    # how many fuzzing instances should we start
+    "processes": 4,
+
+    # "tcp" or "udp" protocol?
+    "ipproto": "tcp",
+
+    # debug mode (lots of log messages, only 1 process)
+    "debug": True,
+
+
+    # STOP. 
+    # no need to change after this line, usually
+
+    # have a special app protocol implemented? use it here
+    "proto": None,
+
+    # the maximum network message number we will look at
+    # (send, replay, test etc.)
+    "maxmsg": None,
+
+    # the maximum network message number we will fuzz
+    "maxfuzzmsg": None,
+
+    # analyze the response of the server?
+    "response_analysis": True,
+
+    # input/output for fuzzer is generated here (so he can mutate it)
+    # also ASAN log files
+    "temp_dir": PROJDIR + "temp",
+
+    # fuzzing results are stored in out/ 
+    "outcome_dir" : PROJDIR + "out",
+
+    # which fuzzer should be used
+    # currently basically only radamsa
+    "fuzzer": "Radamsa",
 
     # Directory of input files
     "inputs" : PROJDIR + "in",
@@ -52,50 +75,13 @@ config = {
     # if you have multiple ffw fuzzers active,
     # change this between them
     "baseport": 20000,
+    
+    # dont change this
+    "basedir": BASEDIR,
+    "projdir": PROJDIR,
 
-    # analyze response for information leak? (slow)
-    "response_analysis": False,
-
-    # TODO
-    # check code coverage?
-    "gcov_coverage": False,
-    "gcov_coverage_time": 10000, # in iterations
-
-    # perform automatic crash analysis?
-    # Note: Can also be manually started with argument "minimize"
-    "crash_minimize": False, 
-    "crash_minimize_time": 3, # number of new crashes
-
-    # TODO
-    # e.g. boofuzz
-    "additional_fuzzer": False,
-
-    # how many fuzzing instances should we start
-    "processes": 32,
-
-
-    # mode
-
-    # Which fuzzing mode are we using
-    # raw: have some raw input file data
-    # interceptor: pickle files from interceptor
-    "mode": "interceptor",
-
-    ## interceptor
-    "receive_answer": False,
-
-
-    ## raw
-
-    # for mode: raw
-    # send data before the actual fuzzing packet
-    # e.g. authentication
-    "sendInitialDataFunction": sendInitialData,
-
-    # for mode: raw
-    # Note: can also be manually started
-    "corpus_destillation": False,
-
+    # restart server every X fuzzing iterations
+    "restart_server_every": 1000,
 }
 
 
