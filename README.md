@@ -2,25 +2,31 @@
 
 Fuzzes network servers.
 
-## Requirements
-
 * A network server which does not fork and accepts a port on the command line
-* Data to be sent to the server in `inputs`
 
-## Config
+# Install
+
+## get ffw 
 
 ```
- sysctl net.core.somaxconn=4096
- ulimit -c 999999
+git clone https://github.com/dobin/ffw.git
+cd ffw/
 ```
 
 ## Install deps
 
 ```
-sudo pip install python-ptrace
+pip install python-ptrace
 ```
 
 ### Fix ptrace
+
+python-ptrace sometimes encounters a bug. Fix the regex specified below.
+The path may be different (depending on how you installed pytohn-ptrace). 
+May not be always necessary (?). Will only affect verify-mode of ffw.
+
+* Relevant file: memory_mapping.py
+* Relevant part: PROC_MAP_REGEX
 
 /usr/local/lib/python2.7/dist-packages/ptrace/debugger/memory_mapping.py
 ```
@@ -28,7 +34,7 @@ PROC_MAP_REGEX = re.compile(
     r'([0-9a-f]+)-([0-9a-f]+) '
     r'(.{4}) '
     r'([0-9a-f]+) '
-    r'([0-9a-f]+):([0-9a-f]+) ' ##### fix this
+    r'([0-9a-f]+):([0-9a-f]+) ' ##### this line needs to be fixed 
     r'([0-9]+)'
     r'(?: +(.*))?'
 )
@@ -36,125 +42,147 @@ PROC_MAP_REGEX = re.compile(
 
 ## install radamsa
 
+Default path specified in ffw for radamsa is `ffw/radamsa`:
+
 ```
 $ git clone https://github.com/aoh/radamsa.git
 $ cd radamsa
 $ make
 ```
 
+# Setup first project
 
-## Modes
+Steps involved in setting up a fuzzing project:
 
-Modes:
-* fuzz
-* minimize
-* replayall
-* replay
+* Create directory structure for that fuzzing project by copying template folder
+* Copy target binary to bin/
+* Specify all necessary information in the config file fuzzing.py
+* Start interceptor-mode to record traffic
+* Start test-mode to verify recorded traffic (optional)
+* Start fuzz-mode to fuzz
+* Start verify-mode to verify crashed from the fuzz mode (optional)
+* Start upload-mode to upload verified crashes to the web (optional)
 
-### Fuzz
-
-* Fuzzes the program.
-* creates .raw files in `outcome_dir`
-
-### Minimize
-
-* Goes through all .raw outcome files in `outcome_dir`
-* Sends it to the server (`target_bin`), and looks for a crash
-* If a crash is detecte, creates a `.crashdata.txt` file for that outome
-* After all files have been processed: shows unique crashes (based on IP and other things)
+What follows are the detailed steps, by using the provided vulnserver as an example. 
 
 
-### replaying
+## Create directory structure 
 
-Send results in outcome to a dedicated server (e.g. in gdb).
-If pre-requests / initial data are sent in the fuzzing, it is not just possible to
-blindly send the `.raw` file in `outcome_dir`, as that request has also to be sent.
-This replay functionality exists to reproduce crashes in an easy way.
+Create a copy of the template directory for the software you want to test, in this case vulnserver:
 
-#### Replayall
+```
+cp -R template/ vulnserver/
+cd vulnserver/
+```
 
-* Sends all outcomes in `outcome_dir/*.raw` to a server
-* User has to start server by themself (e.g. in gdb)
-* Used to check all outcomes
+The directory `vulnserver` will be our working directory from now on. 
+It will contain the file `fuzzing.py`, and the directories `in`, `bin`, `out`, `verified`, and `temp`.
 
-#### Replay
+## Copy binary
 
-* Send a specific outcome in `outcome_dir` to the server
-* either:
-  * by its FULL path (.raw file)
-  * or by its index (based on create time, as seen by replayall)
-* User has to start server by themself (e.g. in gdb)
+Copy the binary of the server you want to fuzz to bin, e.g.:
+```
+cd /tmp/vulnserver/
+make
+cp vulnserver /path/to/ffw/vulnserver/bin
+```
 
-## Example config
+## Configure fuzzer
 
-```python
-def sendInitialData(socket):
-    authData = "\x10\x16\x00\x04\x4d\x51\x54\x54\x04\x02\x00\x00\x00\x0a\x6d\x79\x63\x6c\x69\x65\x6e\x74\x69\x64"
-    socket.sendall(authData)
+Edit fuzzing.py until STOP line. Specify the path to the binary, and how to give 
+```
+    "name": "vulnserver",
+    "target_bin" : PROJDIR + "bin/vulnserver",
+    "target_args": "--port %(port)i",
+    "ipproto": "tcp",
+    "debug": True,
+```
+
+## Perform intercept
+
+Start interceptor-mode. You can use the original standard port of the server as argument.
+Port+1 will be used for the real server port:
+```
+./fuzzing.py interceptor 1024
+```
+
+Start the client and send some messages to the server:
+```
+start client
+```
+
+The server will print text similar to:
+```
+```
+
+This will generate the file `in/data_0.pickle". You can view it by using `../printpickly.py in/data_0.pickle`.
+```
+printpickle data0 output
+```
+
+## Verify intercepted data
+
+Verify if the recorded data can be replayed by using the test-mode. It will start the fuzz target,
+and replays the recorded data storedin `in/data_0.pickle` three times. If there are 0 fails, it is 
+pretty reproducible. 
 
 
-config = {
-    "basedir": BASEDIR,
-    "projdir": PROJDIR,
+```
+verify output
+```
 
-    # fuzzed files are generated here
-    "temp_dir": PROJDIR + "temp",
+## Perform fuzzing
 
-    # where are input which crash stuff stored
-    "outcome_dir" : PROJDIR + "out",
+We are ready to fuzz. Start the fuzzer:
+```
+fuzz
+```
 
-    # which fuzzer should be used
-    "fuzzer": "Radamsa",
+This will result in more and more files in the `out/` directory, if crashes are detected:
+```
+```
 
-    # Path to target
-    "target_bin" : PROJDIR + "bin/mqtt_broker",
-    "target_args": "%(port)i", # not yet used TODO
 
-    # Directory of input files
-    "inputs_raw": PROJDIR + "in_raw", # TODO not yet used
-    "inputs" : PROJDIR + "in",
+## Verify crashes
 
-    # if you have multiple ffw fuzzers active,
-    # change this between them
-    "baseport": 30000,
+We have a lot of crashes, as indicated by the files in the `out/` directory. Lets verify it to be 
+sure that they are indeed valid crashes, and get additional information about the crash:
 
-    # analyze response for information leak? (slow)
-    "response_analysis": False,
+```
+verify
+```
 
-    # TODO
-    # check code coverage?
-    "gcov_coverage": False,
-    "gcov_coverage_time": 10000, # in iterations
+If the crash from `out/` could be verified, new files appear in the `verfified/` directory:
+```
+asdf
+```
 
-    # crash analysis?
-    "crash_minimize": False,
-    "crash_minimize_time": 3, # number of new crashes
 
-    # TODO
-    # Note: can also be manually started
-    "corpus_destillation": False,
+# Detailed Modes Description
 
-    # TODO
-    # e.g. boofuzz
-    "additional_fuzzer": False,
+* Interceptor
+* Tester
+* Fuzzer
+* Verifier
+* Replayer
 
-    # send data before the actual fuzzing packet
-    # e.g. authentication
-    "sendInitialDataFunction": sendInitialData,
+<tbd>
 
-    # how many fuzzing instances should we start
-    # Note: server needs to support port on command line
-    # for this feature to work
-    "processes": 2,
-}
 
+# Various infos
+
+## Config
+
+```
+sysctl net.core.somaxconn=4096
+ulimit -c 999999
 ```
 
 ## Compile targets
 
 Use:
 ```
-CFLAGS="-fsanitize=address -fno-omit-frame-pointer"
+export CFLAGS="-fsanitize=address -fno-omit-frame-pointer"
 ```
 
 # FAQ
@@ -167,4 +195,3 @@ No
 
 Yes
 
-# Fix
