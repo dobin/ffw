@@ -170,7 +170,7 @@ pretty reproducible.
 $ ./fuzzing.py test
 Debug mode enabled
 INFO:root:Using: TCP
-INFO:root:Starting server with args: ['/home/dobin/Development/ffw/vulnserver/bin/vulnserver_asan', '20000']
+INFO:root:Starting server with args: ['./ffw/vulnserver/bin/vulnserver_asan', '20000']
 INFO:root:  Pid: 22247
 INFO:root:Start server PID: 22247
 ==== Iteration =====
@@ -212,9 +212,9 @@ $ ./fuzzing.py fuzz
 Debug mode enabled
 Config:  
   Running fuzzer:    Radamsa
-  Outcomde dir:      /home/dobin/Development/ffw/vulnserver/out
-  Target:            /home/dobin/Development/ffw/vulnserver/bin/vulnserver_asan
-  Input dir:         /home/dobin/Development/ffw/vulnserver/in
+  Outcomde dir:      ./ffw/vulnserver/out
+  Target:            ./ffw/vulnserver/bin/vulnserver_asan
+  Input dir:         ./ffw/vulnserver/in
   Analyze response:  True
 Start child: 0
 
@@ -264,10 +264,10 @@ ffw/vulnserver$ ./fuzzing.py verify
 Debug mode enabled
 INFO:root:Crash verifier
 Processing 6 outcome files
-Now processing: 0: /home/dobin/Development/ffw/vulnserver/out/15032758009265251593.ffw
+Now processing: 0: ./ffw/vulnserver/out/15032758009265251593.ffw
 INFO:root:Using: TCP
 INFO:root:DebugServer: Start Server
-DEBUG:root:START: ['/home/dobin/Development/ffw/vulnserver/bin/vulnserver_asan', '21100']
+DEBUG:root:START: ['./ffw/vulnserver/bin/vulnserver_asan', '21100']
 INFO:root:Attach <PtraceProcess #23559> to debugger
 INFO:root:Set <PtraceProcess #23559> options to 1
 Listening on port: 20100
@@ -291,14 +291,14 @@ ffw/vulnserver$ ls verified/
 ## Replay crashes
 
 To manually replay the crashes, e.g. if the target runs in GDB, use the
-`replay` mode:
+`replay` mode.
 
 Start the target in a terminal in gdb:
 ```
 dobin@unreal:~/Development/ffw/vulnserver$ gdb -q ./bin/vulnserver_asan
 Reading symbols from ./bin/vulnserver_asan...(no debugging symbols found)...done.
 (gdb) r 1024
-Starting program: /home/dobin/Development/ffw/vulnserver/bin/vulnserver_asan 1024
+Starting program: ./ffw/vulnserver/bin/vulnserver_asan 1024
 Listening on port: 1024
 ```
 
@@ -315,11 +315,6 @@ INFO:root:ReceiveData err on msg 3: timed out
 
 It should provoke the error in GDB:
 ```
-New client connected
-Received data with len: 4 on state: 0
-Auth success
-Received data with len: 4 on state: 1
-Received data with len: 16 on state: 2
 New client connected
 Received data with len: 4 on state: 0
 Auth success
