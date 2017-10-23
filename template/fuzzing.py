@@ -1,8 +1,7 @@
 #!/usr/bin/python
-#
 
 import sys
-import os.path, sys
+import os.path
 import os
 
 # import parent dir as pytohn search path
@@ -25,8 +24,8 @@ config = {
     "comment": "",
 
     # Path to target
-    "target_bin" : PROJDIR + "bin/mqtt_broker",
-    
+    "target_bin": PROJDIR + "bin/mqtt_broker",
+
     # target arguments
     # separate arguments by space
     # keywords: %(port)i   is the port the server will be started on
@@ -42,8 +41,11 @@ config = {
     "debug": True,
 
 
-    # STOP. 
+    # STOP.
     # no need to change after this line, usually
+
+    # should we abort if aslr is enabled?
+    "ignore_aslr_status": True,
 
     # have a special app protocol implemented? use it here
     "proto": None,
@@ -62,15 +64,15 @@ config = {
     # also ASAN log files
     "temp_dir": PROJDIR + "temp",
 
-    # fuzzing results are stored in out/ 
-    "outcome_dir" : PROJDIR + "out",
+    # fuzzing results are stored in out/
+    "outcome_dir": PROJDIR + "out",
 
     # which fuzzer should be used
     # currently basically only radamsa
     "fuzzer": "Radamsa",
 
     # Directory of input files
-    "inputs" : PROJDIR + "in",
+    "inputs": PROJDIR + "in",
 
     # Directory of verified files
     "verified_dir": PROJDIR + "verified",
@@ -78,7 +80,7 @@ config = {
     # if you have multiple ffw fuzzers active,
     # change this between them
     "baseport": 20000,
-    
+
     # dont change this
     "basedir": BASEDIR,
     "projdir": PROJDIR,
@@ -94,4 +96,3 @@ def main():
 
 if __name__ == '__main__':
     sys.exit(main())
-
