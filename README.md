@@ -89,7 +89,8 @@ cp vulnserver /path/to/ffw/vulnserver/bin
 
 ## Configure fuzzer
 
-Edit fuzzing.py until STOP line. Specify the path to the binary, and how to give 
+Edit `fuzzing.py` until STOP line. Specify the path to the binary, and how to give the port number
+as parameter:
 ```
     "name": "vulnserver",
     "target_bin" : PROJDIR + "bin/vulnserver",
@@ -120,10 +121,13 @@ This will generate the file `in/data_0.pickle". You can view it by using `../pri
 printpickle data0 output
 ```
 
+It should contain some data from server and client. 
+
+
 ## Verify intercepted data
 
 Verify if the recorded data can be replayed by using the test-mode. It will start the fuzz target,
-and replays the recorded data storedin `in/data_0.pickle` three times. If there are 0 fails, it is 
+and replays the recorded data stored in `in/data_0.pickle` three times. If there are 0 fails, it is 
 pretty reproducible. 
 
 
@@ -173,6 +177,8 @@ asdf
 
 ## Config
 
+If in doubt:
+
 ```
 sysctl net.core.somaxconn=4096
 ulimit -c 999999
@@ -180,7 +186,8 @@ ulimit -c 999999
 
 ## Compile targets
 
-Use:
+Use the following compile flags to increase bug detection rate
+(with ASAN) and backtrace quality:
 ```
 export CFLAGS="-fsanitize=address -fno-omit-frame-pointer"
 ```
@@ -189,9 +196,11 @@ export CFLAGS="-fsanitize=address -fno-omit-frame-pointer"
 
 ## Can i fuzz windows binaries?
 
-No
+No.
 
 ## Can i fuzz closed source binaries?
 
-Yes
+Yes.
+
+
 

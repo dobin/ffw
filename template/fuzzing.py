@@ -72,6 +72,9 @@ config = {
     # Directory of input files
     "inputs" : PROJDIR + "in",
 
+    # Directory of verified files
+    "verified_dir": PROJDIR + "verified",
+
     # if you have multiple ffw fuzzers active,
     # change this between them
     "baseport": 20000,
