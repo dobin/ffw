@@ -122,7 +122,7 @@ class Verifier(object):
         outcome = utils.readPickleFile(outcomeFile)
 
         # temporary fix for (old) outcomes
-        if outcome["initialCrashData"]:
+        if "initialCrashData" in outcome:
             outcome["fuzzerCrashData"] = outcome["initialCrashData"]
             del outcome["initialCrashData"]
 
