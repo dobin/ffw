@@ -96,6 +96,7 @@ class FuzzingSlave(object):
         print str(self.threadId) + " Start fuzzing..."
         self.queue.put( (self.threadId, 0, 0, 0) )
 
+        fuzzingIterationData = None
         while True:
             self.updateStats(iterStats)
             logging.debug("\n\n")
@@ -104,6 +105,12 @@ class FuzzingSlave(object):
             if self.config["debug"]:
                 # lets sleep a bit
                 time.sleep(0.5)
+
+            # save this iteration data for future crashes
+            # we do this at the start, not at the end, so we have to
+            # only write it once
+            previousFuzzingIterationData = fuzzingIterationData
+            fuzzingIterationData = None
 
             # previous fuzz generated a crash
             if not networkManager.openConnection():
@@ -134,7 +141,8 @@ class FuzzingSlave(object):
                     srvCrashData = serverManager.getCrashData()
                     crashData = FuzzingCrashData(srvCrashData)
                     crashData.setFuzzerPos("B")
-                    self.exportFuzzResult(crashData, fuzzingIterationData)
+                    # TODO really previousFuzzingIterationData? i think so
+                    self.exportFuzzResult(crashData, previousFuzzingIterationData)
                     networkManager.closeConnection()
                     serverManager.restart()
                     continue
@@ -173,9 +181,6 @@ class FuzzingSlave(object):
                 if not networkManager.testServerConnection():
                     logging.error("Error: Could not connect to server after restart. abort.")
                     return
-
-            # save this iteration data for future crashes
-            previousFuzzingIterationData = fuzzingIterationData
 
             # Update the counter and display the visual feedback
             iterStats["count"] += 1
