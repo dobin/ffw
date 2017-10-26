@@ -28,7 +28,7 @@ class Tester():
 
 
     def test(self):
-        targetPort = 20000
+        targetPort = self.config["baseport"]
         serverManager = simpleservermanager.SimpleServerManager(self.config, 0, targetPort)
         networkManager = networkmanager.NetworkManager(self.config, targetPort)
 
