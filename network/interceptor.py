@@ -175,30 +175,34 @@ def performUdpIntercept(config, localHost, localPort, targetHost, targetPort):
     sockListen = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     print "Listening on: " + str(localHost) + " : " + str(localPort)
     sockListen.bind((localHost, int(localPort)))
-    #sockListen.settimeout(1.0)
+    sockTarget.settimeout(1.0)
+    sockListen.settimeout(1.0)
 
     while True:
         try:
-            # wait for client msg
-            print "Waiting for client msg..."
-            data, addrCli = sockListen.recvfrom(1024)  # buffer size is 1024 bytes
-            print "cli: received message len: ", str(len(data))
-            print "     from: " + str(addrCli)
-            sockTarget.sendto(data, (targetHost, targetPort))
+            try:
+                # wait for client msg
+                print "Waiting for client msg..."
+                data, addrCli = sockListen.recvfrom(1024)  # buffer size is 1024 bytes
+                print "cli: received message len: ", str(len(data))
+                print "     from: " + str(addrCli)
+                sockTarget.sendto(data, (targetHost, targetPort))
 
-            d = {
-                "index": n,
-                "data": data,
-                "from": "cli",
-            }
-            dataArr.append(d)
-            n += 1
+                d = {
+                    "index": n,
+                    "data": data,
+                    "from": "cli",
+                }
+                dataArr.append(d)
+                n += 1
+            except socket.timeout:
+                print "cli: recv() timeout from server, continuing..."
 
             # check if server sends answer
             try:
                 data, addrSrv = sockTarget.recvfrom(1024)
                 if data is not None:
-                    print "Received from server: len: " + str(len(data))
+                    print "srv: Received from server: len: " + str(len(data))
                     d = {
                         "index": n,
                         "data": data,
@@ -206,12 +210,12 @@ def performUdpIntercept(config, localHost, localPort, targetHost, targetPort):
                     }
                     dataArr.append(d)
 
-                    print "Forward data from server to: " + str(addrCli)
+                    print "     Forward data from server to: " + str(addrCli)
                     sockListen.sendto(data, addrCli)
 
                     n += 1
             except socket.timeout:
-                print "recv() timeout from server, continuing..."
+                print "srv: recv() timeout from server, continuing..."
 
         except KeyboardInterrupt:
             print "\nTerminating..."
