@@ -79,6 +79,7 @@ class SimpleServerManager(object):
         popenArg = serverutils.getInvokeTargetArgs(self.config, self.targetPort)
         logging.info("Starting server with args: " + str(popenArg))
 
+        os.chdir( self.config["projdir"] + "/bin")
         # create devnull so we can us it to surpress output of the server (2.7 specific)
         DEVNULL = open(os.devnull, 'wb')
         p = subprocess.Popen(popenArg, stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL)
