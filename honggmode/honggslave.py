@@ -14,7 +14,6 @@ from network import networkmanager
 
 from fuzzer.fuzzingiterationdata import FuzzingIterationData
 from . import honggcomm
-import serverutils
 
 
 
@@ -30,6 +29,12 @@ class HonggSlave(object):
         self.queue = queue
         self.threadId = threadId
         self.initialSeed = initialSeed
+        self.iterStats = {
+            "lastUpdate": 0,
+            "iterCount": 0,
+            "corpusCount": 0,
+            "crashCount": 0,
+        }
 
 
     def doActualFuzz(self):
@@ -63,10 +68,12 @@ class HonggSlave(object):
         fuzzingIterationData = None
         while True:
             logging.debug("A fuzzing loop...")
+            self.manageStats()
 
             honggData = honggComm.readSocket()
 
             if honggData == "Fuzz":
+                self.iterStats["iterCount"] += 1
                 c = random.randint(0, len(corpus) - 1)
                 logging.info("--[ Fuzz corpus: " + str(c) + "  size: " + str(len(corpus)))
                 idata = corpus[c]
@@ -87,14 +94,29 @@ class HonggSlave(object):
             elif honggData == "New!":
                 logging.info( "--[ Adding file to corpus...")
                 corpus.append(fuzzingIterationData.fuzzedData)
+                self.iterStats["corpusCount"] += 1
             elif honggData == "Cras":
-                self.handleCrash(fuzzingIterationData)
                 logging.info( "--[ Adding crash...")
+                self.handleCrash(fuzzingIterationData)
+                self.iterStats["crashCount"] += 1
             elif honggData == "":
                 logging.info("Hongfuzz quit, exiting too\n")
-                #break
+                break
             else:
-                logging.info( "--[ Unknown: " + str(honggData))
+                logging.error( "--[ Unknown: " + str(honggData))
+
+
+    def manageStats(self):
+        currTime = time.time()
+
+        if currTime > self.iterStats["lastUpdate"] + 1:
+            # send fuzzing information to parent process
+            self.queue.put(
+                (self.threadId,
+                 self.iterStats["iterCount"],
+                 self.iterStats["corpusCount"],
+                 self.iterStats["crashCount"]) )
+            self.iterStats["lastUpdate"] = currTime
 
 
     def startServer(self):
@@ -119,7 +141,6 @@ class HonggSlave(object):
             sys.exit(1)
         #time.sleep( 1 )  # wait a bit so we are sure server is really started
         logging.info("  Pid: " + str(p.pid) )
-
 
 
     def sendData(self, networkManager, fuzzingIterationData):

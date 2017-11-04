@@ -27,19 +27,14 @@ def doFuzz(config):
     procs = []
     n = 0
 
-    if n == 1:
+    while n < config["processes"]:
+        print("Start child: " + str(n))
         r = random.randint(0, 2**32 - 1)
         fuzzingSlave = honggslave.HonggSlave(config, n, q, r)
-        fuzzingSlave.doActualFuzz()
-    else:
-        while n < config["processes"]:
-            print("Start child: " + str(n))
-            r = random.randint(0, 2**32 - 1)
-            fuzzingSlave = honggslave.HonggSlave(config, n, q, r)
-            p = Process(target=fuzzingSlave.doActualFuzz, args=())
-            procs.append(p)
-            p.start()
-            n += 1
+        p = Process(target=fuzzingSlave.doActualFuzz, args=())
+        procs.append(p)
+        p.start()
+        n += 1
 
     # restore signal handler
     signal.signal(signal.SIGINT, orig)
