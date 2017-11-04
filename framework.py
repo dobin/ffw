@@ -11,23 +11,24 @@ import sys
 from network import replay
 from network import interceptor
 from fuzzer import fuzzingmaster
-from verifier import verifier
+#from verifier import verifier
 from verifier import minimizer
 from uploader import uploader
 from network import tester
 from network import proto_vnc
+from honggmode import honggmode
 
 
 def realMain(config):
     func = "fuzz"
 
     if config["debug"]:
-        print "Debug mode enabled"
+        print("Debug mode enabled")
         logging.basicConfig(level=logging.DEBUG)
         config["processes"] = 1
 
     if config["proto"] == "vnc":
-        print "Using protocol: vnc"
+        print("Using protocol: vnc")
         config["protoObj"] = proto_vnc.ProtoVnc()
     else:
         config["protoObj"] = None
@@ -49,12 +50,12 @@ def realMain(config):
         t = tester.Tester(config)
         t.test()
 
-    if func == "verify":
-        v = verifier.Verifier(config)
-        if len(sys.argv) == 2:
-            v.verifyOutDir()
-        else:
-            v.verifyFile(sys.argv[2])
+#    if func == "verify":
+#        v = verifier.Verifier(config)
+#        if len(sys.argv) == 2:
+#            v.verifyOutDir()
+#        else:
+#            v.verifyFile(sys.argv[2])
 
 
     if func == "minimize":
@@ -80,3 +81,6 @@ def realMain(config):
             useCurses = True
 
         fuzzingmaster.doFuzz(config, useCurses)
+
+    if func == "honggmode":
+        honggmode.doFuzz(config)
