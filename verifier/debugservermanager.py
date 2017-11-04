@@ -17,9 +17,9 @@ from ptrace.debugger.process_event import ProcessExit
 from ptrace.debugger.ptrace_signal import ProcessSignal
 
 import serverutils
-from servermanager import ServerManager
+from .servermanager import ServerManager
 
-import verifycrashdata
+from . import verifycrashdata
 
 
 class DebugServerManager(ServerManager):
@@ -110,7 +110,7 @@ class DebugServerManager(ServerManager):
             faultAddress = event.process.getInstrPointer()
         except Exception as e:
             # process already dead, hmm
-            print("GetCrashDetails exception: " + str(e))
+            print(("GetCrashDetails exception: " + str(e)))
 
         # Find the module that contains this address
         # Now we need to turn the address into an offset. This way when the process
@@ -127,7 +127,7 @@ class DebugServerManager(ServerManager):
                     faultOffset = faultAddress - mapping.start
                     break
         except Exception as error:
-            print "getCrashDetails Exception: " + str(error)
+            print("getCrashDetails Exception: " + str(error))
             # it always has a an exception...
             pass
 
@@ -171,7 +171,7 @@ class DebugServerManager(ServerManager):
 
         except Exception as e:
             # process already dead, hmm
-            print("GetCrashDetails exception: " + str(e))
+            print(("GetCrashDetails exception: " + str(e)))
 
 
         vCrashData = verifycrashdata.VerifyCrashData(

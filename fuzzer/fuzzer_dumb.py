@@ -83,7 +83,7 @@ def copyData(inFile, outFile, count):
         current += readSize
 
 def usage():
-    print "%s: <seed> <input file> <output file>" % (sys.argv[0])
+    print("%s: <seed> <input file> <output file>" % (sys.argv[0]))
     sys.exit(-1)
 
 def main():
@@ -99,7 +99,7 @@ def main():
     # Generate a bunch of offsets for data we are going to corrupt and sort them
     offsets = []
     corrupt_pct = (random.random() * (MAX_CORRUPT - MIN_CORRUPT)) + MIN_CORRUPT
-    for i in xrange(int(size * corrupt_pct) + 1):
+    for i in range(int(size * corrupt_pct) + 1):
         offsets.append(random.randint(0, size-1))
     offsets = sorted(offsets)
 

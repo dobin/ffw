@@ -6,7 +6,7 @@ import gui
 
 from multiprocessing import Process, Queue
 
-import fuzzingslave
+from . import fuzzingslave
 import utils
 
 
@@ -29,7 +29,7 @@ def doFuzz(config, useCurses):
     n = 0
 
     while n < config["processes"]:
-        print "Start child: " + str(n)
+        print("Start child: " + str(n))
         r = random.randint(0, 2**32 - 1)
         fuzzingSlave = fuzzingslave.FuzzingSlave(config, n, q, r)
         p = Process(target=fuzzingSlave.doActualFuzz, args=())
@@ -50,7 +50,7 @@ def fuzzCurses(config, q, procs):
     data = [None] * config["processes"]
     n = 0
     while n < config["processes"]:
-        print "init: " + str(n)
+        print("init: " + str(n))
         data[n] = {
             "testspersecond": 0,
             "testcount": 0,
@@ -85,7 +85,7 @@ def fuzzConsole(config, q, procs):
     while True:
         try:
             r = q.get()
-            print "%d: %4d  %8d  %5d" % r
+            print("%d: %4d  %8d  %5d" % r)
         except KeyboardInterrupt:
             # handle ctrl-c
             for p in procs:
@@ -98,9 +98,9 @@ def fuzzConsole(config, q, procs):
 
 
 def printConfig(config):
-    print "Config:  "
-    print "  Running fuzzer:   ", config["fuzzer"]
-    print "  Outcomde dir:     ", config["outcome_dir"]
-    print "  Target:           ", config["target_bin"]
-    print "  Input dir:        ", config["inputs"]
-    print "  Analyze response: ", config["response_analysis"]
+    print("Config:  ")
+    print("  Running fuzzer:   ", config["fuzzer"])
+    print("  Outcomde dir:     ", config["outcome_dir"])
+    print("  Target:           ", config["target_bin"])
+    print("  Input dir:        ", config["inputs"])
+    print("  Analyze response: ", config["response_analysis"])

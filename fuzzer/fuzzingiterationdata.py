@@ -1,6 +1,5 @@
 #!/usr/bin/env python2
 
-import urllib
 import random
 import logging
 import os
@@ -120,8 +119,8 @@ class FuzzingIterationData(object):
             os.remove(self.fuzzingInFile)
             os.remove(self.fuzzingOutFile)
         except:
-            print "Failed to remove file %s!" % self.fuzzingInFile
-            print "Failed to remove file %s!" % self.fuzzingOutFile
+            print("Failed to remove file %s!" % self.fuzzingInFile)
+            print("Failed to remove file %s!" % self.fuzzingOutFile)
 
         return True
 
@@ -132,12 +131,12 @@ class FuzzingIterationData(object):
 
         fuzzerData = fuzzers[ self.config["fuzzer"] ]
         if not fuzzerData:
-            print "Could not find fuzzer with name: " + self.config["fuzzer"]
+            print("Could not find fuzzer with name: " + self.config["fuzzer"])
             return False
 
         fuzzerBin = self.config["basedir"] + "/" + fuzzerData["file"]
         if not os.path.isfile(fuzzerBin):
-            print "Could not find fuzzer binary: " + fuzzerBin
+            print("Could not find fuzzer binary: " + fuzzerBin)
             sys.exit()
 
         args = fuzzerData["args"] % ({

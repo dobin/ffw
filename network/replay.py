@@ -6,7 +6,7 @@ import time
 import logging
 import utils
 
-import networkmanager
+from . import networkmanager
 
 """
 Replay verified outcomes.
@@ -37,8 +37,8 @@ class Replayer():
 
     def replayFile(self, port, file):
         #logging.basicConfig(level=logging.INFO)
-        print "File: " + file
-        print "Port: " + str(port)
+        print("File: " + file)
+        print("Port: " + str(port))
 
         p = utils.readPickleFile(file)
         messages = p["fuzzIterData"]["fuzzedData"]
@@ -47,7 +47,7 @@ class Replayer():
 
     def replayAllFiles(self, config, port):
         global GLOBAL_SLEEP_REPLAY
-        print "Replay all files from directory: " + config["outcome_dir"]
+        print("Replay all files from directory: " + config["outcome_dir"])
 
         outcomeFiles = sorted(glob.glob(os.path.join(config["outcome_dir"], '*.ffw')), key=os.path.getctime)
         for outcomeFile in outcomeFiles:

@@ -55,7 +55,7 @@ class ClientTcpThread(threading.Thread):
 
 
     def run(self):
-        print "Client Thread" + str(self.__threadId) + " started"
+        print("Client Thread" + str(self.__threadId) + " started")
 
         self.__clientSocket.setblocking(0)
 
@@ -64,7 +64,7 @@ class ClientTcpThread(threading.Thread):
         try:
             targetHostSocket.connect((self.__targetHost, self.__targetPort))
         except Exception as e:
-            print "connect() exception: " + str(e)
+            print("connect() exception: " + str(e))
             return
         targetHostSocket.setblocking(0)
 
@@ -84,20 +84,20 @@ class ClientTcpThread(threading.Thread):
 
             try:
                 inputsReady, outputsReady, errorsReady = select.select(inputs, outputs, [], 1.0)
-            except Exception, e:
-                print e
+            except Exception as e:
+                print(e)
                 break
 
             for inp in inputsReady:
                 if inp == self.__clientSocket:
                     try:
                         data = self.__clientSocket.recv(4096)
-                    except Exception, e:
-                        print e
+                    except Exception as e:
+                        print(e)
 
                     if data is not None:
                         if len(data) > 0:
-                            print "Received from client: " + str(self.__threadId) + ": " + str(len(data))
+                            print("Received from client: " + str(self.__threadId) + ": " + str(len(data)))
                             targetHostData += data
                             self.data.append( self.createDataEntry("cli", data) )
                             n += 1
@@ -107,14 +107,14 @@ class ClientTcpThread(threading.Thread):
                     data = None
                     try:
                         data = targetHostSocket.recv(4096)
-                        print "target: recv data"
-                    except Exception, e:
-                        print "target recv Exception: " + str(e)
+                        print("target: recv data")
+                    except Exception as e:
+                        print("target recv Exception: " + str(e))
                         break
 
                     if data is not None:
                         if len(data) > 0:
-                            print "Received from server: " + str(self.__threadId) + ": " + str(len(data))
+                            print("Received from server: " + str(self.__threadId) + ": " + str(len(data)))
                             clientData += data
                             self.data.append( self.createDataEntry("srv", data) )
                             n += 1
@@ -133,10 +133,10 @@ class ClientTcpThread(threading.Thread):
 
         self.__clientSocket.close()
         targetHostSocket.close()
-        print "ClientTcpThread terminating"
+        print("ClientTcpThread terminating")
 
         # store all the stuff
-        print "Got " + str(len(self.data)) + " packets"
+        print("Got " + str(len(self.data)) + " packets")
         fileName = self.config["inputs"] + "/" + "data_" + str(self.__threadId) + ".pickle"
         with open(fileName, 'wb') as f:
             pickle.dump(self.data, f)
@@ -147,14 +147,14 @@ def performTcpIntercept(config, localHost, localPort, targetHost, targetPort):
     serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     serverSocket.bind((localHost, int(localPort)))
     serverSocket.listen(5)
-    print "Forwarding everything to %s:%s" % (targetHost, targetPort)
-    print "Waiting for client on port: " + str(localPort)
+    print("Forwarding everything to %s:%s" % (targetHost, targetPort))
+    print("Waiting for client on port: " + str(localPort))
     threadId = 0
     while True:
         try:
             clientSocket, address = serverSocket.accept()
         except KeyboardInterrupt:
-            print "\nTerminating all clients..."
+            print("\nTerminating all clients...")
             terminateAll = True
             break
 
@@ -173,7 +173,7 @@ def performUdpIntercept(config, localHost, localPort, targetHost, targetPort):
 
     # listening
     sockListen = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    print "Listening on: " + str(localHost) + " : " + str(localPort)
+    print("Listening on: " + str(localHost) + " : " + str(localPort))
     sockListen.bind((localHost, int(localPort)))
     sockTarget.settimeout(1.0)
     sockListen.settimeout(1.0)
@@ -182,10 +182,10 @@ def performUdpIntercept(config, localHost, localPort, targetHost, targetPort):
         try:
             try:
                 # wait for client msg
-                print "Waiting for client msg..."
+                print("Waiting for client msg...")
                 data, addrCli = sockListen.recvfrom(1024)  # buffer size is 1024 bytes
-                print "cli: received message len: ", str(len(data))
-                print "     from: " + str(addrCli)
+                print("cli: received message len: ", str(len(data)))
+                print("     from: " + str(addrCli))
                 sockTarget.sendto(data, (targetHost, targetPort))
 
                 d = {
@@ -196,13 +196,13 @@ def performUdpIntercept(config, localHost, localPort, targetHost, targetPort):
                 dataArr.append(d)
                 n += 1
             except socket.timeout:
-                print "cli: recv() timeout from server, continuing..."
+                print("cli: recv() timeout from server, continuing...")
 
             # check if server sends answer
             try:
                 data, addrSrv = sockTarget.recvfrom(1024)
                 if data is not None:
-                    print "srv: Received from server: len: " + str(len(data))
+                    print("srv: Received from server: len: " + str(len(data)))
                     d = {
                         "index": n,
                         "data": data,
@@ -210,19 +210,19 @@ def performUdpIntercept(config, localHost, localPort, targetHost, targetPort):
                     }
                     dataArr.append(d)
 
-                    print "     Forward data from server to: " + str(addrCli)
+                    print("     Forward data from server to: " + str(addrCli))
                     sockListen.sendto(data, addrCli)
 
                     n += 1
             except socket.timeout:
-                print "srv: recv() timeout from server, continuing..."
+                print("srv: recv() timeout from server, continuing...")
 
         except KeyboardInterrupt:
-            print "\nTerminating..."
+            print("\nTerminating...")
             break
 
     # store all the stuff
-    print "Got " + str(len(dataArr)) + " packets"
+    print("Got " + str(len(dataArr)) + " packets")
     fileName = config["inputs"] + "/" + "data_0.pickle"
     with open(fileName, 'wb') as f:
         pickle.dump(dataArr, f)

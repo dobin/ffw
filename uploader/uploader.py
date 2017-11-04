@@ -41,13 +41,13 @@ class Uploader(object):
         outcomesDir = os.path.abspath(self.config["verified_dir"])
         outcomesFiles = glob.glob(os.path.join(outcomesDir, '*.ffw'))
 
-        print("Processing %d outcome files" % len(outcomesFiles))
+        print(("Processing %d outcome files" % len(outcomesFiles)))
 
         if not self.projectExistsInCloud():
             self.createProjectInCloud()
 
         for outcomeFile in outcomesFiles:
-            print "Processing file: " + outcomeFile
+            print("Processing file: " + outcomeFile)
             outcome = utils.readPickleFile(outcomeFile)
 
             if outcome is not None:
@@ -61,12 +61,12 @@ class Uploader(object):
 
         if r.status_code != 200:
             logging.error("projectExistsInCloud: " + str(r.status_code))
-            print "Return: " + r.text
+            print("Return: " + r.text)
             sys.exit(0)
         j = r.json()
 
         if not j:
-            print "Err"
+            print("Err")
             return False
 
         j = j[0]  # we get an array atm, so just use first element
@@ -75,13 +75,13 @@ class Uploader(object):
             return False
         else:
             projectId = j["pk"]
-            print "project ID: " + str(projectId)
+            print("project ID: " + str(projectId))
             self.projectId = projectId
             return True
 
 
     def createProjectInCloud(self):
-        print "Create project: " + self.config["name"]
+        print("Create project: " + self.config["name"])
         url = self.server + "/api/projects/"
         payload = {
             "name": self.config["name"],
@@ -96,20 +96,20 @@ class Uploader(object):
             sys.exit(1)
         else:
             projectId = j["pk"]
-            print "project ID: " + str(projectId)
+            print("project ID: " + str(projectId))
             self.projectId = projectId
 
 
     def uploadData(self, outcome):
-        print "Upload data"
+        print("Upload data")
         url = self.server + "/api/crashdata/"
 
         if "fuzzIterData" not in outcome:
-            print "Did not find fuzzIterData"
+            print("Did not find fuzzIterData")
             sys.exit(1)
 
         if "fuzzerCrashData" not in outcome:
-            print "Did not find fuzzerCrashData"
+            print("Did not find fuzzerCrashData")
 
             # workaround...
             if "initialCrashData" in outcome:
@@ -181,6 +181,6 @@ class Uploader(object):
         r = requests.post(url, json=payload, auth=self.auth)
         if r.status_code < 200 or r.status_code > 299:
             pprint.pprint(payload)
-            print "Error response: " + r.text
+            print("Error response: " + r.text)
         else:
-            print "Uploading seed " + str(fuzzIterData["seed"]) + " successful"
+            print("Uploading seed " + str(fuzzIterData["seed"]) + " successful")

@@ -3,7 +3,7 @@
 import sys
 import re
 
-import verifycrashdata
+from . import verifycrashdata
 
 
 class AsanParser:

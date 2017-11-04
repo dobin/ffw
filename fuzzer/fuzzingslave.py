@@ -8,10 +8,10 @@ import sys
 import pickle
 import os
 
-from fuzzingcrashdata import FuzzingCrashData
+from .fuzzingcrashdata import FuzzingCrashData
 from network import networkmanager
-import fuzzingiterationdata
-import simpleservermanager
+from . import fuzzingiterationdata
+from . import simpleservermanager
 
 GLOBAL_SLEEP = {
     # how long to wait after server start
@@ -93,7 +93,7 @@ class FuzzingSlave(object):
             # TODO: better error, because server could not be started. stdout?
             return
 
-        print str(self.threadId) + " Start fuzzing..."
+        print(str(self.threadId) + " Start fuzzing...")
         self.queue.put( (self.threadId, 0, 0, 0) )
 
         fuzzingIterationData = None
@@ -191,9 +191,9 @@ class FuzzingSlave(object):
 
     def printFuzzData(self, fuzzData):
         for message in fuzzData:
-            print "  MSG: " + str(fuzzData.index(message))
-            print "    DATA: " + str( len(message["data"]) )
-            print "    FROM: " + str( message["from"] )
+            print("  MSG: " + str(fuzzData.index(message)))
+            print("    DATA: " + str( len(message["data"]) ))
+            print("    FROM: " + str( message["from"] ))
 
 
     def sendPreData(self, networkManager, fuzzingIterationData):

@@ -33,7 +33,7 @@ class Minimizer(object):
         outcomesFiles = glob.glob(os.path.join(outcomesDir, '*.ffw'))
         crashes = dict()
 
-        print("Processing %d outcome files" % len(outcomesFiles))
+        print(("Processing %d outcome files" % len(outcomesFiles)))
 
         for outcomeFile in outcomesFiles:
             crashDetails = self.readCrashDetails(outcomeFile)
@@ -50,18 +50,18 @@ class Minimizer(object):
 
     def showMinimizeOverview(self, outcomesFiles, crashes, noCrash):
 
-        print "Number of outcomes: " + str(len(outcomesFiles))
-        print "Number of no crashes: " + str(noCrash)
+        print("Number of outcomes: " + str(len(outcomesFiles)))
+        print("Number of no crashes: " + str(noCrash))
 
         # manage all these crashes
         for crash in crashes:
-            print "Crashes in Offset: %s" % hex(crash)
+            print("Crashes in Offset: %s" % hex(crash))
             for details in crashes[crash]:
-                print("  Crash: %s" % details["file"])
-                print("    Offset: %s" % hex(details["faultOffset"]))
-                print("    Module: %s" % details["module"])
-                print("    Signature: %s" % details["sig"])
-                print("    Details: %s" % details["details"])
+                print(("  Crash: %s" % details["file"]))
+                print(("    Offset: %s" % hex(details["faultOffset"])))
+                print(("    Module: %s" % details["module"]))
+                print(("    Signature: %s" % details["sig"]))
+                print(("    Details: %s" % details["details"]))
 
 
     def readCrashDetails(self, fileName):

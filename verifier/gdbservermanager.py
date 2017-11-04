@@ -3,8 +3,8 @@ import logging
 import re
 
 import serverutils
-import verifycrashdata
-from servermanager import ServerManager
+from . import verifycrashdata
+from .servermanager import ServerManager
 
 
 class GdbServerManager(ServerManager):
@@ -46,7 +46,7 @@ class GdbServerManager(ServerManager):
         # start gdb
         argsGdb = [ "/usr/bin/gdb", self.config["target_bin"], '-q' ]
 
-        print "Start server: " + str(argsGdb)
+        print("Start server: " + str(argsGdb))
         p = Popen(argsGdb, stdout=PIPE, stdin=PIPE, stderr=PIPE)
 
         data1 = "r " + self.config["target_args"] % ( { "port": self.targetPort } )

@@ -4,18 +4,18 @@ import time
 import os
 import glob
 import multiprocessing
-import Queue
+import queue
 import logging
 import signal
 import pickle
 import copy
 
-import debugservermanager
-import gdbservermanager
+from . import debugservermanager
+from . import gdbservermanager
 from network import networkmanager
 import utils
-import asanparser
-import verifierresult
+from . import asanparser
+from . import verifierresult
 
 """
 Crash Verifier
@@ -95,11 +95,11 @@ class Verifier(object):
         n = 0
         noCrash = 0
 
-        print("Processing %d outcome files" % len(outcomesFiles))
+        print(("Processing %d outcome files" % len(outcomesFiles)))
 
         try:
             for outcomeFile in outcomesFiles:
-                print("Now processing: " + str(n) + ": " + outcomeFile)
+                print(("Now processing: " + str(n) + ": " + outcomeFile))
                 targetPort = self.config["baseport"] + n + 100
                 self._verifyOutcome(targetPort, outcomeFile)
                 n += 1
@@ -109,13 +109,13 @@ class Verifier(object):
             try:
                 self.p.terminate()
             except Exception as error:
-                print "Exception: " + str(error)
+                print("Exception: " + str(error))
 
             # wait for child to exit
             self.p.join()
 
-        print "Number of outcomes: " + str(len(outcomesFiles))
-        print "Number of no crashes: " + str(noCrash)
+        print("Number of outcomes: " + str(len(outcomesFiles)))
+        print("Number of no crashes: " + str(noCrash))
 
 
     def _verifyOutcome(self, targetPort, outcomeFile):
@@ -232,7 +232,7 @@ class Verifier(object):
                 logging.error("Verifier: Output: " + serverStdout)
 
             return crashData
-        except Queue.Empty:
+        except queue.Empty:
             self._handleNoCrash()
             self.stopChild()
             return None
@@ -265,7 +265,7 @@ class Verifier(object):
 
         # handle registers
         if crashData.registers is not None:
-            registerStr = ''.join('{}={} '.format(key, val) for key, val in crashData.registers.items())
+            registerStr = ''.join('{}={} '.format(key, val) for key, val in list(crashData.registers.items()))
         else:
             registerStr = ""
 

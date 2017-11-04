@@ -5,7 +5,7 @@ import utils
 import sys
 
 from fuzzer import simpleservermanager
-import networkmanager
+from . import networkmanager
 
 """
 Test (recorded) data
@@ -43,19 +43,19 @@ class Tester():
 
         it = 0
         while it < 3:
-            print "==== Iteration ====="
+            print("==== Iteration =====")
             networkManager.openConnection()
             self.sendMessages(networkManager)
             networkManager.closeConnection()
             it += 1
 
-        print "Itercount: " + str(it)
-        print "Fails:"
+        print("Itercount: " + str(it))
+        print("Fails:")
         if len(self.stats) == 0:
-            print "None :-)"
+            print("None :-)")
         else:
-            for key, value in self.stats.iteritems():
-                print "Fails at msg #" + str(key) + ": " + str(value)
+            for key, value in self.stats.items():
+                print("Fails at msg #" + str(key) + ": " + str(value))
 
 
     def sendMessages(self, networkManager):
@@ -66,21 +66,21 @@ class Tester():
 
             sys.stdout.write("Handling msg: " + str(n) + " ")
             if message["from"] == "srv":
-                print "Receiving..."
-                print "  Orig: " + str(len(message["data"]))
+                print("Receiving...")
+                print("  Orig: " + str(len(message["data"])))
                 ret = networkManager.receiveData(message)
 
                 if not ret:
-                    print "  Could not receive"
+                    print("  Could not receive")
                     self.stats[n] += 1
                 else:
-                    print "  Real: " + str(len(ret))
+                    print("  Real: " + str(len(ret)))
                     if len(message["data"]) != len(ret):
                         self.stats[n] += 1
 
             if message["from"] == "cli":
-                print "Sending..."
-                print "  Send: " + str(len(message["data"]))
+                print("Sending...")
+                print("  Send: " + str(len(message["data"])))
                 ret = networkManager.sendData(message)
                 if not ret:
                     logging.debug("  server not reachable")
