@@ -148,7 +148,7 @@ class NetworkManager(object):
             if self.config["protoObj"] is not None and message is not None:
                 message["data"] = self.config["protoObj"].onPreSend(message["data"], message["index"])
 
-            self.sock.sendto(message["data"].encode(), ('127.0.0.1', self.targetPort))
+            self.sock.sendto(message["data"], ('127.0.0.1', self.targetPort))
         except socket.error as exc:
             logging.debug("  sendData(): Send data exception on msg " + str(message["index"]) + ": " + str(exc))
             return False
@@ -159,7 +159,7 @@ class NetworkManager(object):
     def receiveDataUdp(self, message=None):
         """Receive data from the server."""
         try:
-            data, addr = self.sock.recvfrom(1024).decode()
+            data, addr = self.sock.recvfrom(1024)
             if self.config["protoObj"] is not None and message is not None:
                 self.config["protoObj"].onPostRecv(data, message["index"])
             return data
@@ -175,8 +175,8 @@ class NetworkManager(object):
         sock.connect(dest)
 
         try:
-            sock.send("PING".encode())
-            sock.send("PING".encode())  # yes, send it two times. once is not enough to create exception!
+            sock.send("PING")
+            sock.send("PING")  # yes, send it two times. once is not enough to create exception!
             sock.close()
             return True
         except Exception as e:
