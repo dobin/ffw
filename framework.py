@@ -11,7 +11,7 @@ import sys
 from network import replay
 from network import interceptor
 from fuzzer import fuzzingmaster
-#from verifier import verifier
+from verifier import verifier
 from verifier import minimizer
 from uploader import uploader
 from network import tester
@@ -50,12 +50,12 @@ def realMain(config):
         t = tester.Tester(config)
         t.test()
 
-#    if func == "verify":
-#        v = verifier.Verifier(config)
-#        if len(sys.argv) == 2:
-#            v.verifyOutDir()
-#        else:
-#            v.verifyFile(sys.argv[2])
+    if func == "verify":
+        v = verifier.Verifier(config)
+        if len(sys.argv) == 2:
+            v.verifyOutDir()
+        else:
+            v.verifyFile(sys.argv[2])
 
 
     if func == "minimize":
