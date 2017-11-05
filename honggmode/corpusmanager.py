@@ -43,6 +43,9 @@ class CorpusManager(object):
             pickle.dump(data, f)
 
 
+    def getCorpusCount(self):
+        return len(self.corpus)
+
     def initialLoad(self):
         """
         Load initial recorded pickle files.
@@ -123,7 +126,6 @@ class FileWatcherEventHandler(pyinotify.ProcessEvent):
 
 
     def process_IN_CREATE(self, event):
-        print "Creating:", event.pathname
         self.corpusManager.newFileHandler(event.pathname)
 
 

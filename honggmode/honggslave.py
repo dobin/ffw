@@ -45,7 +45,7 @@ class HonggSlave(object):
         all magic is performed here
         sends results via queue to the parent
         """
-        logging.basicConfig(level=logging.DEBUG)
+        #logging.basicConfig(level=logging.DEBUG)
         self.config["processes"] = 1
 
         random.seed(self.initialSeed)
@@ -55,9 +55,9 @@ class HonggSlave(object):
         self.targetPort = targetPort
 
         networkManager = networkmanager.NetworkManager(self.config, targetPort)
-        corpusManager = corpusmanager.CorpusManager(self.config)
-        corpusManager.initialLoad()
-        corpusManager.startWatch()
+        self.corpusManager = corpusmanager.CorpusManager(self.config)
+        self.corpusManager.initialLoad()
+        self.corpusManager.startWatch()
 
         # start honggfuzz with target binary
         self.startServer()
@@ -70,14 +70,14 @@ class HonggSlave(object):
         while True:
             logging.debug("A fuzzing loop...")
             self.manageStats()
-            corpusManager.checkForNewFiles()
+            self.corpusManager.checkForNewFiles()
 
             honggData = honggComm.readSocket()
 
             if honggData == "Fuzz":
                 self.iterStats["iterCount"] += 1
 
-                corpusData = corpusManager.getRandomCorpus()
+                corpusData = self.corpusManager.getRandomCorpus()
                 fuzzingIterationData = FuzzingIterationData(self.config, corpusData)
 
                 if not fuzzingIterationData.fuzzData():
@@ -94,7 +94,7 @@ class HonggSlave(object):
 
             elif honggData == "New!":
                 logging.info( "--[ Adding file to corpus...")
-                corpusManager.addNewCorpusFile(fuzzingIterationData.fuzzedData, fuzzingIterationData.seed)
+                self.corpusManager.addNewCorpusFile(fuzzingIterationData.fuzzedData, fuzzingIterationData.seed)
                 self.iterStats["corpusCount"] += 1
             elif honggData == "Cras":
                 logging.info( "--[ Adding crash...")
@@ -116,6 +116,7 @@ class HonggSlave(object):
                 (self.threadId,
                  self.iterStats["iterCount"],
                  self.iterStats["corpusCount"],
+                 self.corpusManager.getCorpusCount(),
                  self.iterStats["crashCount"]) )
             self.iterStats["lastUpdate"] = currTime
 

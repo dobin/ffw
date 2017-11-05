@@ -6,7 +6,7 @@ import logging
 
 from multiprocessing import Process, Queue
 
-import utils
+import time
 from . import honggslave
 
 
@@ -26,7 +26,7 @@ def doFuzz(config):
     n = 0
 
     while n < config["processes"]:
-        print("Start child: " + str(n))
+        print("Start fuzzing child #" + str(n))
         r = random.randint(0, 2**32 - 1)
         fuzzingSlave = honggslave.HonggSlave(config, n, q, r)
         p = Process(target=fuzzingSlave.doActualFuzz, args=())
@@ -41,11 +41,13 @@ def doFuzz(config):
 
 
 def fuzzConsole(config, q, procs):
+    time.sleep(1)
+    print("Thread:  Iterations  CorpusNew  CorpusOverall  Crashes")
     while True:
         try:
             r = q.get()
-            print("%d: %4d  %8d  %5d" % r)
-            logging.info("%d: %4d  %8d  %5d" % r)
+            print(" %5d: %11d  %9d  %13d  %7d" % r)
+            #logging.info("%d: %4d  %8d  %5d" % r)
         except KeyboardInterrupt:
             # handle ctrl-c
             for p in procs:
