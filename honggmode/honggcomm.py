@@ -9,10 +9,10 @@ class HonggComm(object):
         self.sock = None
 
 
-    def openSocket(self):
+    def openSocket(self, fuzzerPid):
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 
-        server_address = '/tmp/honggfuzz_socket'
+        server_address = '/tmp/honggfuzz_socket.' + str(fuzzerPid)
         print(( 'connecting to %s' % server_address))
 
         while True:

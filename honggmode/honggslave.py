@@ -35,6 +35,7 @@ class HonggSlave(object):
             "corpusCount": 0,
             "crashCount": 0,
         }
+        self.fuzzerPid = None
 
 
     def doActualFuzz(self):
@@ -63,7 +64,7 @@ class HonggSlave(object):
 
         # connect with honggfuzz
         honggComm = honggcomm.HonggComm()
-        honggComm.openSocket()
+        honggComm.openSocket(self.fuzzerPid)
 
         fuzzingIterationData = None
         while True:
@@ -141,6 +142,7 @@ class HonggSlave(object):
             sys.exit(1)
         #time.sleep( 1 )  # wait a bit so we are sure server is really started
         logging.info("  Pid: " + str(p.pid) )
+        self.fuzzerPid = p.pid
 
 
     def sendData(self, networkManager, fuzzingIterationData):
