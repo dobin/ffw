@@ -1,8 +1,12 @@
 # FFW - Fuzzing For Worms
 
-Fuzzes network servers.
+Fuzzes network servers/services by intercepting valid network
+communication data, then replay it with some fuzzing.
 
-* A network server which does not fork and accepts a port on the command line
+Requires:
+* A network server which does not fork and accepts a port on the command line, on linux
+* Source not required
+* A client for that network server
 
 # Install
 
@@ -16,10 +20,10 @@ cd ffw/
 ## Install deps
 
 ```
-pip install python-ptrace
+pip install python-ptrace pyinotify
 ```
 
-### Fix ptrace
+### Fix ptrace (optional)
 
 python-ptrace sometimes encounters a bug. Fix the regex specified below.
 The path may be different (depending on how you installed pytohn-ptrace).
@@ -40,7 +44,7 @@ PROC_MAP_REGEX = re.compile(
 )
 ```
 
-## install radamsa
+## install radamsa fuzzer
 
 Default path specified in ffw for radamsa is `ffw/radamsa`:
 
@@ -73,7 +77,7 @@ Create a copy of the template directory for the software you want to test, in th
 ```
 $ cd ffw/
 $ cd vulnserver/
-$ cp -R ../template/* vulnserver/
+$ cp -R ../template/* .
 ```
 
 The directory `vulnserver` will be our working directory from now on.
@@ -325,6 +329,25 @@ Program received signal SIGSEGV, Segmentation fault.
 ```
 
 
+## Honggmode
+
+Specify location of honggfuzz in `fuzzing.py`:
+
+
+
+Compile with:
+```
+export HFUZZ_CC_ASAN="true"
+export CC=~/honggfuzz/hfuzz_cc/hfuzz-clang
+```
+
+Start with:
+```
+./fuzzing.py honggmode
+```
+Instead of `./fuzzing.py fuzz`
+
+
 # Detailed Modes Description
 
 * Interceptor
@@ -333,7 +356,7 @@ Program received signal SIGSEGV, Segmentation fault.
 * Verifier
 * Replayer
 
-<tbd>
+TODO
 
 
 # Various infos
