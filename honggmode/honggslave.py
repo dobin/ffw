@@ -24,6 +24,13 @@ def signal_handler(signal, frame):
 
 
 class HonggSlave(object):
+    """
+    The child thread of the HonggMode fuzzer.
+
+    Implements the actual fuzzing logic, whereas the HonggMode
+    class only starts this class as a dedicated thread.
+    """
+
     def __init__(self, config, threadId, queue, initialSeed):
         self.config = config
         self.queue = queue
@@ -40,16 +47,18 @@ class HonggSlave(object):
 
     def doActualFuzz(self):
         """
-        The main fuzzing loop.
+        Child thread of fuzzer - does teh actual fuzzing.
 
-        all magic is performed here
-        sends results via queue to the parent
+        Sends results/stats via queue to the parent.
+        Will start the target via honggfuzz, connect to the honggfuzz socket,
+        and according to the honggfuzz commands from the socket, send
+        the fuzzed messages to the target binary.
         """
-        #logging.basicConfig(level=logging.DEBUG)
+        logging.basicConfig(level=logging.DEBUG)
         self.config["processes"] = 1
 
-        random.seed(self.initialSeed)
         logging.info("Setup fuzzing..")
+        random.seed(self.initialSeed)
         signal.signal(signal.SIGINT, signal_handler)
         targetPort = self.config["baseport"] + self.threadId
         self.targetPort = targetPort
@@ -60,54 +69,95 @@ class HonggSlave(object):
         self.corpusManager.startWatch()
 
         # start honggfuzz with target binary
-        self.startServer()
+        self._startServer()
 
         # connect with honggfuzz
         honggComm = honggcomm.HonggComm()
         honggComm.openSocket(self.fuzzerPid)
 
+        # warmup
+        # Send all initial corpus once and ignore new BB commands so we
+        # dont add it again.
+        # Note that at the end, there may be still commands in the socket
+        # queue which we need to ignore on the fuzzing loop.
+        initialCorpusIter = iter(self.corpusManager)
+        logging.info("Performing warmup")
+        while True:
+            logging.debug("A warmup loop...")
+
+            try:
+                initialCorpusData = initialCorpusIter.next()
+            except StopIteration:
+                break
+
+            honggData = honggComm.readSocket()
+            if honggData == "Fuzz":
+                logging.debug("Fuzz: Warmup send")
+                self._connectAndSendData(networkManager, initialCorpusData)
+                honggComm.writeSocket("okay")
+
+            else:
+                # We dont really care what the fuzzer sends us
+                # BUT it should be always "New!"
+                # It should never be "Cras"
+                logging.debug("received: " + honggData)
+
+        # the actual fuzzing
+        logging.info("Performing fuzzing")
         fuzzingIterationData = None
         while True:
             logging.debug("A fuzzing loop...")
-            self.manageStats()
+            self._uploadStats()
             self.corpusManager.checkForNewFiles()
 
             honggData = honggComm.readSocket()
-
             if honggData == "Fuzz":
                 self.iterStats["iterCount"] += 1
 
                 corpusData = self.corpusManager.getRandomCorpus()
                 fuzzingIterationData = FuzzingIterationData(self.config, corpusData)
-
                 if not fuzzingIterationData.fuzzData():
                     logging.error("Could not fuzz the data")
                     return
 
-                if networkManager.openConnection():
-                    self.sendData(networkManager, fuzzingIterationData)
-                    networkManager.closeConnection()
-                else:
-                    logging.error( "--- WTF")
-
+                self._connectAndSendData(networkManager, fuzzingIterationData.fuzzedData)
                 honggComm.writeSocket("okay")
 
             elif honggData == "New!":
-                logging.info( "--[ Adding file to corpus...")
-                self.corpusManager.addNewCorpusFile(fuzzingIterationData.fuzzedData, fuzzingIterationData.seed)
-                self.iterStats["corpusCount"] += 1
+                # Warmup may result in a stray message, ignore here
+                if fuzzingIterationData is not None:
+                    logging.info( "--[ Adding file to corpus...")
+                    self.corpusManager.addNewCorpusFile(fuzzingIterationData.fuzzedData, fuzzingIterationData.seed)
+                    self.iterStats["corpusCount"] += 1
+
             elif honggData == "Cras":
-                logging.info( "--[ Adding crash...")
-                self.handleCrash(fuzzingIterationData)
-                self.iterStats["crashCount"] += 1
+                # Warmup may result in a stray message, ignore here
+                if fuzzingIterationData is not None:
+                    logging.info( "--[ Adding crash...")
+                    self._handleCrash(fuzzingIterationData)
+                    self.iterStats["crashCount"] += 1
+
             elif honggData == "":
                 logging.info("Hongfuzz quit, exiting too\n")
                 break
             else:
+                # This should not happen
                 logging.error( "--[ Unknown: " + str(honggData))
 
 
-    def manageStats(self):
+    def _connectAndSendData(self, networkManager, data):
+        """Connect to server via networkManager and send the data."""
+        # try to connect, if server down, wait a bit and try
+        # again (forever)
+        while not networkManager.openConnection():
+            time.sleep(0.2)
+
+        self._sendData(networkManager, data)
+        networkManager.closeConnection()
+
+
+    def _uploadStats(self):
+        """Send fuzzing statistics to parent."""
         currTime = time.time()
 
         if currTime > self.iterStats["lastUpdate"] + 1:
@@ -121,17 +171,18 @@ class HonggSlave(object):
             self.iterStats["lastUpdate"] = currTime
 
 
-    def startServer(self):
-        logging.debug( "Starting server")
+    def _startServer(self):
+        """Start the target (-server) via honggfuzz."""
+        logging.debug( "Starting server/honggfuzz")
 
-        args = "/home/dobin/honggfuzz/honggfuzz -Q -S -C -n 1 -d 4 -l log3.txt -s --socket_fuzzer -- "
+        args = self.config["honggpath"] + " -Q -S -C -n 1 -d 4 -l log3.txt -s --socket_fuzzer -- "
         args += self.config["target_bin"] + " " + self.config["target_args"] % ( { "port": self.targetPort } )
         argsArr = args.split(" ")
         cmdArr = [ ]
         cmdArr.extend( argsArr )
         popenArg = cmdArr
 
-        logging.info("Starting server with args: " + str(popenArg))
+        logging.info("Starting server/honggfuzz with args: " + str(args))
 
         os.chdir( self.config["projdir"] + "/bin")
         # create devnull so we can us it to surpress output of the server (2.7 specific)
@@ -141,15 +192,15 @@ class HonggSlave(object):
         except Exception as e:
             logging.debug( "E: " + str(e))
             sys.exit(1)
-        #time.sleep( 1 )  # wait a bit so we are sure server is really started
-        logging.info("  Pid: " + str(p.pid) )
+        time.sleep( 1 )  # wait a bit so we are sure server is really started
         self.fuzzerPid = p.pid
 
 
-    def sendData(self, networkManager, fuzzingIterationData):
+    def _sendData(self, networkManager, messages):
+        """Send the (-fuzzed) network messages to the target."""
         logging.info("Send data: ")
 
-        for message in fuzzingIterationData.fuzzedData:
+        for message in messages:
             if message["from"] == "srv":
                 r = networkManager.receiveData(message)
                 if not r:
@@ -157,7 +208,7 @@ class HonggSlave(object):
                     return False
 
             if message["from"] == "cli":
-                logging.debug("  Sending message: " + str(fuzzingIterationData.fuzzedData.index(message)))
+                logging.debug("  Sending message: " + str(messages.index(message)))
                 res = networkManager.sendData(message)
                 if res is False:
                     return False
@@ -165,7 +216,7 @@ class HonggSlave(object):
         return True
 
 
-    def handleCrash(self, fuzzingIterationData):
+    def _handleCrash(self, fuzzingIterationData):
         srvCrashData = {
             'asanOutput': 'empty',
             'signum': 0,
@@ -175,10 +226,10 @@ class HonggSlave(object):
         }
         crashData = FuzzingCrashData(srvCrashData)
         crashData.setFuzzerPos("-")
-        self.exportFuzzResult(crashData, fuzzingIterationData)
+        self._exportFuzzResult(crashData, fuzzingIterationData)
 
 
-    def exportFuzzResult(self, crashDataModel, fuzzIter):
+    def _exportFuzzResult(self, crashDataModel, fuzzIter):
         seed = fuzzIter.seed
 
         crashData = crashDataModel.getData()

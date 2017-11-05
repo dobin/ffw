@@ -12,3 +12,7 @@ class CorpusFile(object):
         for input in data:
             input["index"] = n
             n += 1
+
+
+    def getData(self):
+        return self.data

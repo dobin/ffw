@@ -10,6 +10,23 @@ import glob
 from . import corpusfile
 
 
+class CorpusIterator(object):
+    def __init__(self, corpuses):
+        self.corpuses = corpuses
+        self.current = 0
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        if self.current >= len(self.corpuses):
+            raise StopIteration
+        else:
+            self.current += 1
+            return self.corpuses[self.current - 1].getData()
+
+
+
 class CorpusManager(object):
     """
     Manage the corpus files for the fuzzer.
@@ -20,6 +37,10 @@ class CorpusManager(object):
         self.corpus = []
         self.config = config
         self.fileWatcher = FileWatcher(config, self)
+
+
+    def __iter__(self):
+        return CorpusIterator(self.corpus)
 
 
     def getRandomCorpus(self):
