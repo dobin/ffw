@@ -14,7 +14,7 @@ from network import networkmanager
 
 from fuzzer.fuzzingiterationdata import FuzzingIterationData
 from . import honggcomm
-
+from . import corpusmanager
 
 
 def signal_handler(signal, frame):
@@ -53,10 +53,10 @@ class HonggSlave(object):
         targetPort = self.config["baseport"] + self.threadId
         self.targetPort = targetPort
 
-        initialData = self.config["_inputs"]
         networkManager = networkmanager.NetworkManager(self.config, targetPort)
-        corpus = []
-        corpus.append(initialData)
+        corpusManager = corpusmanager.CorpusManager(self.config)
+        corpusManager.initialLoad()
+        corpusManager.startWatch()
 
         # start honggfuzz with target binary
         self.startServer()
@@ -69,15 +69,15 @@ class HonggSlave(object):
         while True:
             logging.debug("A fuzzing loop...")
             self.manageStats()
+            corpusManager.checkForNewFiles()
 
             honggData = honggComm.readSocket()
 
             if honggData == "Fuzz":
                 self.iterStats["iterCount"] += 1
-                c = random.randint(0, len(corpus) - 1)
-                logging.info("--[ Fuzz corpus: " + str(c) + "  size: " + str(len(corpus)))
-                idata = corpus[c]
-                fuzzingIterationData = FuzzingIterationData(self.config, idata)
+
+                corpusData = corpusManager.getRandomCorpus()
+                fuzzingIterationData = FuzzingIterationData(self.config, corpusData)
 
                 if not fuzzingIterationData.fuzzData():
                     logging.error("Could not fuzz the data")
@@ -93,7 +93,7 @@ class HonggSlave(object):
 
             elif honggData == "New!":
                 logging.info( "--[ Adding file to corpus...")
-                corpus.append(fuzzingIterationData.fuzzedData)
+                corpusManager.addNewCorpusFile(fuzzingIterationData.fuzzedData, fuzzingIterationData.seed)
                 self.iterStats["corpusCount"] += 1
             elif honggData == "Cras":
                 logging.info( "--[ Adding crash...")

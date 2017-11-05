@@ -22,8 +22,6 @@ def doFuzz(config):
     # so ctlr-c works
     orig = signal.signal(signal.SIGINT, signal.SIG_IGN)
 
-    utils.prepareInput(config)
-
     procs = []
     n = 0
 
