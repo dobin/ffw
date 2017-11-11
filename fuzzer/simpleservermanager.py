@@ -19,7 +19,7 @@ will start the server (target), stop it etc.
 GLOBAL_SLEEP = {
     # how long to wait after server start
     # can be high as it is not happening so often
-    "sleep_after_server_start": 3,
+    "sleep_after_server_start": 1,
 }
 
 

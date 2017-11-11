@@ -28,14 +28,19 @@ def doFuzz(config, useCurses):
     procs = []
     n = 0
 
-    while n < config["processes"]:
-        print("Start child: " + str(n))
+    if "nofork" in config and config["nofork"]:
         r = random.randint(0, 2**32 - 1)
         fuzzingSlave = fuzzingslave.FuzzingSlave(config, n, q, r)
-        p = Process(target=fuzzingSlave.doActualFuzz, args=())
-        procs.append(p)
-        p.start()
-        n += 1
+        fuzzingSlave.doActualFuzz()
+    else:
+        while n < config["processes"]:
+            print("Start child: " + str(n))
+            r = random.randint(0, 2**32 - 1)
+            fuzzingSlave = fuzzingslave.FuzzingSlave(config, n, q, r)
+            p = Process(target=fuzzingSlave.doActualFuzz, args=())
+            procs.append(p)
+            p.start()
+            n += 1
 
     # restore signal handler
     signal.signal(signal.SIGINT, orig)
@@ -82,10 +87,11 @@ def fuzzCurses(config, q, procs):
 
 
 def fuzzConsole(config, q, procs):
+    print("Thread#  Fuzz/s   Count   Crashes")
     while True:
         try:
             r = q.get()
-            print("%d: %4d  %8d  %5d" % r)
+            print("%d: %4.2f  %8d  %5d" % r)
         except KeyboardInterrupt:
             # handle ctrl-c
             for p in procs:

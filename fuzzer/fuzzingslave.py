@@ -39,21 +39,21 @@ class FuzzingSlave(object):
 
 
     def updateStats(self, iterStats):
-        # stats
-        iterStats["currTime"] = time.time()
-        iterStats["diffTime"] = iterStats["currTime"] - iterStats["startTime"]
-        if iterStats["diffTime"] > GLOBAL_SLEEP["communicate_interval"]:
-            iterStats["fuzzps"] = iterStats["epochCount"] / iterStats["diffTime"]
-            # send fuzzing information to parent process
-            self.queue.put( (self.threadId, iterStats["fuzzps"], iterStats["count"], iterStats["crashCount"]) )
-            iterStats["startTime"] = iterStats["currTime"]
-            iterStats["epochCount"] = 0
-        else:
-            iterStats["epochCount"] += 1
+        iterStats["count"] += 1
 
-        #if iterStats.crashCountAnalLast + config["crash_minimize_time"] < iterStats.crashCount:
-        #    minimizeCrashes(config)
-        #    iterStats.crashCountAnalLast = crashCount
+        # check if we should notify parent
+        currTime = time.time()
+        diffTime = currTime - iterStats["lastUpdateTime"]
+
+        if diffTime > GLOBAL_SLEEP["communicate_interval"]:
+            fuzzPerSec = float(iterStats["count"]) / float(currTime - iterStats["startTime"])
+            # send fuzzing information to parent process
+            self.queue.put( (self.threadId, fuzzPerSec, iterStats["count"], iterStats["crashCount"]) )
+
+            if "nofork" in self.config and self.config["nofork"]:
+                print("%d: %4.2f  %8d  %5d" % (self.threadId, fuzzPerSec, iterStats["count"], iterStats["crashCount"]))
+
+            iterStats["lastUpdateTime"] = currTime
 
 
     def doActualFuzz(self):
@@ -74,12 +74,10 @@ class FuzzingSlave(object):
         networkManager = networkmanager.NetworkManager(self.config, targetPort)
 
         iterStats = {
-            "count": 0,
+            "count": 0,  # number of iterations
             "crashCount": 0,  # number of crashes, absolute
-            "crashCountAnalLast": 0,  # when was the last crash analysis
-            "gcovAnalysisLastIter": 0,  # when was gcov analysis last performed (in iterations)
             "startTime": time.time(),
-            "epochCount": 0,
+            "lastUpdateTime": time.time(),
         }
         initialData = self.config["_inputs"]
         sendDataResult = None
@@ -182,9 +180,6 @@ class FuzzingSlave(object):
                     logging.error("Error: Could not connect to server after restart. abort.")
                     return
 
-            # Update the counter and display the visual feedback
-            iterStats["count"] += 1
-
         # all done, terminate server
         serverManager.stopServer()
 
@@ -206,14 +201,12 @@ class FuzzingSlave(object):
             if message["from"] == "srv":
                 r = networkManager.receiveData(message)
                 if not r:
-                    logging.info("Could not read, crash?!")
                     return False
 
             if message["from"] == "cli":
                 logging.debug("  Sending pre message: " + str(fuzzingIterationData.fuzzedData.index(message)))
                 ret = networkManager.sendData(message)
                 if not ret:
-                    logging.debug("  server not reachable")
                     return False
 
         return True
@@ -232,11 +225,9 @@ class FuzzingSlave(object):
                 if message["from"] == "srv":
                     r = networkManager.receiveData(message)
                     if not r:
-                        logging.info("Could not read, crash?!")
                         return False
 
                 if message["from"] == "cli":
-                    logging.debug("  Sending message: " + str(fuzzingIterationData.fuzzedData.index(message)))
                     res = networkManager.sendData(message)
                     if res is False:
                         return False
