@@ -45,10 +45,14 @@ class NetworkManager(object):
         """
         self.closeConnection()
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
         server_address = ('localhost', self.targetPort)
         logging.info("Open connection on localhost:" + str(self.targetPort))
         try:
             self.sock.connect(server_address)
+
+            if "high_performance" in self.config:
+                self.sock.setblocking(0)
         except socket.error as exc:
             # server down
             self.sock.close()
@@ -84,7 +88,7 @@ class NetworkManager(object):
 
     def receiveDataTcp(self, message=None):
         """Receive data from the server."""
-        self.sock.settimeout(1)
+        self.sock.settimeout(0.01)
         try:
             data = self.sock.recv(1024)
             if self.config["protoObj"] is not None and message is not None:
