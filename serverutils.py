@@ -66,6 +66,7 @@ def setupEnvironment(config):
     # set working directory
     # TODO FIXME
 
+
 def getAsanOutput(config, pid):
     """Get ASAN output file based on the pid and config."""
     # as we cannot get stdout/stderr of child process, we store asan

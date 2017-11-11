@@ -111,10 +111,7 @@ class HonggSlave(object):
             self._uploadStats()
             self.corpusManager.checkForNewFiles()
 
-            t1 = time.time()
             honggData = honggComm.readSocket()
-            t2 = time.time()
-            print "T: " + str(t2 - t1)
             if honggData == "Fuzz":
                 # check first if we have new corpus from other threads
                 # if yes: send it. We'll ignore New!/Cras msgs by settings

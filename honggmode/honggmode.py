@@ -22,6 +22,7 @@ def doFuzz(config):
     # so ctlr-c works
     orig = signal.signal(signal.SIGINT, signal.SIG_IGN)
 
+    logging.basicConfig(level=logging.ERROR)
     procs = []
     n = 0
 
@@ -48,9 +49,11 @@ def doFuzz(config):
 def fuzzConsole(config, q, procs):
     time.sleep(1)
     print("Thread:  Iterations  CorpusNew  CorpusOverall  Crashes  Fuzz/s")
+    perf = {}
     while True:
         try:
             r = q.get()
+            perf[r[0]] = r
             print(" %5d: %11d  %9d  %13d  %7d  %4.2f" % r)
             #logging.info("%d: %4d  %8d  %5d" % r)
         except KeyboardInterrupt:

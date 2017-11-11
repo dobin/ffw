@@ -92,13 +92,18 @@ class CorpusManager(object):
             return
 
         logging.info("Load external corpus: " + fileName)
-        with open(fileName, 'rb') as f:
-            data = pickle.load(f)
+        try:
+            with open(fileName, 'rb') as f:
+                data = pickle.load(f)
 
-        # we'll have to send this new corpus once, but ignore
-        # resulting "New!" from fuzzer. therefore processed=False
-        corpusFile = corpusfile.CorpusFile(fileName, data, processed=False)
-        self.corpus.append(corpusFile)
+            # we'll have to send this new corpus once, but ignore
+            # resulting "New!" from fuzzer. therefore processed=False
+            corpusFile = corpusfile.CorpusFile(fileName, data, processed=False)
+            self.corpus.append(corpusFile)
+
+        except Exception as e:
+            #logging.error("E: " + str(e))
+            pass
 
 
     def hasNewExternalCorpus(self):

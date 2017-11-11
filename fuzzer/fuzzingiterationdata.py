@@ -108,12 +108,8 @@ class FuzzingIterationData(object):
         data = file.read()
         file.close()
 
-        #m = self.fuzzedData.index(self.choice)
-        #self.fuzzedData[m]["data"] = data
         self.choice["data"] = data
         self.choice["isFuzzed"] = True
-
-        #logging.debug("OUTPUT: " + urllib.quote_plus(self.choice["data"]))
 
         try:
             os.remove(self.fuzzingInFile)
