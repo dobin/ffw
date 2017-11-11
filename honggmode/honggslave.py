@@ -112,26 +112,41 @@ class HonggSlave(object):
 
             honggData = honggComm.readSocket()
             if honggData == "Fuzz":
-                self.iterStats["iterCount"] += 1
+                # check first if we have new corpus from other threads
+                # if yes: send it. We'll ignore New!/Cras msgs by settings
+                # fuzzingIterationData = None
+                if self.corpusManager.hasNewExternalCorpus():
+                    fuzzingIterationData = None  # important
+                    corpus = self.corpusManager.getNewExternalCorpus()
+                    corpus.processed = True
+                    self._connectAndSendData(networkManager, corpus.getData())
 
-                corpusData = self.corpusManager.getRandomCorpus()
-                fuzzingIterationData = FuzzingIterationData(self.config, corpusData)
-                if not fuzzingIterationData.fuzzData():
-                    logging.error("Could not fuzz the data")
-                    return
+                # just randomly select a corpus, fuzz it, (handle result)
+                else:
+                    self.iterStats["iterCount"] += 1
 
-                self._connectAndSendData(networkManager, fuzzingIterationData.fuzzedData)
+                    corpus = self.corpusManager.getRandomCorpus()
+                    fuzzingIterationData = FuzzingIterationData(self.config, corpus.getData())
+                    if not fuzzingIterationData.fuzzData():
+                        logging.error("Could not fuzz the data")
+                        return
+
+                    self._connectAndSendData(networkManager, fuzzingIterationData.fuzzedData)
+
+                # send okay to continue honggfuzz
                 honggComm.writeSocket("okay")
 
             elif honggData == "New!":
                 # Warmup may result in a stray message, ignore here
+                # If new-corpus-from-other-thread: Ignore here
                 if fuzzingIterationData is not None:
                     logging.info( "--[ Adding file to corpus...")
-                    self.corpusManager.addNewCorpusFile(fuzzingIterationData.fuzzedData, fuzzingIterationData.seed)
+                    self.corpusManager.addNewCorpus(fuzzingIterationData.fuzzedData, fuzzingIterationData.seed)
                     self.iterStats["corpusCount"] += 1
 
             elif honggData == "Cras":
                 # Warmup may result in a stray message, ignore here
+                # If new-corpus-from-other-thread: Ignore here
                 if fuzzingIterationData is not None:
                     logging.info( "--[ Adding crash...")
                     self._handleCrash(fuzzingIterationData)

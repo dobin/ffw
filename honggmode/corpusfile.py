@@ -2,10 +2,10 @@
 
 class CorpusFile(object):
 
-
-    def __init__(self, filename, data):
+    def __init__(self, filename, data, processed=True):
         self.data = data
         self.filename = filename
+        self.processed = processed
 
         # backward compatibility
         n = 0
@@ -16,3 +16,7 @@ class CorpusFile(object):
 
     def getData(self):
         return self.data
+
+
+    def isProcessed(self):
+        return self.processed
