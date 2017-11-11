@@ -110,7 +110,7 @@ class FuzzingIterationData(object):
 
         #m = self.fuzzedData.index(self.choice)
         #self.fuzzedData[m]["data"] = data
-#        self.choice["data"] = data
+        self.choice["data"] = data
         self.choice["isFuzzed"] = True
 
         #logging.debug("OUTPUT: " + urllib.quote_plus(self.choice["data"]))
