@@ -25,14 +25,19 @@ def doFuzz(config):
     procs = []
     n = 0
 
-    while n < config["processes"]:
-        print("Start fuzzing child #" + str(n))
+    if "nofork" in config and config["nofork"]:
         r = random.randint(0, 2**32 - 1)
         fuzzingSlave = honggslave.HonggSlave(config, n, q, r)
-        p = Process(target=fuzzingSlave.doActualFuzz, args=())
-        procs.append(p)
-        p.start()
-        n += 1
+        fuzzingSlave.doActualFuzz()
+    else:
+        while n < config["processes"]:
+            print("Start fuzzing child #" + str(n))
+            r = random.randint(0, 2**32 - 1)
+            fuzzingSlave = honggslave.HonggSlave(config, n, q, r)
+            p = Process(target=fuzzingSlave.doActualFuzz, args=())
+            procs.append(p)
+            p.start()
+            n += 1
 
     # restore signal handler
     signal.signal(signal.SIGINT, orig)
@@ -42,11 +47,11 @@ def doFuzz(config):
 
 def fuzzConsole(config, q, procs):
     time.sleep(1)
-    print("Thread:  Iterations  CorpusNew  CorpusOverall  Crashes")
+    print("Thread:  Iterations  CorpusNew  CorpusOverall  Crashes  Fuzz/s")
     while True:
         try:
             r = q.get()
-            print(" %5d: %11d  %9d  %13d  %7d" % r)
+            print(" %5d: %11d  %9d  %13d  %7d  %4.2f" % r)
             #logging.info("%d: %4d  %8d  %5d" % r)
         except KeyboardInterrupt:
             # handle ctrl-c

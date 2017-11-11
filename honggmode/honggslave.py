@@ -41,6 +41,7 @@ class HonggSlave(object):
             "iterCount": 0,
             "corpusCount": 0,
             "crashCount": 0,
+            "startTime": time.time(),
         }
         self.fuzzerPid = None
 
@@ -54,7 +55,7 @@ class HonggSlave(object):
         and according to the honggfuzz commands from the socket, send
         the fuzzed messages to the target binary.
         """
-        logging.basicConfig(level=logging.DEBUG)
+        #logging.basicConfig(level=logging.DEBUG)
         self.config["processes"] = 1
 
         logging.info("Setup fuzzing..")
@@ -110,7 +111,10 @@ class HonggSlave(object):
             self._uploadStats()
             self.corpusManager.checkForNewFiles()
 
+            t1 = time.time()
             honggData = honggComm.readSocket()
+            t2 = time.time()
+            print "T: " + str(t2 - t1)
             if honggData == "Fuzz":
                 # check first if we have new corpus from other threads
                 # if yes: send it. We'll ignore New!/Cras msgs by settings
@@ -176,21 +180,28 @@ class HonggSlave(object):
         currTime = time.time()
 
         if currTime > self.iterStats["lastUpdate"] + 1:
+            fuzzPerSec = float(self.iterStats["iterCount"]) / float(currTime - self.iterStats["startTime"])
+
             # send fuzzing information to parent process
-            self.queue.put(
-                (self.threadId,
+            d = (self.threadId,
                  self.iterStats["iterCount"],
                  self.iterStats["corpusCount"],
                  self.corpusManager.getCorpusCount(),
-                 self.iterStats["crashCount"]) )
+                 self.iterStats["crashCount"],
+                 fuzzPerSec)
+            self.queue.put( d )
             self.iterStats["lastUpdate"] = currTime
+
+            if "nofork" in self.config and self.config["nofork"]:
+                print(" %5d: %11d  %9d  %13d  %7d  %4.2f" % d)
+
 
 
     def _startServer(self):
         """Start the target (-server) via honggfuzz."""
         logging.debug( "Starting server/honggfuzz")
 
-        args = self.config["honggpath"] + " -Q -S -C -n 1 -d 4 -l log3.txt -s --socket_fuzzer -- "
+        args = self.config["honggpath"] + " -Q -S -C -n 1 -s --socket_fuzzer -- "
         args += self.config["target_bin"] + " " + self.config["target_args"] % ( { "port": self.targetPort } )
         argsArr = args.split(" ")
         cmdArr = [ ]
