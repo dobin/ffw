@@ -3,7 +3,7 @@
 import signal
 import random
 import logging
-
+import os
 from multiprocessing import Process, Queue
 
 import time
@@ -25,6 +25,9 @@ def doFuzz(config):
     logging.basicConfig(level=logging.ERROR)
     procs = []
     n = 0
+
+    if not _honggExists(config):
+        return
 
     if "nofork" in config and config["nofork"]:
         r = random.randint(0, 2**32 - 1)
@@ -65,3 +68,15 @@ def fuzzConsole(config, q, procs):
             break
 
     print("Finished")
+
+
+def _honggExists(config):
+    if "honggpath" not in config or config["honggpath"] == "":
+        logging.error("Honggfuzz not configured")
+        return False
+
+    if not os.path.isfile(config["honggpath"]):
+        logging.error("Invalid path to honggfuzz: " + config["honggpath"])
+        return False
+
+    return True
