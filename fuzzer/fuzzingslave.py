@@ -228,6 +228,10 @@ class FuzzingSlave(object):
                         return False
 
                 if message["from"] == "cli":
+                    if "isFuzzed" in message:
+                        logging.debug("  Sending fuzzed message: " + str(fuzzingIterationData.fuzzedData.index(message)))
+                    else:
+                        logging.debug("  Sending post message: " + str(fuzzingIterationData.fuzzedData.index(message)))
                     res = networkManager.sendData(message)
                     if res is False:
                         return False
@@ -236,6 +240,10 @@ class FuzzingSlave(object):
 
 
     def exportFuzzResult(self, crashDataModel, fuzzIter):
+        if fuzzIter is None:
+            logging.error("Received None as fuzz iteration. Wrong server-down detection?")
+            return
+
         seed = fuzzIter.seed
 
         crashData = crashDataModel.getData()
