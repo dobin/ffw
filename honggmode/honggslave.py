@@ -193,12 +193,12 @@ class HonggSlave(object):
                 print(" %5d: %11d  %9d  %13d  %7d  %4.2f" % d)
 
 
-
     def _startServer(self):
         """Start the target (-server) via honggfuzz."""
         logging.debug( "Starting server/honggfuzz")
 
-        args = self.config["honggpath"] + " -Q -S -C -n 1 -s --socket_fuzzer -- "
+        args = self.config["honggpath"] + " " + self.config["honggmode_option"]
+        args += " " + "-d 4 -l log6.txt -Q -S -C -n 1 -s --socket_fuzzer -- "
         args += self.config["target_bin"] + " " + self.config["target_args"] % ( { "port": self.targetPort } )
         argsArr = args.split(" ")
         cmdArr = [ ]
