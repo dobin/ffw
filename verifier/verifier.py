@@ -4,7 +4,6 @@ import time
 import os
 import glob
 import multiprocessing
-import queue
 import logging
 import signal
 import pickle
@@ -232,7 +231,7 @@ class Verifier(object):
                 logging.error("Verifier: Output: " + serverStdout)
 
             return crashData
-        except queue.Empty:
+        except multiprocessing.queue.Empty:
             self._handleNoCrash()
             self.stopChild()
             return None
