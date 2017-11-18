@@ -24,25 +24,25 @@ config = {
     "comment": "",
 
     # Path to target
-    "target_bin": PROJDIR + "bin/mqtt_broker",
+    "target_bin": PROJDIR + "bin/server",
 
     # target arguments
     # separate arguments by space
-    # keywords: %(port)i   is the port the server will be started on
+    # keywords: ""%(port)i" is the port the server will be started on
     "target_args": "%(port)i",
 
     # how many fuzzing instances should we start
-    "processes": 4,
+    "processes": 1,
 
     # "tcp" or "udp" protocol?
     "ipproto": "tcp",
 
-    # debug mode (lots of log messages, only 1 process)
-    "debug": True,
-
-
     # STOP.
     # no need to change after this line, usually
+
+    # hongg stuff
+    "honggpath": "/opt/honggfuzz/honggfuzz",
+    "honggmode_option": "",
 
     # should we abort if aslr is enabled?
     "ignore_aslr_status": True,
@@ -79,6 +79,7 @@ config = {
 
     # if you have multiple ffw fuzzers active,
     # change this between them
+    # Use something between 20'0000 and 30'000 or bad stuff may happen
     "baseport": 20000,
 
     # dont change this
@@ -86,7 +87,7 @@ config = {
     "projdir": PROJDIR,
 
     # restart server every X fuzzing iterations
-    "restart_server_every": 1000,
+    "restart_server_every": 10000,
 }
 
 

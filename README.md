@@ -3,48 +3,26 @@
 Fuzzes network servers/services by intercepting valid network
 communication data, then replay it with some fuzzing.
 
-Requires:
-* A network server which does not fork and accepts a port on the command line, on linux
-* Source not required
-* A client for that network server
+FFW can fuzz open source applications, and also closed
+source applications. It also supports feedback driven fuzzing
+by instrumenting honggfuzz, for both open- and closed source apps.
 
-# Install
+# Installation
 
-## get ffw
+## Install dependencies
+
+```
+pip install pyinotify
+```
+
+## Get ffw
 
 ```
 git clone https://github.com/dobin/ffw.git
 cd ffw/
 ```
 
-## Install deps
-
-```
-pip install python-ptrace pyinotify
-```
-
-### Fix ptrace (optional)
-
-python-ptrace sometimes encounters a bug. Fix the regex specified below.
-The path may be different (depending on how you installed pytohn-ptrace).
-May not be always necessary (?). Will only affect verify-mode of ffw.
-
-* Relevant file: memory_mapping.py
-* Relevant part: PROC_MAP_REGEX
-
-/usr/local/lib/python2.7/dist-packages/ptrace/debugger/memory_mapping.py
-```
-PROC_MAP_REGEX = re.compile(
-    r'([0-9a-f]+)-([0-9a-f]+) '
-    r'(.{4}) '
-    r'([0-9a-f]+) '
-    r'([0-9a-f]+):([0-9a-f]+) ' ##### this line needs to be fixed
-    r'([0-9]+)'
-    r'(?: +(.*))?'
-)
-```
-
-## install radamsa fuzzer
+## Install radamsa fuzzer
 
 Default path specified in ffw for radamsa is `ffw/radamsa`:
 
@@ -54,7 +32,7 @@ $ cd radamsa
 $ make
 ```
 
-# Setup first project
+# Setup a project
 
 Steps involved in setting up a fuzzing project:
 
@@ -70,6 +48,8 @@ Steps involved in setting up a fuzzing project:
 What follows are the detailed steps, by using the provided vulnserver as an example.
 
 
+# Setup sample project
+
 ## Create directory structure
 
 Create a copy of the template directory for the software you want to test, in this case vulnserver:
@@ -84,7 +64,7 @@ The directory `vulnserver` will be our working directory from now on.
 It will contain the file `fuzzing.py`, and the directories `in`, `bin`, `out`, `verified`, and `temp`.
 
 
-## Compile the binary
+## Compile the target
 
 Copy the binary of the server you want to fuzz to bin. It is already prepared
 in the `vulnserver/` directory, can be compiled with `make`:
@@ -112,7 +92,7 @@ as parameter:
 Start interceptor-mode. You can use the original standard port of the
 server as argument. Port+1 will be used for the real server port:
 ```
-$ ./fuzzing.py interceptor 1024
+$ ./fuzzing.py interceptor --port 1024
 Debug mode enabled
 INFO:root:Starting server with args: ['bin/vulnserver_asan', '1025']
 INFO:root:  Pid: 21158
@@ -308,7 +288,7 @@ Listening on port: 1024
 
 In another terminal, use `replay` with a `.ffw` file:
 ```
-dobin@unreal:~/Development/ffw/vulnserver$ ./fuzzing.py replay 1024 verified/18287258929267146782.ffw
+dobin@unreal:~/Development/ffw/vulnserver$ ./fuzzing.py replay --port 1024 --file verified/18287258929267146782.ffw
 Debug mode enabled
 File: verified/18287258929267146782.ffw
 Port: 1024
@@ -331,15 +311,42 @@ Program received signal SIGSEGV, Segmentation fault.
 
 ## Honggmode
 
+Honggmode uses hongfuzz for feedback driven fuzzing. It requires an up to date kernel and clang version. Tested on Ubuntu 17.04.
+
+### Setup honggfuzz
+
+Use the ffw-honggfuzz repository, and compile it:
+```
+git clone https://github.com/dobin/honggfuzz
+make
+make install
+```
+
 Specify location of honggfuzz in `fuzzing.py`:
+```
+"honggpath": "/home/fuzzer/honggfuzz/honggfuzz",
+```
 
+### Setup an open-source project
 
-
-Compile with:
+Compile target with:
 ```
 export HFUZZ_CC_ASAN="true"
 export CC=~/honggfuzz/hfuzz_cc/hfuzz-clang
 ```
+
+### Setup a closed-source project
+
+Add one of the following options. See https://github.com/google/honggfuzz/blob/master/docs/FeedbackDrivenFuzzing.md for reference. `--linux_perf_bts_edge` works well.
+
+```
+"honggmode_option": "--linux_perf_bts_edge"
+"honggmode_option": "--linux_perf_ipt_block"
+"honggmode_option": "--linux_perf_instr"
+"honggmode_option": "--linux_perf_branch"
+```
+
+### Fuzz
 
 Start with:
 ```
@@ -348,18 +355,42 @@ Start with:
 Instead of `./fuzzing.py fuzz`
 
 
-# Detailed Modes Description
-
-* Interceptor
-* Tester
-* Fuzzer
-* Verifier
-* Replayer
-
-TODO
 
 
 # Various infos
+
+## Notes on (obsolete) python-ptrace
+
+python-ptrace does not yield good results, and is currently disabled.
+
+If you want to use `python-ptrace` in verifier mode, install it:
+```
+pip install pyinotify
+```
+
+And fix it.
+
+### Fix ptrace
+
+python-ptrace sometimes encounters a bug. Fix the regex specified below.
+The path may be different (depending on how you installed pytohn-ptrace).
+May not be always necessary (?). Will only affect verify-mode of ffw.
+
+* Relevant file: memory_mapping.py
+* Relevant part: PROC_MAP_REGEX
+
+/usr/local/lib/python2.7/dist-packages/ptrace/debugger/memory_mapping.py
+```
+PROC_MAP_REGEX = re.compile(
+    r'([0-9a-f]+)-([0-9a-f]+) '
+    r'(.{4}) '
+    r'([0-9a-f]+) '
+    r'([0-9a-f]+):([0-9a-f]+) ' # replace orig line with this one
+    r'([0-9]+)'
+    r'(?: +(.*))?'
+)
+```
+
 
 ## Config
 
@@ -369,6 +400,8 @@ If in doubt:
 sysctl net.core.somaxconn=4096
 ulimit -c 999999
 ```
+
+Or run as root.
 
 ## Compile targets
 
