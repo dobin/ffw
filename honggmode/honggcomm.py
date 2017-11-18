@@ -16,13 +16,13 @@ class HonggComm(object):
 
         server_address = '/tmp/honggfuzz_socket.' + str(fuzzerPid)
         sys.stdout.write('connecting to honggfuzz socket: %s... ' % server_address)
-
+        logging.error('connecting to honggfuzz socket: %s... ' % server_address)
         while True:
             try:
                 sock.connect(server_address)
                 break
             except socket.error as msg:
-                logging.info("Error: " + str(msg))
+                logging.info("Honggcomm Error, could not connect to honggfuzz socket: " + str(msg))
                 time.sleep(0.2)
 
         print (" connected!")
