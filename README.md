@@ -7,6 +7,15 @@ FFW can fuzz open source applications, and also closed
 source applications. It also supports feedback driven fuzzing
 by instrumenting honggfuzz, for both open- and closed source apps. This is called `honggmode`.
 
+Features:
+* Fuzzes all kind of network protocol (-server)
+* No modification of the fuzzing target needed (at all)
+* Can fuzz open- and closed-source projects
+* Has feedback-driven fuzzing (compiler support, or hardware based)
+* Can fuzz network clients too (wip)
+* Very fast fuzzing setup, no source code changes or protocol reversing needed!
+
+
 # Installation
 
 ## Install dependencies
