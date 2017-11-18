@@ -1,5 +1,4 @@
-
-# Setup sample project
+# FFW: Setup sample project
 
 ## Create directory structure
 
@@ -12,7 +11,7 @@ $ cp -R ../template/* .
 ```
 
 The directory `vulnserver` will be our working directory from now on.
-It will contain the file `fuzzing.py`, and the directories `in`, `bin`, `out`, `verified`, and `temp`.
+It will contain the file `fuzzing.py`, and the directories `in/`, `bin/`, `out/`, `verified/`, and `temp/`.
 
 
 ## Compile the target
@@ -23,6 +22,10 @@ in the `vulnserver/` directory, can be compiled with `make`:
 $ make
 gcc -O0 -fsanitize=address -fno-stack-protector -fno-omit-frame-pointer vulnserver.c -o vulnserver_asan
 gcc -O0 -fno-stack-protector -fno-omit-frame-pointer vulnserver.c -o vulnserver_asan
+```
+
+And copy it to the `bin/` directory:
+```
 $ cp ./vulnserver_asan ./bin
 ```
 
@@ -35,7 +38,6 @@ as parameter:
     "target_bin" : PROJDIR + "bin/vulnserver_asan",
     "target_args": "%(port)i",
     "ipproto": "tcp",
-    "debug": True,
 ```
 
 ## Perform intercept
@@ -43,7 +45,7 @@ as parameter:
 Start interceptor-mode. You can use the original standard port of the
 server as argument. Port+1 will be used for the real server port:
 ```
-$ ./fuzzing.py interceptor --port 1024
+ffw/vulnserver $ ./fuzzing.py --intercept --port 1024 --debug
 Debug mode enabled
 INFO:root:Starting server with args: ['bin/vulnserver_asan', '1025']
 INFO:root:  Pid: 21158
@@ -52,9 +54,9 @@ Forwarding everything to localhost:1025
 Waiting for client on port: 1024
 ```
 
-Start the client to send some messages to the server:
+Start the client in another terminal to send some messages to the server:
 ```
-$ ./vulnserver_client.py 1024
+ffw/vulnserver  $ ./vulnserver_client.py 1024
 Connecting to 127.0.0.1 port 1024
 Send message 1
 Send message 2
@@ -84,7 +86,7 @@ Press `CTRL-C` to quit the server.
 This will generate the file `in/data_0.pickle`. You can view it by using `../printpickly.py in/data_0.pickle`:
 
 ```
-./ffw/vulnserver $ ../printpickle.py in/data_0.pickle
+ffw/vulnserver $ ../printpickle.py in/data_0.pickle
 [   {   'data': 'AAAA', 'from': 'cli'},
     {   'data': 'ok', 'from': 'srv'},
     {   'data': 'BBBB', 'from': 'cli'},
@@ -102,7 +104,7 @@ Test if the recorded data can be replayed by using the test-mode. It will start 
 pretty reproducible.
 
 ```
-$ ./fuzzing.py test
+$ ./fuzzing.py --test --debug
 Debug mode enabled
 INFO:root:Using: TCP
 INFO:root:Starting server with args: ['./ffw/vulnserver/bin/vulnserver_asan', '20000']
@@ -185,17 +187,16 @@ ffw/vulnserver$ ls out/
 10807046273026107559.txt  15032758009265251593.txt  2679312059348738636.txt
 ```
 
-The txt files contain the plaintext information about the crash, the ffw
+The `.txt` files contain the plaintext information about the crash, the `.ffw`
 files are python pickle files.
 
 
 ## Verify crashes
 
-We have a lot of crashes, as indicated by the files in the `out/` directory. Lets verify it to be
-sure that they are indeed valid crashes, and get additional information about the crash:
+We have a lot of crashes, as indicated by the files in the `out/` directory. Lets verify it to be sure that they are indeed valid crashes, and get additional information about the crash:
 
 ```
-ffw/vulnserver$ ./fuzzing.py verify
+ffw/vulnserver$ ./fuzzing.py --verify --debug
 Debug mode enabled
 INFO:root:Crash verifier
 Processing 6 outcome files
@@ -230,7 +231,7 @@ To manually replay the crashes, e.g. if the target runs in GDB, use the
 
 Start the target in a terminal in gdb:
 ```
-dobin@unreal:~/Development/ffw/vulnserver$ gdb -q ./bin/vulnserver_asan
+./ffw/vulnserver$ gdb -q ./bin/vulnserver_asan
 Reading symbols from ./bin/vulnserver_asan...(no debugging symbols found)...done.
 (gdb) r 1024
 Starting program: ./ffw/vulnserver/bin/vulnserver_asan 1024
@@ -239,7 +240,7 @@ Listening on port: 1024
 
 In another terminal, use `replay` with a `.ffw` file:
 ```
-dobin@unreal:~/Development/ffw/vulnserver$ ./fuzzing.py replay --port 1024 --file verified/18287258929267146782.ffw
+./ffw/vulnserver$ ./fuzzing.py --replay --port 1024 --file verified/18287258929267146782.ffw --debug
 Debug mode enabled
 File: verified/18287258929267146782.ffw
 Port: 1024
@@ -248,7 +249,7 @@ INFO:root:Open connection on localhost:1024
 INFO:root:ReceiveData err on msg 3: timed out
 ```
 
-It should provoke the error in GDB:
+It should provoke the crash in the target program running in GDB:
 ```
 New client connected
 Received data with len: 4 on state: 0

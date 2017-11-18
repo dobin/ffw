@@ -8,7 +8,7 @@ python-ptrace does not yield good results, and is currently disabled.
 
 If you want to use `python-ptrace` in verifier mode, install it:
 ```
-pip install pyinotify
+pip install python-ptrace
 ```
 
 And fix it.

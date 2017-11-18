@@ -12,7 +12,7 @@ by instrumenting honggfuzz, for both open- and closed source apps. This is calle
 ## Install dependencies
 
 ```
-pip install pyinotify
+pip install pyinotify psutil python-ptrace requests hexdump
 ```
 
 ## Get ffw
@@ -22,15 +22,15 @@ git clone https://github.com/dobin/ffw.git
 cd ffw/
 ```
 
-## Install radamsa fuzzer
-
-Default path specified in ffw for radamsa is `ffw/radamsa`:
+## Install Radamsa fuzzer
 
 ```
 $ git clone https://github.com/aoh/radamsa.git
 $ cd radamsa
 $ make
 ```
+
+Default Radamsa directory specified in ffw is `ffw/radamsa`.
 
 # Setup a project
 
