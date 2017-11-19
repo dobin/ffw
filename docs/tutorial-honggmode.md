@@ -21,6 +21,11 @@ $ sudo apt-get install binutils-dev libunwind-dev clang
 
 ## Fuzz with hardware-based feedback
 
+Note:
+* Requires a new CPU, Kernel
+* Does not work in vmware
+* Requires root
+
 Go into the vulnserver ffw project:
 
 ```
@@ -32,18 +37,51 @@ fuzzing feedback:
 
 ```
 "honggpath": "/home/fuzzer/honggfuzz/honggfuzz",
-"honggmode_option": "--linux_perf_bts_edge"
+"honggmode_option": "hw"
 ```
+
+We will still use "vulnserver_asan" as binary, which is not compiled with
+any fuzzing feedback code.
 
 Start with:
 ```
-./fuzzing.py --honggmode
+# ./fuzzing.py --honggmode --debug
 ```
 (Instead of `./fuzzing.py --fuzz`)
 
-You'll should have an output like this:
+You'll should have an output like this if it works:
+```
+INFO:root:--[ Adding file to corpus...
 ```
 
+## Fuzz with software-based feedback
+
+Compile with hfuzz:
+```
+$ export HFUZZ_CC_ASAN="true"
+$ ~/honggfuzz/hfuzz_cc/hfuzz-clang vulnserver.c -o vulnserver_hfuzz
+$ mv vulnserver_hfuzz bin/
+```
+
+Change config to point to this new binary:
+```
+"target_bin": PROJDIR + "bin/vulnserver_hfuzz",
+```
+
+Configure honggfuzz:
+```
+"honggpath": "/home/fuzzer/honggfuzz/honggfuzz",
+"honggmode_option": "sw"
+```
+
+Start honggfuzz:
+```
+$ ./fuzzing.py --honggmode --debug
+```
+
+You'll should have an output like this if it works:
+```
+INFO:root:--[ Adding file to corpus...
 ```
 
 

@@ -79,7 +79,7 @@ def realMain(config):
 
     if args.honggmode:
         if args.honggcov == "hw" or config["honggcov"] == "hw":
-            config["honggmode_option"] = "--linux_perf_bts_edge "
+            config["honggmode_option"] = "--linux_perf_bts_edge"
 
             if os.geteuid() != 0:
                 logging.error("--honggcov hw hardware coverage requires root")
