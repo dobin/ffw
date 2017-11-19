@@ -196,22 +196,45 @@ class HonggSlave(object):
     def _startServer(self):
         """Start the target (-server) via honggfuzz."""
         logging.debug( "Starting server/honggfuzz")
-
-        args = self.config["honggpath"] + " " + self.config["honggmode_option"]
-        args += "-d 4 -l log6.txt -Q -S -C -n 1 -s --socket_fuzzer -- "
-        args += self.config["target_bin"] + " " + self.config["target_args"] % ( { "port": self.targetPort } )
-        argsArr = args.split(" ")
         cmdArr = [ ]
-        cmdArr.extend( argsArr )
-        popenArg = cmdArr
 
-        logging.info("Starting server/honggfuzz with args: " + str(args))
+        cmdArr.append(self.config["honggpath"])  # we start honggfuzz
+        cmdArr.append('--keep_output')  # keep children output (in log)
+        cmdArr.append('--sanitizers')
+        cmdArr.append('--sancov')  # Sanitizer coverage feedback, default in honggfuzz 1.2
+        cmdArr.append('--threads')  # only one thread
+        cmdArr.append('1')
+        cmdArr.append('--stdin_input')
+        cmdArr.append('--socket_fuzzer')
 
+        if self.config["debug"]:
+            # enable debug mode with log to file
+            cmdArr.append("-d")
+            cmdArr.append("4")
+            cmdArr.append('-l')
+            cmdArr.append('honggfuzz.log')
+
+        # only append honggmode specific option if available
+        if self.config["honggmode_option"]:
+            cmdArr.append(self.config["honggmode_option"])
+
+        # add target to start
+        cmdArr.append("--")
+        cmdArr.append(self.config["target_bin"])
+
+        # target binary argument are given as string, split it
+        targetArgs = self.config["target_args"] % ( { "port": self.targetPort } )
+        targetArgsArr = targetArgs.split(' ')
+        cmdArr.extend(targetArgsArr)
+
+        logging.info("Starting server/honggfuzz with args: " + str(cmdArr))
+
+        # change working directory to target bin location
         os.chdir( self.config["projdir"] + "/bin")
         # create devnull so we can us it to surpress output of the server (2.7 specific)
         DEVNULL = open(os.devnull, 'wb')
         try:
-            p = subprocess.Popen(popenArg, stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL)
+            p = subprocess.Popen(cmdArr, stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL)
         except Exception as e:
             logging.debug( "E: " + str(e))
             sys.exit(1)

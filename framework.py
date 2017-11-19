@@ -39,7 +39,7 @@ def realMain(config):
     parser.add_argument('--processes', help='Fuzzer: How many paralell processes', type=int)
 
     # TODO: make this mode specific
-    parser.add_argument("--honggcov", help="Select Honggfuzz coverage", default="sw")
+    parser.add_argument("--honggcov", help="Select Honggfuzz coverage: hw/sw", default="sw")
     parser.add_argument('--port', help='Intercept/Replay: Port to be used for the target server', type=int)
     parser.add_argument('--file', help="Verify/Replay: Specify file to be used")
     parser.add_argument('--url', help="Uploader: url")
@@ -85,7 +85,9 @@ def realMain(config):
                 logging.error("--honggcov hw hardware coverage requires root")
                 return
         elif args.honggcov == "sw" or config["honggcov"] == "sw":
-            config["honggmode_option"] = ""
+            config["honggmode_option"] = None  # sw is default
+        else:
+            config["honggmode_option"] = None
 
         honggmode.doFuzz(config)
 

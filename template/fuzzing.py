@@ -43,7 +43,7 @@ config = {
     # hongg stuff
     "honggpath": "/opt/honggfuzz/honggfuzz",
     "honggcov": None,
-    "honggmode_option": "", # will be overwritten
+    "honggmode_option": None,  # will be overwritten based on honggcov
 
     # should we abort if aslr is enabled?
     "ignore_aslr_status": True,
