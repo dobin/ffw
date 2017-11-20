@@ -164,12 +164,19 @@ class HonggSlave(object):
     def _connectAndSendData(self, networkManager, data):
         """Connect to server via networkManager and send the data."""
         # try to connect, if server down, wait a bit and try
-        # again (forever)
+        # again (10x)
+        n = 0
         while not networkManager.openConnection():
             time.sleep(0.2)
+            n += 1
+            if n > 10:
+                networkManager.closeConnection()
+                return False
 
         self._sendData(networkManager, data)
         networkManager.closeConnection()
+
+        return True
 
 
     def _uploadStats(self):
