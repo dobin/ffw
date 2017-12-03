@@ -16,6 +16,32 @@ But: It is preferable to just patch the source code of the target
 so it takes the listening port from the command line.
 
 
+## No new basic blocks on feedback driven fuzzing
+
+Make sure you compile the target with the correct flags,
+or the correct honggfuzz based compiler. Also set the hfuzz flags:
+
+Set arguments manually:
+```
+export CFLAGS="-fsanitize-coverage=trace-pc-guard,indirect-calls,trace-cmp -fsanitizer=address"
+```
+
+Or:
+
+Clang:
+```
+    export HFUZZ_CC_ASAN="true"
+    export CC=/opt/honggfuzz/hfuzz_cc/hfuzz-clang
+    export CXX=/opt/honggfuzz/hfuzz_cc/hfuzz-clang++
+```
+
+GCC:
+```
+    export HFUZZ_CC_ASAN="true"
+    export CC=/opt/honggfuzz/hfuzz_cc/hfuzz-gcc
+    export CXX=/opt/honggfuzz/hfuzz_cc/hfuzz-g++
+```
+
 # Various infos
 
 ## Notes on (obsolete) python-ptrace
