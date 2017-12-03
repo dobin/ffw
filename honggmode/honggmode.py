@@ -57,7 +57,8 @@ def fuzzConsole(config, q, procs):
         try:
             r = q.get()
             perf[r[0]] = r
-            print(" %5d: %11d  %9d  %13d  %7d  %4.2f" % r)
+            #print(" %5d: %11d  %9d  %13d  %7d  %4.2f" % r)
+            print(" %5d: It: %d  CorpusNew: %d   CorpusOverall %d   Crashes: %d   Fuzz/s: %.1f" % r)
             #logging.info("%d: %4d  %8d  %5d" % r)
         except KeyboardInterrupt:
             # handle ctrl-c

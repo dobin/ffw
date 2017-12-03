@@ -114,6 +114,8 @@ class HonggSlave(object):
 
             honggData = honggComm.readSocket()
             if honggData == "Fuzz":
+                couldSend = False
+
                 # check first if we have new corpus from other threads
                 # if yes: send it. We'll ignore New!/Cras msgs by settings
                 # fuzzingIterationData = None
@@ -121,7 +123,7 @@ class HonggSlave(object):
                     fuzzingIterationData = None  # important
                     corpus = self.corpusManager.getNewExternalCorpus()
                     corpus.processed = True
-                    self._connectAndSendData(networkManager, corpus.getData())
+                    couldSend = self._connectAndSendData(networkManager, corpus.getData())
 
                 # just randomly select a corpus, fuzz it, (handle result)
                 else:
@@ -133,10 +135,14 @@ class HonggSlave(object):
                         logging.error("Could not fuzz the data")
                         return
 
-                    self._connectAndSendData(networkManager, fuzzingIterationData.fuzzedData)
+                    couldSend = self._connectAndSendData(networkManager, fuzzingIterationData.fuzzedData)
 
-                # send okay to continue honggfuzz
-                honggComm.writeSocket("okay")
+
+                if couldSend:
+                    # send okay to continue honggfuzz
+                    honggComm.writeSocket("okay")
+                else:
+                    honggComm.writeSocket("bad!")
 
             elif honggData == "New!":
                 # Warmup may result in a stray message, ignore here
