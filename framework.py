@@ -6,7 +6,6 @@
 #   author: Chris Bisnett
 
 import logging
-import sys
 import argparse
 import os
 
@@ -19,6 +18,10 @@ from uploader import uploader
 from network import tester
 from network import proto_vnc
 from honggmode import honggmode
+
+
+def checkRequirements(config):
+    return True
 
 
 def realMain(config):
@@ -46,6 +49,10 @@ def realMain(config):
     parser.add_argument('--basic_auth_user', help='Uploader: basic auth user')
     parser.add_argument('--basic_auth_password', help='Uploader: basic auth password')
     args = parser.parse_args()
+
+    if not checkRequirements(config):
+        print "Requirements not met."
+        return
 
     # TODO remove this from here
     if config["proto"] == "vnc":
@@ -120,70 +127,3 @@ def realMain(config):
             u = uploader.Uploader(config, args.url, None, None)
 
         u.uploadVerifyDir()
-
-
-def realMain2(config):
-    func = "fuzz"
-
-    if config["debug"]:
-        print("Debug mode enabled")
-        logging.basicConfig(level=logging.DEBUG)
-        config["processes"] = 1
-
-    if config["proto"] == "vnc":
-        print("Using protocol: vnc")
-        config["protoObj"] = proto_vnc.ProtoVnc()
-    else:
-        config["protoObj"] = None
-
-    if len(sys.argv) > 1:
-        func = sys.argv[1]
-
-    #if func == "corpus_destillation":
-        #corpus_destillation()
-
-    if func == "upload":
-        if len(sys.argv) == 5:
-            u = uploader.Uploader(config, sys.argv[2], sys.argv[3], sys.argv[4])
-        else:
-            u = uploader.Uploader(config, sys.argv[2], None, None)
-        u.uploadVerifyDir()
-
-    if func == "test":
-        t = tester.Tester(config)
-        t.test()
-
-    if func == "verify":
-        v = verifier.Verifier(config)
-        if len(sys.argv) == 2:
-            v.verifyOutDir()
-        else:
-            v.verifyFile(sys.argv[2])
-
-
-    if func == "minimize":
-        mini = minimizer.Minimizer(config)
-        mini.minimizeOutDir()
-
-    if func == "replay":
-        replayer = replay.Replayer(config)
-        replayer.replayFile(sys.argv[2], sys.argv[3])
-
-    if func == "replayall":
-        replay.replayAllFiles(config, sys.argv[2])
-
-    if func == "interceptor":
-        interceptor.doIntercept(config, sys.argv[2])
-
-    if func == "interceptorreplay":
-        interceptor.replayAll(config)
-
-    if func == "fuzz":
-        useCurses = False
-        if len(sys.argv) == 3 and sys.argv[2] == "curses":
-            useCurses = True
-
-        fuzzingmaster.doFuzz(config, useCurses)
-
-    if func == "honggmode":
-        honggmode.doFuzz(config)
