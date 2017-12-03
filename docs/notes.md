@@ -1,3 +1,19 @@
+# Fuzzing Problems FAQ
+
+## "Could not connect" / "Socket Error"
+
+Note: If your project is unable to specify a target port
+on the command line, adjust `baseport` to the hardcoded port
+in the software project, and set `processes=1`:
+
+```
+    "target_args": "", # no port specification possible
+    "baseport": 8080,  # set this to the target's port
+    "processes": 1,    # can only set one process
+```
+
+But: It is preferable to just patch the source code of the target
+so it takes the listening port from the command line.
 
 
 # Various infos

@@ -31,14 +31,14 @@ $ cp ./vulnserver_asan ./bin
 
 ## Configure fuzzer
 
-Edit `fuzzing.py` until STOP line. Specify the path to the binary, and how to give the port number
-as parameter:
+Edit `fuzzing.py` until STOP line. Specify the path to the binary, and how to give the port number as parameter:
 ```
     "name": "vulnserver",
     "target_bin" : PROJDIR + "bin/vulnserver_asan",
     "target_args": "%(port)i",
     "ipproto": "tcp",
 ```
+
 
 ## Perform intercept
 
