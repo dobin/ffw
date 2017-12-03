@@ -145,7 +145,7 @@ All looking good!
 
 We are ready to fuzz. Start the fuzzer:
 ```
-$ ./fuzzing.py fuzz
+$ ./fuzzing.py --fuzz --debug
 Debug mode enabled
 Config:  
   Running fuzzer:    Radamsa

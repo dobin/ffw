@@ -21,7 +21,7 @@ Features:
 ## Install dependencies
 
 ```
-pip install pyinotify psutil python-ptrace requests hexdump
+pip install -r requirements.txt
 ```
 
 ## Get ffw

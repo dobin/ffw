@@ -1,0 +1,7 @@
+pyinotify 
+psutil 
+python-ptrace 
+requests 
+hexdump
+pyOpenSSL==16.2.0
+pycrypto
