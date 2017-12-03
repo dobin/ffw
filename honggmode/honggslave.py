@@ -56,7 +56,8 @@ class HonggSlave(object):
         the fuzzed messages to the target binary.
         """
         #logging.basicConfig(level=logging.DEBUG)
-        self.config["processes"] = 1
+        if "debug" in self.config and self.config["debug"]:
+            self.config["processes"] = 1
 
         logging.info("Setup fuzzing..")
         random.seed(self.initialSeed)
