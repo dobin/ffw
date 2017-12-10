@@ -5,6 +5,7 @@ import threading
 import select
 import pickle
 import logging
+import os
 
 from fuzzer import simpleservermanager
 
@@ -137,9 +138,20 @@ class ClientTcpThread(threading.Thread):
 
         # store all the stuff
         print("Got " + str(len(self.data)) + " packets")
-        fileName = self.config["inputs"] + "/" + "data_" + str(self.__threadId) + ".pickle"
+        fileName = self.getDataFilename()
+        print("Storing into file: " + fileName)
         with open(fileName, 'wb') as f:
             pickle.dump(self.data, f)
+
+
+    def getDataFilename(self):
+        n = 0
+        filename = self.config["inputs"] + "/" + "data_" + str(n) + ".pickle"
+        while os.path.isfile(filename):
+            n += 1
+            filename = self.config["inputs"] + "/" + "data_" + str(n) + ".pickle"
+
+        return filename
 
 
 def performTcpIntercept(config, localHost, localPort, targetHost, targetPort):
@@ -148,10 +160,12 @@ def performTcpIntercept(config, localHost, localPort, targetHost, targetPort):
     serverSocket.bind((localHost, int(localPort)))
     serverSocket.listen(5)
     print("Forwarding everything to %s:%s" % (targetHost, targetPort))
-    print("Waiting for client on port: " + str(localPort))
+    print("Waiting for new client on port: " + str(localPort))
+
     threadId = 0
     while True:
         try:
+
             clientSocket, address = serverSocket.accept()
         except KeyboardInterrupt:
             print("\nTerminating all clients...")
