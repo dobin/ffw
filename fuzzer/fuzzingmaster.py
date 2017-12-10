@@ -23,7 +23,7 @@ def doFuzz(config, useCurses):
     orig = signal.signal(signal.SIGINT, signal.SIG_IGN)
 
     printConfig(config)
-    utils.prepareInput(config)
+    inputs = utils.loadInputs(config)
 
     procs = []
     n = 0
@@ -36,7 +36,7 @@ def doFuzz(config, useCurses):
         while n < config["processes"]:
             print("Start child: " + str(n))
             r = random.randint(0, 2**32 - 1)
-            fuzzingSlave = fuzzingslave.FuzzingSlave(config, n, q, r)
+            fuzzingSlave = fuzzingslave.FuzzingSlave(config, n, q, r, inputs)
             p = Process(target=fuzzingSlave.doActualFuzz, args=())
             procs.append(p)
             p.start()

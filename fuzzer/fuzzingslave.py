@@ -31,11 +31,12 @@ def signal_handler(signal, frame):
 
 
 class FuzzingSlave(object):
-    def __init__(self, config, threadId, queue, initialSeed):
+    def __init__(self, config, threadId, queue, initialSeed, inputs):
         self.config = config
         self.queue = queue
         self.threadId = threadId
         self.initialSeed = initialSeed
+        self.inputs = inputs
 
 
     def updateStats(self, iterStats):
@@ -79,10 +80,8 @@ class FuzzingSlave(object):
             "startTime": time.time(),
             "lastUpdateTime": time.time(),
         }
-        initialData = self.config["_inputs"]
         sendDataResult = None
         previousFuzzingIterationData = None
-        self.printFuzzData(initialData)
 
         # start server
         serverManager.start()
@@ -104,6 +103,8 @@ class FuzzingSlave(object):
                 # lets sleep a bit
                 time.sleep(0.5)
 
+            selectedInput = self.getRandomInput()
+
             # save this iteration data for future crashes
             # we do this at the start, not at the end, so we have to
             # only write it once
@@ -121,7 +122,7 @@ class FuzzingSlave(object):
                 serverManager.restart()
                 continue
 
-            fuzzingIterationData = fuzzingiterationdata.FuzzingIterationData(self.config, initialData)
+            fuzzingIterationData = fuzzingiterationdata.FuzzingIterationData(self.config, selectedInput)
             if not fuzzingIterationData.fuzzData():
                 logging.error("Could not fuzz the data")
                 return
@@ -182,6 +183,10 @@ class FuzzingSlave(object):
 
         # all done, terminate server
         serverManager.stopServer()
+
+
+    def getRandomInput(self):
+        return random.choice(self.inputs)
 
 
     def printFuzzData(self, fuzzData):

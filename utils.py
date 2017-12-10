@@ -4,6 +4,7 @@ import pickle
 import os
 import logging
 import sys
+import glob
 
 """
 Several utility functions.
@@ -29,17 +30,22 @@ def fixMsgs(messages):
         n += 1
 
 
-def prepareInput(config):
-    file = config["inputs"] + "/data_0.pickle"
+def loadInputs(config):
+    inputs = []
 
-    if not os.path.isfile(file):
-        logging.error("Could not read input file: " + file)
-        sys.exit(0)
+    inputFiles = glob.glob(os.path.join(config["inputs"], '*'))
+    for inputFile in inputFiles:
+        try:
+            with open(inputFile, 'rb') as f:
+                data = pickle.load(f)
+                fixMsgs(data)
+                inputs.append(data)
+        except:
+            #logging.error("E: " + str(e))
+            pass
 
-    with open(file, 'rb') as f:
-        config["_inputs"] = pickle.load(f)
 
-    n = 0
-    for input in config["_inputs"]:
-        input["index"] = n
-        n += 1
+
+    print("Loaded " + str(len(inputs)) + " inputs")
+
+    return inputs
