@@ -21,6 +21,19 @@ from honggmode import honggmode
 
 
 def checkRequirements(config):
+    if not os.path.isfile(config["target_bin"]):
+        print "Target binary not found: " + str(config["target_bin"])
+        return False
+
+    return True
+
+
+def checkFuzzRequirements(config):
+    f = config["projdir"] + '/in/data_0.pickle'
+    if not os.path.isfile(f):
+        print "No intercepted data found: " + str(f)
+        return False
+
     return True
 
 
@@ -82,9 +95,14 @@ def realMain(config):
         t.test()
 
     if args.fuzz:
+        if not checkFuzzRequirements(config):
+            return False
         fuzzingmaster.doFuzz(config, args.gui)
 
     if args.honggmode:
+        if not checkFuzzRequirements(config):
+            return False
+
         if args.honggcov == "hw" or config["honggcov"] == "hw":
             config["honggmode_option"] = "--linux_perf_bts_edge"
 
