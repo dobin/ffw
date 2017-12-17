@@ -42,6 +42,21 @@ GCC:
     export CXX=/opt/honggfuzz/hfuzz_cc/hfuzz-g++
 ```
 
+
+# Compiling
+
+## Sanitizer=address linker error
+
+If you get something like this upon compiling:
+```
+undefined reference to __asan_report_store8
+```
+
+Do:
+```
+export LDFLAGS="-fsanitize=address"
+```
+
 # Various infos
 
 ## Notes on (obsolete) python-ptrace
