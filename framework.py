@@ -56,7 +56,8 @@ def realMain(config):
 
     # TODO: make this mode specific
     parser.add_argument("--honggcov", help="Select Honggfuzz coverage: hw/sw", default="sw")
-    parser.add_argument('--port', help='Intercept/Replay: Port to be used for the target server', type=int)
+    parser.add_argument('--listenport', help='Intercept: Listener port', type=int)
+    parser.add_argument('--targetport', help='Intercept/Replay: Port to be used for the target server', type=int)
     parser.add_argument('--file', help="Verify/Replay: Specify file to be used")
     parser.add_argument('--url', help="Uploader: url")
     parser.add_argument('--basic_auth_user', help='Uploader: basic auth user')
@@ -85,10 +86,20 @@ def realMain(config):
         config["debug"] = False
 
     if args.intercept:
-        if args.port:
-            interceptor.doIntercept(config, args.port)
-        else:
-            print "Specify a port with --port"
+        interceptorPort = 10000
+        targetPort = 20000
+
+        if args.listenport:
+            interceptorPort = args.listenport
+
+        if args.targetport:
+            targetPort = args.targetport
+
+        print("Interceptor listen on port: " + str(interceptorPort))
+        print("Target port: " + str(targetPort))
+
+        interceptor.doIntercept(config, interceptorPort, targetPort)
+
 
     if args.test:
         t = tester.Tester(config)
@@ -133,10 +144,10 @@ def realMain(config):
 
         if not args.file:
             print "Use --file to specify a file to be replayed"
-        elif not args.port:
-            print "Use --port to specify port to listen on"
+        elif not args.targetport:
+            print "Use --targetport to specify port to send data to"
         else:
-            replayer.replayFile(args.port, args.file)
+            replayer.replayFile(args.targetport, args.file)
 
     if args.upload:
         if args.basic_auth_user and args.basic_auth_password:

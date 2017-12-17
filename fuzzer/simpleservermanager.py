@@ -44,7 +44,12 @@ class SimpleServerManager(object):
             logging.error("Could not find target file: " + str(self.config["target_bin"]))
             sys.exit(1)
         self.process = self._runTarget()
-        logging.info("Start server PID: " + str(self.process.pid))
+
+        if self.process is None:
+            return False
+        else:
+            logging.info("Start server PID: " + str(self.process.pid))
+            return True
 
 
     def stop(self):
@@ -81,10 +86,20 @@ class SimpleServerManager(object):
 
         os.chdir( self.config["projdir"] + "/bin")
         # create devnull so we can us it to surpress output of the server (2.7 specific)
-        DEVNULL = open(os.devnull, 'wb')
-        p = subprocess.Popen(popenArg, stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL)
+        #DEVNULL = open(os.devnull, 'wb')
+        #p = subprocess.Popen(popenArg, stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL)
+
+        # we want to see stdout / stderr
+        p = subprocess.Popen(popenArg)
         time.sleep( GLOBAL_SLEEP["sleep_after_server_start"] )  # wait a bit so we are sure server is really started
         logging.info("  Pid: " + str(p.pid) )
+
+        # check if process is really alive (check exit code)
+        returnCode = p.poll()
+        logging.info("  Return code: " + str(returnCode))
+        if returnCode is not None:
+            # if return code is set (e.g. 1), the process exited
+            return None
 
         return p
 

@@ -42,15 +42,15 @@ Edit `fuzzing.py` until STOP line. Specify the path to the binary, and how to gi
 
 ## Perform intercept
 
-Start interceptor-mode. You can use the original standard port of the
-server as argument. Port+1 will be used for the real server port:
+Start interceptor-mode. By default it will take port 10'000 as default listener
+port, and starts the target server on port 20'000.
 ```
-ffw/vulnserver $ ./fuzzing.py --intercept --port 1024 --debug
+ffw/vulnserver $ ./fuzzing.py --intercept --listenport 1024 --debug
 Debug mode enabled
-INFO:root:Starting server with args: ['bin/vulnserver_asan', '1025']
+INFO:root:Starting server with args: ['bin/vulnserver_asan', '20000']
 INFO:root:  Pid: 21158
 INFO:root:Start server PID: 21158
-Forwarding everything to localhost:1025
+Forwarding everything to localhost:20000
 Waiting for client on port: 1024
 ```
 
@@ -66,7 +66,7 @@ Send message 3
 The server will print text similar to:
 ```
 Client Thread0 started
-INFO:root:Logging into: localhost:1025
+INFO:root:Logging into: localhost:20000
 Received from client: 0: 4
 target: recv data
 Received from server: 0: 2

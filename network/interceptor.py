@@ -6,9 +6,10 @@ import select
 import pickle
 import logging
 import os
+import time
 
 from fuzzer import simpleservermanager
-
+from network import networkmanager
 
 """
 Interceptor.py, standalone binary
@@ -157,8 +158,11 @@ class ClientTcpThread(threading.Thread):
 def performTcpIntercept(config, localHost, localPort, targetHost, targetPort):
     global terminateAll
     serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    serverSocket.bind((localHost, int(localPort)))
-    serverSocket.listen(5)
+    try:
+        serverSocket.bind((localHost, int(localPort)))
+        serverSocket.listen(5)
+    except Exception as e:
+        print("Error binding to: %s:%s: %s" % (targetHost, targetPort, str(e)))
     print("Forwarding everything to %s:%s" % (targetHost, targetPort))
     print("Waiting for new client on port: " + str(localPort))
 
@@ -243,19 +247,58 @@ def performUdpIntercept(config, localHost, localPort, targetHost, targetPort):
 
 
 # called from ffw
-def doIntercept(config, localPort):
+def doIntercept(config, interceptorPort, targetPort):
     localHost = "0.0.0.0"
     targetHost = "localhost"
 
-    targetPort = int(localPort) + 1
     config["baseport"] = targetPort
 
-    # run the server, as configured in config
+    # run the targetserver, as configured in config
     serverManager = simpleservermanager.SimpleServerManager(config, 0, targetPort)
-    serverManager.start()
+    isStarted = serverManager.start()
+    if not isStarted:
+        print("Could not start server, check its output")
+        return
+
+    # test connection
+    networkManager = networkmanager.NetworkManager(config, targetPort)
+    n = 0
+    alive = False
+    while n < 10:
+        logging.info("Check if we can connect to server")
+        alive = networkManager.testServerConnection()
+        if alive:
+            break
+
+        n += 1
+        time.sleep(0.5)
+
+    if not alive:
+        print("Server not alive, aborting")
+        printErrAnalysis(config, targetPort)
+        print("")
+        print("Common errors:")
+        print("* Did you specify the correct port?")
+        print("* Did you specify all necessary command line arguments (config file etc)?")
+        print("* Are the paths/working directory set correctly?")
+        return
 
     # start mitm server
     if config["ipproto"] is "tcp":
-        performTcpIntercept(config, localHost, localPort, targetHost, targetPort)
+        performTcpIntercept(config, localHost, interceptorPort, targetHost, targetPort)
     else:
-        performUdpIntercept(config, localHost, localPort, targetHost, targetPort)
+        performUdpIntercept(config, localHost, interceptorPort, targetHost, targetPort)
+
+
+def printErrAnalysis(config, targetPort):
+    binaryName = os.path.basename(config["target_bin"])
+
+    cmdPs = "ps auxwww | grep %s" % (binaryName)
+    print("Check if process exists: " + cmdPs)
+    os.system(cmdPs)
+
+    print("")
+
+    cmdNetstat = "netstat -anp | grep %s 2>/dev/null" % (binaryName)
+    print("Check if port is open: " + cmdNetstat)
+    os.system(cmdNetstat)
