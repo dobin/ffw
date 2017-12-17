@@ -45,6 +45,7 @@ class NetworkManager(object):
         """
         self.closeConnection()
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.settimeout(0.5)
 
         server_address = ('localhost', self.targetPort)
         logging.info("Open connection on localhost:" + str(self.targetPort))

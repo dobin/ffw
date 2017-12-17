@@ -137,11 +137,11 @@ class HonggSlave(object):
 
                     couldSend = self._connectAndSendData(networkManager, fuzzingIterationData.fuzzedData)
 
-
                 if couldSend:
                     # send okay to continue honggfuzz
                     honggComm.writeSocket("okay")
                 else:
+                    logging.info("Server appears to be down, force restart")
                     honggComm.writeSocket("bad!")
 
             elif honggData == "New!":
@@ -174,9 +174,8 @@ class HonggSlave(object):
         # again (10x)
         n = 0
         while not networkManager.openConnection():
-            time.sleep(0.2)
             n += 1
-            if n > 10:
+            if n > 6:
                 networkManager.closeConnection()
                 return False
 
