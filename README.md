@@ -11,27 +11,27 @@ In comparison with the alternatives, FFW is the most advanced,
 feature-complete and tested network fuzzer.
 
 Features:
-* Fuzzes all kind of network protocol (-server)
+* Fuzzes all kind of network protocol (HTTP, MQTT, SMTP, you name it)
 * No modification of the fuzzing target needed (at all)
 * Can fuzz open- and closed-source projects
-* Has feedback-driven fuzzing (compiler support, or hardware based)
+* Has feedback-driven fuzzing (with compiler support, or hardware based)
 * Can fuzz network clients too (wip)
-* Very fast fuzzing setup, no source code changes or protocol reversing needed!
+* Fast fuzzing setup (no source code changes or protocol reversing needed!)
 * Reasonable fuzzing performance
 
 # Installation
 
-## Install dependencies
-
-```
-pip install -r requirements.txt
-```
-
-## Get ffw
+## Get FFW
 
 ```
 git clone https://github.com/dobin/ffw.git
 cd ffw/
+```
+
+## Install FFW dependencies
+
+```
+pip install -r requirements.txt
 ```
 
 ## Install Radamsa fuzzer
