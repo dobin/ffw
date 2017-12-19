@@ -5,7 +5,10 @@ communication data, then replay it with some fuzzing.
 
 FFW can fuzz open source applications, and also closed
 source applications. It also supports feedback driven fuzzing
-by instrumenting honggfuzz, for both open- and closed source apps. This is called `honggmode`.
+by instrumenting honggfuzz, for both open- and closed source apps. 
+
+In comparison with the alternatives, FFW is the most advanced, 
+feature-complete and tested network fuzzer.
 
 Features:
 * Fuzzes all kind of network protocol (-server)
@@ -14,7 +17,7 @@ Features:
 * Has feedback-driven fuzzing (compiler support, or hardware based)
 * Can fuzz network clients too (wip)
 * Very fast fuzzing setup, no source code changes or protocol reversing needed!
-
+* Reasonable fuzzing performance
 
 # Installation
 
@@ -59,6 +62,28 @@ For a step-by-step guide:
 * [Setup the sample project tutorial](https://github.com/dobin/ffw/blob/master/docs/tutorial-sample-project.md)
 * [Setup the feedback-driven fuzzing project tutorial](https://github.com/dobin/ffw/blob/master/docs/tutorial-honggmode.md)
 * [Some fuzzing help and infos](https://github.com/dobin/ffw/blob/master/docs/notes.md)
+
+# Alternatives 
+
+## Fuzzotron
+
+Available via https://github.com/denandz/fuzzotron. "Fuzzotron is a simple network fuzzer supporting TCP, UDP and multithreading."
+
+Support network fuzzing, also uses Radamsa. Can use coverage data, but it is experimental.
+
+Con's:
+* Does not restart target server
+* Unreliable crash detection
+* Experimental code coverage
+
+## Mutiny
+
+Available via https://github.com/Cisco-Talos/mutiny-fuzzer. "The Mutiny Fuzzing Framework is a network fuzzer that operates by replaying PCAPs through a mutational fuzzer."
+
+Con's: 
+* No code coverage
+* Only one commit (no development?)
+* Rudimentary crash detection
 
 # FAQ
 
