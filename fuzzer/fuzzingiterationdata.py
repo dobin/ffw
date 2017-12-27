@@ -21,6 +21,12 @@ fuzzers = {
         "file": "radamsa/bin/radamsa",
         "args": '-s %(seed)s -o %(output)s "%(input)s"',
     },
+    "Zzuf":
+    {
+        "name": "Zzuf",
+        "file": "zzuf/src/zzuf",
+        "args": '-r 0.01 -s %(seed)s -v -d < "%(input)s" > %(output)s'
+    }
 }
 
 

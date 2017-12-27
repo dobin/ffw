@@ -21,7 +21,7 @@ in the `vulnserver/` directory, can be compiled with `make`:
 ```
 $ make
 gcc -O0 -fsanitize=address -fno-stack-protector -fno-omit-frame-pointer vulnserver.c -o vulnserver_asan
-gcc -O0 -fno-stack-protector -fno-omit-frame-pointer vulnserver.c -o vulnserver_asan
+gcc -O0 -fno-stack-protector -fno-omit-frame-pointer vulnserver.c -o vulnserver_plain
 ```
 
 And copy it to the `bin/` directory:
