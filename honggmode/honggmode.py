@@ -73,7 +73,7 @@ def fuzzConsole(config, q, procs):
 
 def _honggExists(config):
     if "honggpath" not in config or config["honggpath"] == "":
-        logging.error("Honggfuzz not configured")
+        logging.error('Honggfuzz not configured. Require path to honggfuzz in config in "honggpath".')
         return False
 
     if not os.path.isfile(config["honggpath"]):

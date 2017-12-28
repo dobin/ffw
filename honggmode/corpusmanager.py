@@ -12,6 +12,8 @@ from . import corpusfile
 
 
 class CorpusIterator(object):
+    """The iter() of CorpusManager class."""
+
     def __init__(self, corpuses):
         self.corpuses = corpuses
         self.current = 0
@@ -27,15 +29,13 @@ class CorpusIterator(object):
             return self.corpuses[self.current - 1].getData()
 
 
-
 class CorpusManager(object):
     """
     Manage the corpus files for the fuzzer.
-
     """
 
     def __init__(self, config):
-        self.corpus = []
+        self.corpus = []  # type: Array[CorpusFile]
         self.config = config
         self.fileWatcher = FileWatcher(config, self)
 
@@ -77,10 +77,10 @@ class CorpusManager(object):
         inputFiles = glob.glob(os.path.join(self.config["inputs"], '*'))
 
         for inputFile in inputFiles:
-            self.loadFile(inputFile)
+            self.loadFile(inputFile, False)
 
 
-    def loadFile(self, fileName):
+    def loadFile(self, fileName, isExternal):
         logging.debug("Load Corpus file: " + fileName)
         if not os.path.isfile(fileName):
             logging.error("Could not read input file: " + fileName)
@@ -98,7 +98,7 @@ class CorpusManager(object):
 
             # we'll have to send this new corpus once, but ignore
             # resulting "New!" from fuzzer. therefore processed=False
-            corpusFile = corpusfile.CorpusFile(fileName, data, processed=False)
+            corpusFile = corpusfile.CorpusFile(fileName, data, processed=False, isExternal=True)
             self.corpus.append(corpusFile)
 
         except Exception as e:
@@ -141,7 +141,7 @@ class CorpusManager(object):
 
 
     def newFileHandler(self, filename):
-        self.loadFile(filename)
+        self.loadFile(filename, True)
 
 
 class FileWatcher(object):

@@ -38,16 +38,18 @@ class FuzzingIterationData(object):
     - all the original packets
     - the fuzzed packet
     - seed
+    - the parent corpus where the data is derived from (optional)
     """
 
-    def __init__(self, config, initialData):
-        self.seed = None
+    def __init__(self, config, initialData, parentCorpus=None):
+        self.seed = None  # type: int
         self.config = config
         self.initialData = initialData
         self.fuzzedData = None
         self.choice = None
         self.fuzzingInFile = None
         self.time = time.strftime("%c")
+        self.parentCorpus = parentCorpus  # type: CorpusFile
 
 
     def getData(self):
@@ -64,6 +66,10 @@ class FuzzingIterationData(object):
             "time": self.time,
         }
         return data
+
+
+    def getParentCorpus(self):
+        return self.parentCorpus
 
 
     def _generateSeed(self):

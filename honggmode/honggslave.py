@@ -11,8 +11,8 @@ import subprocess
 
 from fuzzer.fuzzingcrashdata import FuzzingCrashData
 from network import networkmanager
-
 from fuzzer.fuzzingiterationdata import FuzzingIterationData
+
 from . import honggcomm
 from . import corpusmanager
 
@@ -54,6 +54,9 @@ class HonggSlave(object):
         Will start the target via honggfuzz, connect to the honggfuzz socket,
         and according to the honggfuzz commands from the socket, send
         the fuzzed messages to the target binary.
+
+        New fuzzed data will be generated via FuzzingIterationData, where
+        the initial data from the corpus is managed by CorpusManager.
         """
         #logging.basicConfig(level=logging.DEBUG)
         if "debug" in self.config and self.config["debug"]:
@@ -120,7 +123,7 @@ class HonggSlave(object):
                 # if yes: send it. We'll ignore New!/Cras msgs by settings
                 # fuzzingIterationData = None
                 if self.corpusManager.hasNewExternalCorpus():
-                    fuzzingIterationData = None  # important
+                    fuzzingIterationData = None  # ignore results
                     corpus = self.corpusManager.getNewExternalCorpus()
                     corpus.processed = True
                     couldSend = self._connectAndSendData(networkManager, corpus.getData())
@@ -130,7 +133,7 @@ class HonggSlave(object):
                     self.iterStats["iterCount"] += 1
 
                     corpus = self.corpusManager.getRandomCorpus()
-                    fuzzingIterationData = FuzzingIterationData(self.config, corpus.getData())
+                    fuzzingIterationData = FuzzingIterationData(self.config, corpus.getData(), corpus)
                     if not fuzzingIterationData.fuzzData():
                         logging.error("Could not fuzz the data")
                         return
@@ -150,6 +153,8 @@ class HonggSlave(object):
                 if fuzzingIterationData is not None:
                     logging.info( "--[ Adding file to corpus...")
                     self.corpusManager.addNewCorpus(fuzzingIterationData.fuzzedData, fuzzingIterationData.seed)
+                    fuzzingIterationData.getParentCorpus().statsAddNew()
+
                     self.iterStats["corpusCount"] += 1
 
             elif honggData == "Cras":
@@ -165,7 +170,7 @@ class HonggSlave(object):
                 break
             else:
                 # This should not happen
-                logging.error( "--[ Unknown: " + str(honggData))
+                logging.error( "--[ Unknown Honggfuzz msg: " + str(honggData))
 
 
     def _connectAndSendData(self, networkManager, data):
@@ -276,6 +281,9 @@ class HonggSlave(object):
 
 
     def _handleCrash(self, fuzzingIterationData):
+        # update stats
+        fuzzingIterationData.getParentCorpus().statsAddCrash()
+
         srvCrashData = {
             'asanOutput': 'empty',
             'signum': 0,
