@@ -8,6 +8,7 @@
 import logging
 import argparse
 import os
+import glob
 
 from network import replay
 from network import interceptor
@@ -29,8 +30,8 @@ def checkRequirements(config):
 
 
 def checkFuzzRequirements(config):
-    f = config["projdir"] + '/in/data_0.pickle'
-    if not os.path.isfile(f):
+    f = config["projdir"] + '/in/*.pickle'
+    if len( glob.glob(f)) <= 0:
         print "No intercepted data found: " + str(f)
         return False
 
