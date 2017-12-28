@@ -32,7 +32,12 @@ class Tester():
         serverManager = simpleservermanager.SimpleServerManager(self.config, 0, targetPort)
         networkManager = networkmanager.NetworkManager(self.config, targetPort)
 
+        print("Using port: " + str(targetPort))
         serverManager.start()
+
+        if not networkManager.debugServerConnection():
+            print("Could not connect. Are you sure you have the right port?")
+
 
         inputs = utils.loadInputs(self.config)
         for inp in inputs:

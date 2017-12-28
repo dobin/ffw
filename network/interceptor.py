@@ -262,25 +262,8 @@ def doIntercept(config, interceptorPort, targetPort):
 
     # test connection
     networkManager = networkmanager.NetworkManager(config, targetPort)
-    n = 0
-    alive = False
-    while n < 10:
-        logging.info("Check if we can connect to server")
-        alive = networkManager.testServerConnection()
-        if alive:
-            break
 
-        n += 1
-        time.sleep(0.5)
-
-    if not alive:
-        print("Server not alive, aborting")
-        printErrAnalysis(config, targetPort)
-        print("")
-        print("Common errors:")
-        print("* Did you specify the correct port?")
-        print("* Did you specify all necessary command line arguments (config file etc)?")
-        print("* Are the paths/working directory set correctly?")
+    if not networkManager.debugServerConnection():
         return
 
     # start mitm server
@@ -288,17 +271,3 @@ def doIntercept(config, interceptorPort, targetPort):
         performTcpIntercept(config, localHost, interceptorPort, targetHost, targetPort)
     else:
         performUdpIntercept(config, localHost, interceptorPort, targetHost, targetPort)
-
-
-def printErrAnalysis(config, targetPort):
-    binaryName = os.path.basename(config["target_bin"])
-
-    cmdPs = "ps auxwww | grep %s" % (binaryName)
-    print("Check if process exists: " + cmdPs)
-    os.system(cmdPs)
-
-    print("")
-
-    cmdNetstat = "netstat -anp | grep %s 2>/dev/null" % (binaryName)
-    print("Check if port is open: " + cmdNetstat)
-    os.system(cmdNetstat)

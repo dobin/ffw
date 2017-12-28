@@ -4,6 +4,7 @@ import socket
 import logging
 import time
 import sys
+import os
 
 
 class NetworkManager(object):
@@ -191,6 +192,43 @@ class NetworkManager(object):
 
     ######################################33
     # Non-proto specific
+
+    def debugServerConnection(self):
+        n = 0
+        alive = False
+        while n < 10:
+            print("Check if we can connect to server")
+            alive = self.testServerConnection()
+            if alive:
+                break
+
+            n += 1
+            time.sleep(0.5)
+
+        if not alive:
+            print("Server not alive, aborting")
+            self._printErrAnalysis()
+            print("")
+            print("Common errors:")
+            print("* Did you specify the correct port?")
+            print("* Did you specify all necessary command line arguments (config file etc)?")
+            print("* Are the paths/working directory set correctly?")
+            return
+
+
+    def _printErrAnalysis(self):
+        binaryName = os.path.basename(self.config["target_bin"])
+
+        cmdPs = "ps auxwww | grep %s" % (binaryName)
+        print("Check if process exists: " + cmdPs)
+        os.system(cmdPs)
+
+        print("")
+
+        cmdNetstat = "netstat -anp | grep %s 2>/dev/null" % (binaryName)
+        print("Check if port is open: " + cmdNetstat)
+        os.system(cmdNetstat)
+
 
     def sendMessages(self, msgArr):
         if not self.openConnection():
