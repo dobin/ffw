@@ -100,7 +100,7 @@ class Verifier(object):
         try:
             for outcomeFile in outcomesFiles:
                 print(("Now processing: " + str(n) + ": " + outcomeFile))
-                targetPort = self.config["baseport"] + n + 100
+                targetPort = self.config["baseport"]
                 self._verifyOutcome(targetPort, outcomeFile)
                 n += 1
 
@@ -206,8 +206,9 @@ class Verifier(object):
         serverPid = data[1]
         self.serverPid = serverPid
         logging.info("Verifier: Server pid: " + str(serverPid))
+        logging.info("Verifier: Server Port: " + str(targetPort))
 
-        res = self.networkManager.waitForServerReadyness()
+        res = self.networkManager.debugServerConnection()
         if not res:
             return None
 

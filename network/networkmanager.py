@@ -200,7 +200,7 @@ class NetworkManager(object):
             print("Check if we can connect to server")
             alive = self.testServerConnection()
             if alive:
-                break
+                return True
 
             n += 1
             time.sleep(0.5)
@@ -213,7 +213,8 @@ class NetworkManager(object):
             print("* Did you specify the correct port?")
             print("* Did you specify all necessary command line arguments (config file etc)?")
             print("* Are the paths/working directory set correctly?")
-            return
+
+        return False
 
 
     def _printErrAnalysis(self):
