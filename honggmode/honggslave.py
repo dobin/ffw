@@ -110,25 +110,42 @@ class HonggSlave(object):
         # the actual fuzzing
         logging.info("Performing fuzzing")
         fuzzingIterationData = None
+
+        # Just assume target is alive, because of the warmup phase
+        # this var is needed mainly to not create false-positives, e.g.
+        # if the target is for some reason unstartable, it would be detected
+        # as crash
+        haveCheckedTargetIsAlive = True
+
         while True:
             logging.debug("A fuzzing loop...")
             self._uploadStats()
             self.corpusManager.checkForNewFiles()
 
             honggData = honggComm.readSocket()
+            # honggfuzz says: Send fuzz data via network
             if honggData == "Fuzz":
                 couldSend = False
 
+                # are we really sure that the target is alive? If not, check
+                if not haveCheckedTargetIsAlive:
+                    if not networkManager.waitForServerReadyness():
+                        logging.error("Wanted to fuzz, but targets seems down. Aborting.")
+                        return
+                    else:
+                        haveCheckedTargetIsAlive = True
+
                 # check first if we have new corpus from other threads
-                # if yes: send it. We'll ignore New!/Cras msgs by settings
-                # fuzzingIterationData = None
+                # if yes: send it. We'll ignore New!/Cras msgs by setting:
+                #   fuzzingIterationData = None
                 if self.corpusManager.hasNewExternalCorpus():
                     fuzzingIterationData = None  # ignore results
                     corpus = self.corpusManager.getNewExternalCorpus()
                     corpus.processed = True
                     couldSend = self._connectAndSendData(networkManager, corpus.getData())
 
-                # just randomly select a corpus, fuzz it, (handle result)
+                # just randomly select a corpus, fuzz it, send it
+                # honggfuzz will tell us what to do next
                 else:
                     self.iterStats["iterCount"] += 1
 
@@ -141,12 +158,18 @@ class HonggSlave(object):
                     couldSend = self._connectAndSendData(networkManager, fuzzingIterationData.fuzzedData)
 
                 if couldSend:
-                    # send okay to continue honggfuzz
+                    # all ok...
                     honggComm.writeSocket("okay")
                 else:
+                    # target seems to be down. Have honggfuzz restart it
+                    # and hope for the best, but check after restart if it
+                    # is really up
                     logging.info("Server appears to be down, force restart")
                     honggComm.writeSocket("bad!")
+                    haveCheckedTargetIsAlive = False
 
+            # honggfuzz says: new basic-block found
+            #   (from the data we sent before)
             elif honggData == "New!":
                 # Warmup may result in a stray message, ignore here
                 # If new-corpus-from-other-thread: Ignore here
@@ -157,6 +180,7 @@ class HonggSlave(object):
 
                     self.iterStats["corpusCount"] += 1
 
+            # honggfuzz says: target crashed (yay!)
             elif honggData == "Cras":
                 # Warmup may result in a stray message, ignore here
                 # If new-corpus-from-other-thread: Ignore here
@@ -164,6 +188,10 @@ class HonggSlave(object):
                     logging.info( "--[ Adding crash...")
                     self._handleCrash(fuzzingIterationData)
                     self.iterStats["crashCount"] += 1
+
+                # target was down and needs to be restarted by honggfuzz.
+                # check if it was successfully restarted!
+                haveCheckedTargetIsAlive = False
 
             elif honggData == "":
                 logging.info("Hongfuzz quit, exiting too\n")
@@ -174,9 +202,12 @@ class HonggSlave(object):
 
 
     def _connectAndSendData(self, networkManager, data):
-        """Connect to server via networkManager and send the data."""
-        # try to connect, if server down, wait a bit and try
-        # again (10x)
+        """
+        Connect to server via networkManager and send the data.
+
+        Try several times to create the connection. Returns true if it was
+        able to send the data.
+        """
         n = 0
         while not networkManager.openConnection():
             n += 1
