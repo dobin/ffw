@@ -41,6 +41,7 @@ class HonggSlave(object):
             "iterCount": 0,
             "corpusCount": 0,
             "crashCount": 0,
+            "timeoutCount": 0,
             "startTime": time.time(),
         }
         self.fuzzerPid = None
@@ -132,6 +133,7 @@ class HonggSlave(object):
                     if not networkManager.waitForServerReadyness():
                         logging.error("Wanted to fuzz, but targets seems down. Force honggfuzz to restart it.")
                         honggComm.writeSocket("bad!")
+                        self.iterStats["timeoutCount"] += 1
                     else:
                         haveCheckedTargetIsAlive = True
 
@@ -165,6 +167,7 @@ class HonggSlave(object):
                     # and hope for the best, but check after restart if it
                     # is really up
                     logging.info("Server appears to be down, force restart")
+                    self.iterStats["timeoutCount"] += 1
                     honggComm.writeSocket("bad!")
                     haveCheckedTargetIsAlive = False
 
@@ -225,7 +228,7 @@ class HonggSlave(object):
         """Send fuzzing statistics to parent."""
         currTime = time.time()
 
-        if currTime > self.iterStats["lastUpdate"] + 1:
+        if currTime > self.iterStats["lastUpdate"] + 3:
             fuzzPerSec = float(self.iterStats["iterCount"]) / float(currTime - self.iterStats["startTime"])
 
             # send fuzzing information to parent process
@@ -234,6 +237,7 @@ class HonggSlave(object):
                  self.iterStats["corpusCount"],
                  self.corpusManager.getCorpusCount(),
                  self.iterStats["crashCount"],
+                 self.iterStats["timeoutCount"],
                  fuzzPerSec)
             self.queue.put( d )
             self.iterStats["lastUpdate"] = currTime
