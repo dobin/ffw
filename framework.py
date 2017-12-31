@@ -38,6 +38,30 @@ def checkFuzzRequirements(config):
     return True
 
 
+# https://stackoverflow.com/questions/9321741/printing-to-screen-and-writing-to-a-file-at-the-same-time
+def setupLoggingWithFile(config):
+    # set up logging to file - see previous section for more details
+    logging.basicConfig(level=logging.DEBUG,
+                        format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                        datefmt='%m-%d %H:%M',
+                        filename='ffw-debug.log',
+                        filemode='w')
+    # define a Handler which writes INFO messages or higher to the sys.stderr
+    console = logging.StreamHandler()
+    console.setLevel(logging.WARN)
+    # set a format which is simpler for console use
+    formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+    # tell the handler to use this format
+    console.setFormatter(formatter)
+    # add the handler to the root logger
+    logging.getLogger('').addHandler(console)
+
+
+def setupLoggingStandard():
+    logging.basicConfig(format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                        datefmt='%m-%d %H:%M')
+
+
 def realMain(config):
     parser = argparse.ArgumentParser("Fuzzing For Worms")
 
@@ -63,6 +87,7 @@ def realMain(config):
     parser.add_argument('--url', help="Uploader: url")
     parser.add_argument('--basic_auth_user', help='Uploader: basic auth user')
     parser.add_argument('--basic_auth_password', help='Uploader: basic auth password')
+    parser.add_argument('--adddebuglogfile', help='Will write a debug log file', action="store_true")
     args = parser.parse_args()
 
     if not checkRequirements(config):
@@ -85,6 +110,11 @@ def realMain(config):
         config["debug"] = True
     else:
         config["debug"] = False
+
+    if args.adddebuglogfile:
+        setupLoggingWithFile(config)
+    else:
+        setupLoggingStandard()
 
     if args.intercept:
         interceptorPort = 10000
