@@ -253,8 +253,10 @@ class NetworkManager(object):
     def waitForServerReadyness(self):
         n = 0
         while not self.testServerConnection():
-            if n > 10:
-                logging.error("Server not ready after 10 tries.. still continuing")
+            if n > 20:
+                logging.error("Server no ready after 10 tries.. aborting")
+                return False
+
             time.sleep(0.2)
             n += 1
 

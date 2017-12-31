@@ -130,8 +130,8 @@ class HonggSlave(object):
                 # are we really sure that the target is alive? If not, check
                 if not haveCheckedTargetIsAlive:
                     if not networkManager.waitForServerReadyness():
-                        logging.error("Wanted to fuzz, but targets seems down. Aborting.")
-                        return
+                        logging.error("Wanted to fuzz, but targets seems down. Force honggfuzz to restart it.")
+                        honggComm.writeSocket("bad!")
                     else:
                         haveCheckedTargetIsAlive = True
 
