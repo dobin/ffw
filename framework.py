@@ -26,6 +26,11 @@ def checkRequirements(config):
         print "Target binary not found: " + str(config["target_bin"])
         return False
 
+    if not os.path.isdir(config["temp_dir"]):
+        print "Temp directory not found: " + str(config["temp_dir"])
+        return False
+
+
     return True
 
 

@@ -104,7 +104,7 @@ class NetworkManager(object):
     def testServerConnectionTcp(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_address = ('localhost', self.targetPort)
-
+        sock.settimeout(1)
         try:
             sock.connect(server_address)
         except socket.error as exc:
@@ -253,7 +253,8 @@ class NetworkManager(object):
     def waitForServerReadyness(self):
         n = 0
         while not self.testServerConnection():
-            if n > 20:
+            logging.debug("Trying to connect")
+            if n > 10:
                 logging.error("Server no ready after 10 tries.. aborting")
                 return False
 

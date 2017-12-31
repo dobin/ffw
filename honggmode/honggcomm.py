@@ -29,11 +29,14 @@ class HonggComm(object):
 
 
     def readSocket(self):
+        logging.debug("SOCKET: Try to recv")
         recv = self.sock.recv(4).decode()
+        logging.debug("SOCKET:   Recieved: " + recv)
         return recv
 
 
     def writeSocket(self, data):
+        logging.debug("SOCKET: Send: " + data)
         self.sock.sendall( str.encode(data) )
 
 
