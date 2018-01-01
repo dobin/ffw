@@ -83,8 +83,11 @@ class FuzzingSlave(object):
         sendDataResult = None
         previousFuzzingIterationData = None
 
-        # start server
+        # start server, or not
+        if 'disableServer' in self.config and self.config['disableServer']:
+            serverManager.dis()
         serverManager.start()
+
         if not networkManager.waitForServerReadyness():
             logging.error("Error: Could not connect to server.")
             # TODO: better error, because server could not be started. stdout?

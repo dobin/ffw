@@ -35,11 +35,15 @@ class SimpleServerManager(object):
         self.config = config
         self.process = None
         self.targetPort = targetPort
+        self.isDisabled = False
         serverutils.setupEnvironment(self.config)
 
 
     def start(self):
         """Start the server"""
+        if self.isDisabled:
+            return
+
         if not os.path.isfile(self.config["target_bin"]):
             logging.error("Could not find target file: " + str(self.config["target_bin"]))
             sys.exit(1)
@@ -54,16 +58,25 @@ class SimpleServerManager(object):
 
     def stop(self):
         """Stop the server"""
+        if self.isDisabled:
+            return
+
         logging.info("Stop server PID: " + str(self.process.pid))
         self.process.terminate
 
 
     def restart(self):
+        if self.isDisabled:
+            return
+
         self.stop()
         time.sleep(GLOBAL_SLEEP["sleep_after_server_start"])
         self.start()
         time.sleep(GLOBAL_SLEEP["sleep_after_server_start"])
 
+
+    def dis(self):
+        self.isDisabled = True
 
     def isStarted(self):
         """Return true if server is started"""
