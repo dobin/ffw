@@ -89,6 +89,9 @@ class FuzzingIterationData(object):
         self._generateSeed()
         self._chooseInput()
 
+        if not self.choice:
+            return False
+
         self.fuzzingInFile = os.path.join(self.config["temp_dir"], str(self.seed) + ".in.raw")
         self.fuzzingOutFile = os.path.join(self.config["temp_dir"], str(self.seed) + ".out.raw")
 
@@ -160,6 +163,12 @@ class FuzzingIterationData(object):
         """Select a message to be fuzzed."""
         #self.fuzzedData = list(self.initialData)
         self.fuzzedData = copy.deepcopy(self.initialData)
+
+        # Prevent endless loops if no client message is found in an input packet.
+        if next((i for i in self.fuzzedData if i["from"] == "cli"), None) == None:
+            logging.debug("No client messages found in %s." % self.fuzzedData)
+            self.choice = None
+            return
 
         # TODO: make this dependant on seed
         if self.config["maxfuzzmsg"]:
