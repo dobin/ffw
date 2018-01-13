@@ -67,6 +67,7 @@ class ClientTcpThread(threading.Thread):
             targetHostSocket.connect((self.__targetHost, self.__targetPort))
         except Exception as e:
             print("connect() exception: " + str(e))
+            print("  while connecting to: " + self.__targetHost + ":" + str(self.__targetPort))
             return
         targetHostSocket.setblocking(0)
 
@@ -162,15 +163,21 @@ def performTcpIntercept(config, localHost, localPort, targetHost, targetPort):
         serverSocket.bind((localHost, int(localPort)))
         serverSocket.listen(5)
     except Exception as e:
-        print("Error binding to: %s:%s: %s" % (targetHost, targetPort, str(e)))
+        print("Error binding to: %s:%s: %s" % (localHost, localPort, str(e)))
+        return
+
     print("Forwarding everything to %s:%s" % (targetHost, targetPort))
     print("Waiting for new client on port: " + str(localPort))
 
     threadId = 0
     while True:
         try:
-
             clientSocket, address = serverSocket.accept()
+        except socket.error as e:
+            logging.error("accept() Socket Error: " + str(e))
+            logging.error("Try waiting a bit...")
+
+            break
         except KeyboardInterrupt:
             print("\nTerminating all clients...")
             terminateAll = True
