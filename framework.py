@@ -61,6 +61,9 @@ def setupLoggingWithFile(config):
     # add the handler to the root logger
     logging.getLogger('').addHandler(console)
 
+    # slaves will setup their own logging
+    config["DebugWithFile"] = True
+
 
 def setupLoggingStandard():
     logging.basicConfig(format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',

@@ -12,7 +12,7 @@ import subprocess
 from fuzzer.fuzzingcrashdata import FuzzingCrashData
 from network import networkmanager
 from fuzzer.fuzzingiterationdata import FuzzingIterationData
-
+import utils
 from . import honggcomm
 from . import corpusmanager
 
@@ -62,6 +62,9 @@ class HonggSlave(object):
         #logging.basicConfig(level=logging.DEBUG)
         if "debug" in self.config and self.config["debug"]:
             self.config["processes"] = 1
+
+        if "DebugWithFile" in self.config:
+            utils.setupSlaveLoggingWithFile(self.threadId)
 
         logging.info("Setup fuzzing..")
         random.seed(self.initialSeed)

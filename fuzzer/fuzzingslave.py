@@ -12,6 +12,7 @@ from .fuzzingcrashdata import FuzzingCrashData
 from network import networkmanager
 from . import fuzzingiterationdata
 from . import simpleservermanager
+import utils
 
 GLOBAL_SLEEP = {
     # how long to wait after server start
@@ -66,6 +67,9 @@ class FuzzingSlave(object):
         Only called once, by the fuzzingmaster
         """
         global GLOBAL_SLEEP
+
+        if "DebugWithFile" in self.config:
+            utils.setupSlaveLoggingWithFile(self.threadId)
 
         random.seed(self.initialSeed)
         logging.info("Setup fuzzing..")

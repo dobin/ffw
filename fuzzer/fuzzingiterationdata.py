@@ -165,7 +165,7 @@ class FuzzingIterationData(object):
         self.fuzzedData = copy.deepcopy(self.initialData)
 
         # Prevent endless loops if no client message is found in an input packet.
-        if next((i for i in self.fuzzedData if i["from"] == "cli"), None) == None:
+        if next((i for i in self.fuzzedData if i["from"] == "cli"), None) is None:
             logging.debug("No client messages found in %s." % self.fuzzedData)
             self.choice = None
             return
