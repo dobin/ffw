@@ -13,6 +13,7 @@ import glob
 from network import replay
 from network import interceptor
 from fuzzer import fuzzingmaster
+from clientfuzzer import clientfuzzer-master
 from verifier import verifier
 from verifier import minimizer
 from uploader import uploader
@@ -77,6 +78,7 @@ def realMain(config):
     group.add_argument('--intercept', help='Intercept and record network communication', action="store_true")
     group.add_argument('--test', help='Test intercepted network communication', action="store_true")
     group.add_argument('--fuzz', help='Perform fuzzing', action="store_true")
+    group.add_argument('--clientfuzz', help='Perform client fuzzing', action="store_true")
     group.add_argument('--honggmode', help='Perform honggfuze based fuzzing', action="store_true")
     group.add_argument('--verify', help='Verify crashes', action="store_true")
     group.add_argument('--minimize', help='Minimize crashes', action="store_true")
@@ -139,7 +141,6 @@ def realMain(config):
 
         interceptor.doIntercept(config, interceptorPort, targetPort)
 
-
     if args.test:
         t = tester.Tester(config)
         t.test()
@@ -148,6 +149,11 @@ def realMain(config):
         if not checkFuzzRequirements(config):
             return False
         fuzzingmaster.doFuzz(config, args.gui)
+
+    if args.clientfuzz:
+        if not checkFuzzRequirements(config):
+            return False
+        clientfuzzermaster.doFuzz(config, args.gui)
 
     if args.honggmode:
         if not checkFuzzRequirements(config):
