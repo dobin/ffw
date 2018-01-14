@@ -2,11 +2,10 @@
 
 import signal
 import random
-import gui
 
 from multiprocessing import Process, Queue
 
-from . import clientfuzzer-slave
+from . import clientfuzzerslave
 import utils
 
 

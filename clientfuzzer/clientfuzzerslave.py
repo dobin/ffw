@@ -8,12 +8,29 @@ import sys
 import pickle
 import os
 
-from .fuzzingcrashdata import FuzzingCrashData
+from fuzzer.fuzzingcrashdata import FuzzingCrashData
 
 from fuzzer import fuzzingiterationdata
 from . import clientmanager
 from . import networkservermanager
 import utils
+
+
+GLOBAL_SLEEP = {
+    # how long to wait after server start
+    # can be high as it is not happening so often
+    "sleep_after_server_start": 1,
+
+    # send update interval from child to parent
+    # via queue
+    "communicate_interval": 3
+}
+
+
+def signal_handler(signal, frame):
+    # TODO fixme make object so i can kill server
+    #stopServer()
+    sys.exit(0)
 
 
 class FuzzingSlave(object):
@@ -61,7 +78,7 @@ class FuzzingSlave(object):
         signal.signal(signal.SIGINT, signal_handler)
 
         targetPort = self.config["baseport"] + self.threadId
-        clientManager = simpleclientmanager.SimpleClientManager(self.config, self.threadId, targetPort)
+        clientManager = clientmanager.ClientManager(self.config, self.threadId, targetPort)
         networkServerManager = networkservermanager.NetworkServerManager(self.config, targetPort)
 
         # start the server
@@ -89,8 +106,15 @@ class FuzzingSlave(object):
                 time.sleep(0.5)
 
             selectedInput = self.getRandomInput()
-            networkServerManager.setData(selectedInput)
+
+            fuzzingIterationData = fuzzingiterationdata.FuzzingIterationData(self.config, selectedInput)
+            if not fuzzingIterationData.fuzzData():
+                logging.error("Could not fuzz the data")
+                return
+
+            networkServerManager.setFuzzData(fuzzingIterationData)
             clientManager.execute()
+            networkServerManager.handleConnection()
 
         networkServerManager.stop()
 

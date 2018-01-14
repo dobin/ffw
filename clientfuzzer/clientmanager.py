@@ -1,10 +1,29 @@
 
+import serverutils
+import logging
+import os
+import time
+import subprocess
 
-class ClientManager(config, threadId, targetPort):
+
+GLOBAL_SLEEP = {
+    # how long to wait after server start
+    # can be high as it is not happening so often
+    "sleep_after_server_start": 1,
+}
+
+
+class ClientManager(object):
     print "Client Manager"
+
+    def __init__(self, config, threadId, targetPort):
+        self.config = config
+        self.threadId = threadId
+        self.targetPort = targetPort
 
     def execute(self):
         print "Start client"
+        self._runTarget()
 
 
     def _runTarget(self):

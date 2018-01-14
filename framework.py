@@ -13,7 +13,7 @@ import glob
 from network import replay
 from network import interceptor
 from fuzzer import fuzzingmaster
-from clientfuzzer import clientfuzzer-master
+from clientfuzzer import clientfuzzermaster
 from verifier import verifier
 from verifier import minimizer
 from uploader import uploader
