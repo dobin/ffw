@@ -14,8 +14,9 @@ class NetworkServerManager(object):
         self.sock = None
 
     def start(self):
-        self._startListen()
         print "Start Server Manager"
+        return self._startListen()
+
 
 
     def setFuzzData(self, data):
@@ -29,16 +30,28 @@ class NetworkServerManager(object):
 
         print "Client connected!"
 
-        print "recv..."
-        buf = conn.recv(1024)
-        print "  Received: " + buf
+        for message in self.fuzzingIterationData.fuzzedData:
+            if self.config["maxmsg"] and message["index"] > self.config["maxmsg"]:
+                break
 
-        print "send..."
-        conn.send("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+            if message["from"] == "srv":
+                print ".. send"
+                if not self._sendData(conn, message):
+                    break
+            else:
+                print ".. recv"
+                if not self._receiveData(conn, message):
+                    break
 
         print "finished"
         conn.close()
 
+
+    def _receiveData(self, conn, message):
+        return conn.recv(1024)
+
+    def _sendData(self, conn, message):
+        conn.send(message["data"])
 
     def _startListen(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -49,10 +62,12 @@ class NetworkServerManager(object):
             self.socket.bind(("localhost", self.targetPort))
         except socket.error as msg:
             print 'Bind failed. Error Code : ' + str(msg[0]) + ' Message ' + msg[1]
-            sys.exit()
+            return False
 
         print 'Socket bind complete'
 
         #Start listening on socket
         self.socket.listen(10)
         print 'Socket now listening'
+
+        return True

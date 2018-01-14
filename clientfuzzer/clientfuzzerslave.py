@@ -82,7 +82,8 @@ class FuzzingSlave(object):
         networkServerManager = networkservermanager.NetworkServerManager(self.config, targetPort)
 
         # start the server
-        networkServerManager.start()
+        if not networkServerManager.start():
+            return
 
         iterStats = {
             "count": 0,  # number of iterations
