@@ -31,6 +31,10 @@ config = {
     # keywords: ""%(port)i" is the port the server will be started on
     "target_args": "%(port)i",
 
+    # if you cant specify the port on the command line,
+    # hardcode it here. Note that it will work only with one fuzzing instance.
+    "baseport": 20000,
+
     # how many fuzzing instances should we start
     "processes": 1,
 
@@ -77,11 +81,6 @@ config = {
 
     # Directory of verified files
     "verified_dir": PROJDIR + "verified",
-
-    # if you have multiple ffw fuzzers active,
-    # change this between them
-    # Use something between 20'0000 and 30'000 or bad stuff may happen
-    "baseport": 20000,
 
     # dont change this
     "basedir": BASEDIR,
