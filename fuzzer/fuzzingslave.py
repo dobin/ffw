@@ -205,21 +205,22 @@ class FuzzingSlave(object):
 
     def sendPreData(self, networkManager, fuzzingIterationData):
         logging.info("Send pre data: ")
+        
+        if fuzzingIterationData.fuzzedData:
+            for message in fuzzingIterationData.fuzzedData:
+                if message == fuzzingIterationData.choice:
+                    break
 
-        for message in fuzzingIterationData.fuzzedData:
-            if message == fuzzingIterationData.choice:
-                break
+                if message["from"] == "srv":
+                    r = networkManager.receiveData(message)
+                    if not r:
+                        return False
 
-            if message["from"] == "srv":
-                r = networkManager.receiveData(message)
-                if not r:
-                    return False
-
-            if message["from"] == "cli":
-                logging.debug("  Sending pre message: " + str(fuzzingIterationData.fuzzedData.index(message)))
-                ret = networkManager.sendData(message)
-                if not ret:
-                    return False
+                if message["from"] == "cli":
+                    logging.debug("  Sending pre message: " + str(fuzzingIterationData.fuzzedData.index(message)))
+                    ret = networkManager.sendData(message)
+                    if not ret:
+                        return False
 
         return True
 
@@ -228,25 +229,26 @@ class FuzzingSlave(object):
         logging.info("Send data: ")
 
         s = False
-        for message in fuzzingIterationData.fuzzedData:
-            # skip pre messages
-            if message == fuzzingIterationData.choice:
-                s = True
+        if fuzzingIterationData.fuzzedData:
+            for message in fuzzingIterationData.fuzzedData:
+                # skip pre messages
+                if message == fuzzingIterationData.choice:
+                    s = True
 
             if s:
-                if message["from"] == "srv":
-                    r = networkManager.receiveData(message)
-                    if not r:
-                        return False
+                    if message["from"] == "srv":
+                        r = networkManager.receiveData(message)
+                        if not r:
+                            return False
 
-                if message["from"] == "cli":
-                    if "isFuzzed" in message:
-                        logging.debug("  Sending fuzzed message: " + str(fuzzingIterationData.fuzzedData.index(message)))
-                    else:
-                        logging.debug("  Sending post message: " + str(fuzzingIterationData.fuzzedData.index(message)))
-                    res = networkManager.sendData(message)
-                    if res is False:
-                        return False
+                    if message["from"] == "cli":
+                        if "isFuzzed" in message:
+                            logging.debug("  Sending fuzzed message: " + str(fuzzingIterationData.fuzzedData.index(message)))
+                        else:
+                            logging.debug("  Sending post message: " + str(fuzzingIterationData.fuzzedData.index(message)))
+                        res = networkManager.sendData(message)
+                        if res is False:
+                            return False
 
         return True
 

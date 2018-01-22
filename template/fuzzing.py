@@ -72,6 +72,9 @@ config = {
     # currently basically only radamsa
     "fuzzer": "Radamsa",
 
+    #Dharma grammars
+    "grammars": PROJDIR + "grammars/",
+
     # Directory of input files
     "inputs": PROJDIR + "in",
 

@@ -7,28 +7,9 @@ import subprocess
 import copy
 import time
 import sys
+import IPython
 
-fuzzers = {
-    "Dumb":
-    {
-        "name": "Dumb",
-        "file": "fuzzer_dumb.py",
-        "args": '%(seed)s "%(input)s" %(output)s',
-    },
-    "Radamsa":
-    {
-        "name": "Radamsa",
-        "file": "radamsa/bin/radamsa",
-        "args": '-s %(seed)s -o %(output)s "%(input)s"',
-    },
-    "Zzuf":
-    {
-        "name": "Zzuf",
-        "file": "zzuf/src/zzuf",
-        "args": '-r 0.01 -s %(seed)s -v -d < "%(input)s" > %(output)s'
-    }
-}
-
+from fuzzer_list import fuzzers
 
 class FuzzingIterationData(object):
     """
@@ -87,10 +68,10 @@ class FuzzingIterationData(object):
         logging.debug("Fuzzing the data")
 
         self._generateSeed()
-        self._chooseInput()
-
-        if not self.choice:
-            return False
+	if fuzzers[self.config["fuzzer"]]["type"] == "gen" :
+            self._chooseInput()
+            if not self.choice:
+                return False
 
         self.fuzzingInFile = os.path.join(self.config["temp_dir"], str(self.seed) + ".in.raw")
         self.fuzzingOutFile = os.path.join(self.config["temp_dir"], str(self.seed) + ".out.raw")
@@ -110,10 +91,10 @@ class FuzzingIterationData(object):
     def _writeFuzzingFile(self):
         """Write the data to be fuzzed to a file."""
         file = open(self.fuzzingInFile, "w")
-        file.write(self.choice["data"])
-        #logging.debug("urllib.quote_plus: " + str(self.choice["data"]))
+        if self.choice:
+            file.write(self.choice["data"])
+            #logging.debug("urllib.quote_plus: " + str(self.choice["data"]))
         file.close()
-
         return True
 
 
@@ -122,9 +103,9 @@ class FuzzingIterationData(object):
         file = open(self.fuzzingOutFile, "r")
         data = file.read()
         file.close()
-
-        self.choice["data"] = data
-        self.choice["isFuzzed"] = True
+        if self.choice:
+            self.choice["data"] = data
+            self.choice["isFuzzed"] = True
 
         try:
             os.remove(self.fuzzingInFile)
@@ -150,8 +131,14 @@ class FuzzingIterationData(object):
             print("Could not find fuzzer binary: " + fuzzerBin)
             sys.exit()
 
+	grammars_string = ""
+	for root,dirs,files in os.walk(self.config["grammars"]):                     
+	    for element in files:                                                    
+		grammars_string += self.config["grammars"] + element + " "
+
         args = fuzzerData["args"] % ({
             "seed": self.seed,
+	    "grammar": grammars_string,
             "input": self.fuzzingInFile,
             "output": self.fuzzingOutFile})
         subprocess.call(fuzzerBin + " " + args, shell=True)

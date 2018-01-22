@@ -60,6 +60,7 @@ Steps involved in setting up a fuzzing project:
 
 For a step-by-step guide:
 * [Setup the sample project tutorial](https://github.com/dobin/ffw/blob/master/docs/tutorial-sample-project.md)
+* [Setup the Grammar based fuzzer](https://github.com/dobin/ffw/blob/master/docs/tutorial-grammar-based.md)
 * [Setup the feedback-driven fuzzing project tutorial](https://github.com/dobin/ffw/blob/master/docs/tutorial-honggmode.md)
 * [Some fuzzing help and infos](https://github.com/dobin/ffw/blob/master/docs/notes.md)
 
