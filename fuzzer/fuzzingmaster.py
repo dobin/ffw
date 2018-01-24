@@ -7,6 +7,7 @@ import gui
 from multiprocessing import Process, Queue
 
 from . import fuzzingslave
+from fuzzer_list import fuzzers
 import utils
 
 
@@ -23,7 +24,10 @@ def doFuzz(config, useCurses):
     orig = signal.signal(signal.SIGINT, signal.SIG_IGN)
 
     printConfig(config)
-    inputs = utils.loadInputs(config)
+    if fuzzers[config["fuzzer"]]["type"] == "mut" :
+        inputs = utils.loadInputs(config)
+    else:
+        inputs = None
 
     procs = []
     n = 0
