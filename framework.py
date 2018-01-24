@@ -13,6 +13,7 @@ import glob
 from network import replay
 from network import interceptor
 from fuzzer import fuzzingmaster
+from fuzzer import fuzzer_list
 from clientfuzzer import clientfuzzermaster
 from verifier import verifier
 from verifier import minimizer
@@ -36,6 +37,9 @@ def checkRequirements(config):
 
 
 def checkFuzzRequirements(config):
+    if fuzzer_list.fuzzers[config["fuzzer"]]["type"] == "gen":
+        return True
+
     f = config["projdir"] + '/in/*.pickle'
     if len( glob.glob(f)) <= 0:
         print "No intercepted data found: " + str(f)

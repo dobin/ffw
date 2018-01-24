@@ -25,8 +25,6 @@ fuzzers = {
         "name": "Dharma",
         "file": "dharma/dharma/dharma.py",
         "args": '-grammars %(grammar)s -seed %(seed)s > %(output)s',
-        "type": "mut"
+        "type": "gen"
     }
 }
-
-

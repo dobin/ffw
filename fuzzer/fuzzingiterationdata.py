@@ -7,9 +7,9 @@ import subprocess
 import copy
 import time
 import sys
-import IPython
 
 from fuzzer_list import fuzzers
+
 
 class FuzzingIterationData(object):
     """
@@ -68,10 +68,11 @@ class FuzzingIterationData(object):
         logging.debug("Fuzzing the data")
 
         self._generateSeed()
-	if fuzzers[self.config["fuzzer"]]["type"] == "gen" :
-            self._chooseInput()
-            if not self.choice:
-                return False
+
+        self._chooseInput()
+        if not self.choice:
+            logging.warn("No choice selected")
+            return False
 
         self.fuzzingInFile = os.path.join(self.config["temp_dir"], str(self.seed) + ".in.raw")
         self.fuzzingOutFile = os.path.join(self.config["temp_dir"], str(self.seed) + ".out.raw")
@@ -103,6 +104,9 @@ class FuzzingIterationData(object):
         file = open(self.fuzzingOutFile, "r")
         data = file.read()
         file.close()
+
+        logging.debug("Read fuzzing data: " + data)
+
         if self.choice:
             self.choice["data"] = data
             self.choice["isFuzzed"] = True
@@ -131,16 +135,18 @@ class FuzzingIterationData(object):
             print("Could not find fuzzer binary: " + fuzzerBin)
             sys.exit()
 
-	grammars_string = ""
-	for root,dirs,files in os.walk(self.config["grammars"]):                     
-	    for element in files:                                                    
-		grammars_string += self.config["grammars"] + element + " "
+        grammars_string = ""
+        if "grammars" in self.config:
+            for root, dirs, files in os.walk(self.config["grammars"]):
+                for element in files:
+                    grammars_string += self.config["grammars"] + element + " "
 
         args = fuzzerData["args"] % ({
             "seed": self.seed,
-	    "grammar": grammars_string,
+            "grammar": grammars_string,
             "input": self.fuzzingInFile,
             "output": self.fuzzingOutFile})
+        logging.debug("CMD: " + args)
         subprocess.call(fuzzerBin + " " + args, shell=True)
 
         return True
@@ -148,7 +154,6 @@ class FuzzingIterationData(object):
 
     def _chooseInput(self):
         """Select a message to be fuzzed."""
-        #self.fuzzedData = list(self.initialData)
         self.fuzzedData = copy.deepcopy(self.initialData)
 
         # Prevent endless loops if no client message is found in an input packet.
@@ -171,4 +176,3 @@ class FuzzingIterationData(object):
 
         s = 'selected input: %s  from: %s  len: %s' % ( str(self.fuzzedData.index(self.choice)), self.choice["from"], str(len(self.choice["data"]) ) )
         logging.debug(s)
-        #logging.debug("INPUT: " + urllib.quote_plus(self.choice["data"]))

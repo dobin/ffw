@@ -44,10 +44,7 @@ def loadInputs(config):
             #logging.error("E: " + str(e))
             pass
 
-
-
     print("Loaded " + str(len(inputs)) + " inputs")
-
     return inputs
 
 

@@ -3,6 +3,7 @@
 import signal
 import random
 import gui
+import logging
 
 from multiprocessing import Process, Queue
 
@@ -24,10 +25,25 @@ def doFuzz(config, useCurses):
     orig = signal.signal(signal.SIGINT, signal.SIG_IGN)
 
     printConfig(config)
-    if fuzzers[config["fuzzer"]]["type"] == "mut" :
+    if fuzzers[config["fuzzer"]]["type"] == "mut":
+        logging.debug("Loading recorded data...")
         inputs = utils.loadInputs(config)
     else:
-        inputs = None
+        logging.debug("Not loading any data, as generative fuzzer")
+        # create fake data.
+        # an list with: a list of network messages
+        inputs = [
+            [
+                {
+                    "data": "",
+                    "from": "cli",
+                },
+                {
+                    "data": "",
+                    "from": "srv",
+                },
+            ]
+        ]
 
     procs = []
     n = 0
