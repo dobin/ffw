@@ -26,5 +26,12 @@ fuzzers = {
         "file": "dharma/dharma/dharma.py",
         "args": '-grammars %(grammar)s -seed %(seed)s > %(output)s',
         "type": "gen"
+    },
+    "Blab":
+    {
+        "name": "Blab",
+        "file": "blab/bin/blab",
+        "args": '-e "$(cat %(grammar)s)" -o %(output)s',
+        "type": "gen"
     }
 }
