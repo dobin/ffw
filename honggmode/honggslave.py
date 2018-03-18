@@ -266,7 +266,6 @@ class HonggSlave(object):
         if self.config["debug"]:
             # enable debug mode with log to file
             cmdArr.append("-d")
-            cmdArr.append("4")
             cmdArr.append('-l')
             cmdArr.append('honggfuzz.log')
 
