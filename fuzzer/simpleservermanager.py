@@ -125,11 +125,17 @@ class SimpleServerManager(object):
         Return the data of the crash
         or None if it has not crashed (should not happen)
         """
+        if self.isDisabled or self.process is None:
+            return False
 
-        if self.process.poll():
-            logging.info("getCrashData(): get data, but server alive?!")
-        else:
-            logging.info("getCrashData(): ok, server is really crashed")
+
+        try:
+            if self.process.poll():
+                logging.info("getCrashData(): get data, but server alive?!")
+            else:
+                logging.info("getCrashData(): ok, server is really crashed")
+        except Exception as e:
+            logging.warn("Could not poll process, strange: " + str(e))
 
         crashData = {
             'asanOutput': serverutils.getAsanOutput(self.config, self.process.pid),
