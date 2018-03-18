@@ -14,7 +14,7 @@ class HonggComm(object):
     def openSocket(self, fuzzerPid):
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 
-        server_address = '/tmp/honggfuzz_socket.' + str(fuzzerPid)
+        server_address = '/tmp/honggfuzz_socket'
         sys.stdout.write('connecting to honggfuzz socket: %s... ' % server_address)
         while True:
             try:
