@@ -58,7 +58,7 @@ class SimpleServerManager(object):
 
     def stop(self):
         """Stop the server"""
-        if self.isDisabled:
+        if self.isDisabled or self.process is None:
             return
 
         logging.info("Stop server PID: " + str(self.process.pid))
