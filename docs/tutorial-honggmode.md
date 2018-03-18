@@ -7,10 +7,10 @@ Note: This tutorial is based on successful completion of
 
 ## Install honggfuzz
 
-Use the ffw-honggfuzz repository, and compile it:
+Use the honggfuzz repository, and compile it:
 ```
 $ cd
-$ git clone https://github.com/dobin/honggfuzz
+$ git clone https://github.com/google/honggfuzz
 $ make
 ```
 
