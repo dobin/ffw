@@ -125,8 +125,15 @@ class HonggSlave(object):
             logging.debug("A fuzzing loop...")
             self._uploadStats()
             self.corpusManager.checkForNewFiles()
+            honggData = None
 
-            honggData = honggComm.readSocket()
+            try:
+                honggData = honggComm.readSocket()
+            except Exception as e:
+                logging.error("Could not read from honggfuzz socket: " + str(e))
+                logging.error("Honggfuzz server crashed? Killed?")
+                return
+
             # honggfuzz says: Send fuzz data via network
             if honggData == "Fuzz":
                 couldSend = False
