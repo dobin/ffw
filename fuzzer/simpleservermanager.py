@@ -62,7 +62,10 @@ class SimpleServerManager(object):
             return
 
         logging.info("Stop server PID: " + str(self.process.pid))
-        self.process.terminate()
+        try:
+            self.process.terminate()
+        except:
+            logging.info("Could not terminate server - already crashed?")
 
 
     def restart(self):
