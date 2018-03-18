@@ -9,6 +9,7 @@ import time
 import sys
 
 from fuzzer_list import fuzzers
+import utils
 
 
 class FuzzingIterationData(object):
@@ -103,7 +104,7 @@ class FuzzingIterationData(object):
         data = file.read()
         file.close()
 
-        logging.debug("Read fuzzing data: " + data)
+        logging.debug("Read fuzzing data: " + utils.cap(data, 64))
 
         self.choice["data"] = data
         self.choice["isFuzzed"] = True

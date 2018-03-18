@@ -14,6 +14,11 @@ Shared by different phases of the framework.
 """
 
 
+# https://stackoverflow.com/questions/11602386/python-function-for-capping-a-string-to-a-maximum-length
+def cap(s, l):
+    return s if len(s) <= l else s[0:l - 3] + '...'
+
+
 def readPickleFile(fileName):
     data = None
 
