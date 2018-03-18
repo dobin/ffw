@@ -92,9 +92,7 @@ class FuzzingIterationData(object):
     def _writeFuzzingFile(self):
         """Write the data to be fuzzed to a file."""
         file = open(self.fuzzingInFile, "w")
-        if self.choice:
-            file.write(self.choice["data"])
-            #logging.debug("urllib.quote_plus: " + str(self.choice["data"]))
+        file.write(self.choice["data"])
         file.close()
         return True
 
@@ -107,9 +105,8 @@ class FuzzingIterationData(object):
 
         logging.debug("Read fuzzing data: " + data)
 
-        if self.choice:
-            self.choice["data"] = data
-            self.choice["isFuzzed"] = True
+        self.choice["data"] = data
+        self.choice["isFuzzed"] = True
 
         try:
             os.remove(self.fuzzingInFile)
