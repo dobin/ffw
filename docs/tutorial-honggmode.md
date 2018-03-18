@@ -56,11 +56,15 @@ INFO:root:--[ Adding file to corpus...
 
 ## Fuzz with software-based feedback
 
-Compile with hfuzz:
+Note:
+* This required Ubuntu 17.04 or higher
+* On Ubuntu 16.04 there will be something like `clang: error: unsupported argument 'trace-pc-guard' to option 'fsanitize-coverage='`
+
+Compile `vulnserver` with hfuzz:
 ```
+$ cd vulnserver/
 $ export HFUZZ_CC_ASAN="true"
-$ ~/honggfuzz/hfuzz_cc/hfuzz-clang vulnserver.c -o vulnserver_hfuzz
-$ mv vulnserver_hfuzz bin/
+$ ~/honggfuzz/hfuzz_cc/hfuzz-clang vulnserver.c -o bin/vulnserver_hfuzz
 ```
 
 Change config to point to this new binary:
@@ -85,7 +89,6 @@ INFO:root:--[ Adding file to corpus...
 ```
 
 
-
 ## Test the honggfuzz integration mode
 
 ### Compile
@@ -100,16 +103,14 @@ $ ~/honggfuzz/hfuzz_cc/hfuzz-clang vulnserver_cov.c -o vulnserver_cov
 
 Start honggfuzz with the following command line on port 5001:
 ```
-~/honggfuzz/honggfuzz -Q -S -C -n 1 -s -d 4 -l log.txt --socket_fuzzer -- ./vulnserver_cov 5001
-
-No input file corpus loaded, the external socket_fuzzer is responsible for creating the fuzz data
-Waiting for SocketFuzzer connection on socket: /tmp/honggfuzz_socket.24588
+~/honggfuzz/honggfuzz  --keep_output --debug --sanitizers --sancov --stdin_input --threads 1 --verbose --logfile log.txt --socket_fuzzer -- ./vulnserver_cov 5001
+Waiting for SocketFuzzer connection on socket: /tmp/honggfuzz_socket
 ```
 
 On another terminal, connect:
 ```
-$ python3 honggfuzz_socketclient.py /tmp/honggfuzz_socket.25751
-connecting to /tmp/honggfuzz_socket.25751
+$ python honggfuzz_socketclient.py auto
+connecting to /tmp/honggfuzz_socket
 --[ Adding file to corpus...
 --[ Target crashed
 --[ Adding file to corpus...
@@ -128,7 +129,6 @@ connecting to /tmp/honggfuzz_socket.25751
 ```
 
 If the message `Adding file to corpus` appears, it works.
-
 
 ### Closed-source project options
 
