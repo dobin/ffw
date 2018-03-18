@@ -62,7 +62,7 @@ class SimpleServerManager(object):
             return
 
         logging.info("Stop server PID: " + str(self.process.pid))
-        self.process.terminate
+        self.process.terminate()
 
 
     def restart(self):

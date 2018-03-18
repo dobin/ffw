@@ -64,6 +64,8 @@ class Tester():
                 for key, value in self.stats.items():
                     print("Fails at msg #" + str(key) + ": " + str(value))
 
+        serverManager.stop()
+
 
     def sendMessages(self, networkManager, inp):
         n = 0
