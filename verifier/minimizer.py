@@ -38,7 +38,7 @@ class Minimizer(object):
         for outcomeFile in outcomesFiles:
             crashDetails = self.readCrashDetails(outcomeFile)
 
-            if crashDetails is not None:
+            if crashDetails is not None and "faultOffset" in crashDetails:
                 idx = crashDetails["faultOffset"]
                 if idx not in crashes:
                     crashes[idx] = []
