@@ -99,7 +99,13 @@ class FuzzingIterationData(object):
 
 
     def _readFuzzingFile(self):
-        """Read the fuzzed data"""
+        """
+	Read the fuzzed data
+
+	The fuzzer has generated a new file with fuzzed data.
+	Read it, then remove that file.
+	Also remove the original input file.	
+	"""
         file = open(self.fuzzingOutFile, "r")
         data = file.read()
         file.close()
@@ -114,7 +120,8 @@ class FuzzingIterationData(object):
         except:
             print("Failed to remove file %s!" % self.fuzzingInFile)
 
-        if self.config["keep_temp"]:
+	# keep fuzzed files for debugging purposes
+        if "keep_temp" in self.config and self.config["keep_temp"]:
             return True
 
         try:
