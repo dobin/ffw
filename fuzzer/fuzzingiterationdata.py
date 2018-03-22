@@ -111,9 +111,15 @@ class FuzzingIterationData(object):
 
         try:
             os.remove(self.fuzzingInFile)
-            os.remove(self.fuzzingOutFile)
         except:
             print("Failed to remove file %s!" % self.fuzzingInFile)
+
+        if self.config["keep_temp"]:
+            return True
+
+        try:
+            os.remove(self.fuzzingOutFile)
+        except:
             print("Failed to remove file %s!" % self.fuzzingOutFile)
 
         return True
