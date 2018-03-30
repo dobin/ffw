@@ -32,7 +32,7 @@ cd ffw/
 
 If its a fresh Ubuntu, install relevant packages:
 ```
-apt-get install python python-pip clang
+apt-get install python python-pip clang gdb
 ```
 
 And pythin dependencies:
