@@ -21,6 +21,7 @@ from uploader import uploader
 from network import tester
 from network import proto_vnc
 from honggmode import honggmode
+import distutils.spawn
 
 
 def checkRequirements(config):
@@ -32,6 +33,9 @@ def checkRequirements(config):
         print "Temp directory not found: " + str(config["temp_dir"])
         return False
 
+    if distutils.spawn.find_executable("gdb") is None:
+        print "GDB not installed?"
+        return False
 
     return True
 
