@@ -5,9 +5,9 @@ communication data, then replay it with some fuzzing.
 
 FFW can fuzz open source applications, and also closed
 source applications. It also supports feedback driven fuzzing
-by instrumenting honggfuzz, for both open- and closed source apps. 
+by instrumenting honggfuzz, for both open- and closed source apps.
 
-In comparison with the alternatives, FFW is the most advanced, 
+In comparison with the alternatives, FFW is the most advanced,
 feature-complete and tested network fuzzer.
 
 Features:
@@ -30,6 +30,12 @@ cd ffw/
 
 ## Install FFW dependencies
 
+If its a fresh Ubuntu, install relevant packages:
+```
+apt-get install python python-pip clang
+```
+
+And pythin dependencies:
 ```
 pip install -r requirements.txt
 ```
@@ -64,7 +70,7 @@ For a step-by-step guide:
 * [Setup the feedback-driven fuzzing project tutorial](https://github.com/dobin/ffw/blob/master/docs/tutorial-honggmode.md)
 * [Some fuzzing help and infos](https://github.com/dobin/ffw/blob/master/docs/notes.md)
 
-# Alternatives 
+# Alternatives
 
 ## Fuzzotron
 
@@ -81,7 +87,7 @@ Con's:
 
 Available via https://github.com/Cisco-Talos/mutiny-fuzzer. "The Mutiny Fuzzing Framework is a network fuzzer that operates by replaying PCAPs through a mutational fuzzer."
 
-Con's: 
+Con's:
 * No code coverage
 * Only one commit (no development?)
 * Rudimentary crash detection
