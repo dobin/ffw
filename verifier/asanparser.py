@@ -8,6 +8,16 @@ from . import verifycrashdata
 
 
 class AsanParser:
+    """
+    Parses ASAN output files
+
+    If a binary is compiled with ASAN, it will/should create output or file
+    which contains detailed information about the vulnerability and crash.
+
+    This class attempts to parse this text file and to extract all
+    necessary information, e.g. the fault instruction.
+    """
+
     def __init__(self):
         self.lines = None
         self.data = None
@@ -67,6 +77,8 @@ class AsanParser:
         if "heap-use-after-free" in headerLine:
             asanData["cause"] = "UaF"
 
+        if "memcpy-param-overlap" in headerLine:
+            asanData["cause"] = "Memcpy"
 
         # find "^#1"
         # #0 is usually the asan line where it failed, which does not interest us
@@ -82,13 +94,22 @@ class AsanParser:
             n += 1
             line = self.lines[n]
 
+
         # split that main line
         # "==58842==ERROR: AddressSanitizer: heap-buffer-overflow on address
         #   0x60200000eed8 at pc 0x7f2c3ac7b033 bp 0x7ffd1e7630f0 sp 0x7ffd1e762898"
+        # or
+        # ==1996==ERROR: AddressSanitizer: memcpy-param-overlap: memory ranges
+        #   [0x7ffe1a3fd0e0,0x7ffe1a3fd4a5) and [0x7ffe1a3fd190, 0x7ffe1a3fd555) overlap
         mainLine = headerLine.split(" ")
-        print "Mainline: " + str(mainLine)
-        asanData["faultAddress"] = int(mainLine[8], 16)
-        #asanData["cause_line"] = mainLine[3] + " " + mainLine[4]
+        logging.info("Mainline: " + str(mainLine))
+        if "range" in headerLine:
+            # cool, PC is not written here.. take it from backtrace
+            # #1 0x55b23bee8491 in handleData1 /Development/ffw/vulnserver/vulnserver.c:20
+            tmp = line.split(" ")
+            asanData["faultAddress"] = int(tmp[1], 16)
+        else:
+            asanData["faultAddress"] = int(mainLine[8], 16)
         asanData["cause_line"] = "neh"
 
 

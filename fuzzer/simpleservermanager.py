@@ -128,7 +128,6 @@ class SimpleServerManager(object):
         if self.isDisabled or self.process is None:
             return False
 
-
         try:
             if self.process.poll():
                 logging.info("getCrashData(): get data, but server alive?!")
