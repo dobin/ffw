@@ -80,9 +80,14 @@ class HonggSlave(object):
         # start honggfuzz with target binary
         self._startServer()
 
-        # connect with honggfuzz
+        # connect to honggfuzz
         honggComm = honggcomm.HonggComm()
         honggComm.openSocket(self.fuzzerPid)
+
+        # test connection first
+        if not networkManager.debugServerConnection():
+            logging.error("Damn.")
+            return
 
         # warmup
         # Send all initial corpus once and ignore new BB commands so we
