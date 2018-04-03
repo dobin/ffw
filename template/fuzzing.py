@@ -70,7 +70,7 @@ config = {
     "temp_dir": PROJDIR + "temp",
 
     # keep generated output files
-    "keep_temp: False,
+    "keep_temp": False,
 
     # fuzzing results are stored in out/
     "outcome_dir": PROJDIR + "out",
