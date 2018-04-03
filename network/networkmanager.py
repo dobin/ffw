@@ -23,7 +23,7 @@ class NetworkManager(object):
             self.sendData = self.sendDataTcp
             self.receiveData = self.receiveDataTcp
             self.testServerConnection = self.testServerConnectionTcp
-        else:
+        elif config["ipproto"] is "udp":
             logging.info("Using: UDP")
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.sock.settimeout(1.0)
@@ -32,6 +32,9 @@ class NetworkManager(object):
             self.sendData = self.sendDataUdp
             self.receiveData = self.receiveDataUdp
             self.testServerConnection = self.testServerConnectionUdp
+        else:
+            logging.error("Unknown proto: -" + config["ipproto"] + "-")
+
 
     ######################################33
 
@@ -104,10 +107,12 @@ class NetworkManager(object):
     def testServerConnectionTcp(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_address = ('localhost', self.targetPort)
+        logging.debug("testServerConnectionTcp: connect to " + str(server_address))
         sock.settimeout(1)
         try:
             sock.connect(server_address)
         except socket.error as exc:
+            logging.info("Connection error: " + str(exc))
             return False
 
         sock.close()
@@ -197,7 +202,7 @@ class NetworkManager(object):
         n = 0
         alive = False
         while n < 10:
-            print("Check if we can connect to server")
+            print("Check if we can connect to server localhost:" + str(self.targetPort))
             alive = self.testServerConnection()
             if alive:
                 return True

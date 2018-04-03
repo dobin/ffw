@@ -80,20 +80,24 @@ def setupLoggingStandard():
                         datefmt='%m-%d %H:%M')
 
 
-def loadConfig(configfilename):
+def loadConfig(configfilename, basedir):
     rawData = open(configfilename, 'r').read()
-    pyData = ast.literal_eval(rawData)
 
-    pyData["PROJDIR"] = os.getcwd() + "/"
-    pyData["BASEDIR"] = os.path.realpath(pyData["PROJDIR"] + "/../")
+    # hmm this produces some strange behaviour upon string comparison
+    # of the values of the dict
+    #pyData = ast.literal_eval(rawData)
+    pyData = eval(rawData)
+
+    pyData["basedir"] = basedir
+    pyData["projdir"] = os.getcwd() + "/"
 
     # cleanup. Damn this is ugly.
-    pyData["target_bin"] = pyData["PROJDIR"] + pyData["target_bin"]
-    pyData["temp_dir"] = pyData["PROJDIR"] + pyData["temp_dir"]
-    pyData["outcome_dir"] = pyData["PROJDIR"] + pyData["outcome_dir"]
-    pyData["grammars"] = pyData["PROJDIR"] + pyData["grammars"]
-    pyData["inputs"] = pyData["PROJDIR"] + pyData["inputs"]
-    pyData["verified_dir"] = pyData["PROJDIR"] + pyData["verified_dir"]
+    pyData["target_bin"] = pyData["projdir"] + pyData["target_bin"]
+    pyData["temp_dir"] = pyData["projdir"] + pyData["temp_dir"]
+    pyData["outcome_dir"] = pyData["projdir"] + pyData["outcome_dir"]
+    pyData["grammars"] = pyData["projdir"] + pyData["grammars"]
+    pyData["inputs"] = pyData["projdir"] + pyData["inputs"]
+    pyData["verified_dir"] = pyData["projdir"] + pyData["verified_dir"]
 
     return pyData
 
@@ -125,7 +129,9 @@ def realMain(config):
     parser.add_argument('--basic_auth_user', help='Uploader: basic auth user')
     parser.add_argument('--basic_auth_password', help='Uploader: basic auth password')
     parser.add_argument('--adddebuglogfile', help='Will write a debug log file', action="store_true")
+
     parser.add_argument('--config', help='Config file')
+    parser.add_argument('--basedir', help='FFW base directory')
     args = parser.parse_args()
 
     if config is None:
@@ -133,7 +139,10 @@ def realMain(config):
             print "No config specified. Either start via fuzzing.py, or with --config <configfile>"
             return
         else:
-            config = loadConfig(args.config)
+            if not args.basedir:
+                print "Please specify FFW basedir"
+            else:
+                config = loadConfig(args.config, args.basedir)
 
     if not checkRequirements(config):
         print "Requirements not met."
@@ -170,9 +179,11 @@ def realMain(config):
 
         if args.targetport:
             targetPort = args.targetport
+        else:
+            targetPort = config["baseport"]
 
         print("Interceptor listen on port: " + str(interceptorPort))
-        print("Target port: " + str(targetPort))
+        print("Target server port: " + str(targetPort))
 
         interceptor.doIntercept(config, interceptorPort, targetPort)
 
