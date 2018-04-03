@@ -9,6 +9,7 @@ import logging
 import argparse
 import os
 import glob
+import ast
 
 from network import replay
 from network import interceptor
@@ -79,6 +80,24 @@ def setupLoggingStandard():
                         datefmt='%m-%d %H:%M')
 
 
+def loadConfig(configfilename):
+    rawData = open(configfilename, 'r').read()
+    pyData = ast.literal_eval(rawData)
+
+    pyData["PROJDIR"] = os.getcwd() + "/"
+    pyData["BASEDIR"] = os.path.realpath(pyData["PROJDIR"] + "/../")
+
+    # cleanup. Damn this is ugly.
+    pyData["target_bin"] = pyData["PROJDIR"] + pyData["target_bin"]
+    pyData["temp_dir"] = pyData["PROJDIR"] + pyData["temp_dir"]
+    pyData["outcome_dir"] = pyData["PROJDIR"] + pyData["outcome_dir"]
+    pyData["grammars"] = pyData["PROJDIR"] + pyData["grammars"]
+    pyData["inputs"] = pyData["PROJDIR"] + pyData["inputs"]
+    pyData["verified_dir"] = pyData["PROJDIR"] + pyData["verified_dir"]
+
+    return pyData
+
+
 def realMain(config):
     parser = argparse.ArgumentParser("Fuzzing For Worms")
 
@@ -106,7 +125,15 @@ def realMain(config):
     parser.add_argument('--basic_auth_user', help='Uploader: basic auth user')
     parser.add_argument('--basic_auth_password', help='Uploader: basic auth password')
     parser.add_argument('--adddebuglogfile', help='Will write a debug log file', action="store_true")
+    parser.add_argument('--config', help='Config file')
     args = parser.parse_args()
+
+    if config is None:
+        if args.config is None:
+            print "No config specified. Either start via fuzzing.py, or with --config <configfile>"
+            return
+        else:
+            config = loadConfig(args.config)
 
     if not checkRequirements(config):
         print "Requirements not met."
