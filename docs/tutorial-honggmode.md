@@ -37,7 +37,7 @@ fuzzing feedback:
 
 ```
 "honggpath": "/home/fuzzer/honggfuzz/honggfuzz",
-"honggmode_option": "hw"
+"honggcov": "hw"
 ```
 
 We will still use "vulnserver_asan" as binary, which is not compiled with
