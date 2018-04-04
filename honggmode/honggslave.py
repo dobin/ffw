@@ -298,10 +298,19 @@ class HonggSlave(object):
 
         # change working directory to target bin location
         os.chdir( self.config["projdir"] + "/bin")
+
         # create devnull so we can us it to surpress output of the server (2.7 specific)
         DEVNULL = open(os.devnull, 'wb')
+
+        # create environment
+        my_env = os.environ.copy()
+        # disable LeakAnalyzer because it makes honggfuzz crash
+        # https://github.com/dobin/ffw/issues/20
+        my_env["ASAN_OPTIONS"] = "detect_leaks=0"
+
+        # finally start it
         try:
-            p = subprocess.Popen(cmdArr, stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL)
+            p = subprocess.Popen(cmdArr, env=my_env, stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL)
         except Exception as e:
             logging.debug( "E: " + str(e))
             sys.exit(1)
