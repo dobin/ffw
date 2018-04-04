@@ -216,8 +216,9 @@ class NetworkManager(object):
             print("")
             print("Common errors:")
             print("* Did you specify the correct port?")
-            print("* Did you specify all necessary command line arguments (config file etc)?")
-            print("* Are the paths/working directory set correctly?")
+            print("* Did you specify all necessary command line arguments for target (config file etc)?")
+            print("* Are the paths/working-directory of target set correctly?")
+            print("* In honggfuzz mode: Is the target compiled with hfuzz_cc compiler?")
 
         return False
 
