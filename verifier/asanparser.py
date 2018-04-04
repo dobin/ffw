@@ -103,13 +103,10 @@ class AsanParser:
         #   [0x7ffe1a3fd0e0,0x7ffe1a3fd4a5) and [0x7ffe1a3fd190, 0x7ffe1a3fd555) overlap
         mainLine = headerLine.split(" ")
         logging.info("Mainline: " + str(mainLine))
-        if "range" in headerLine:
-            # cool, PC is not written here.. take it from backtrace
-            # #1 0x55b23bee8491 in handleData1 /Development/ffw/vulnserver/vulnserver.c:20
-            tmp = line.split(" ")
-            asanData["faultAddress"] = int(tmp[1], 16)
-        else:
-            asanData["faultAddress"] = int(mainLine[8], 16)
+
+        # #1 0x55b23bee8491 in handleData1 /Development/ffw/vulnserver/vulnserver.c:20
+        tmp = line.split(" ")
+        asanData["faultAddress"] = int(tmp[1], 16)
         asanData["cause_line"] = "neh"
 
 
