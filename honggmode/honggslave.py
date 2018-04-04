@@ -309,7 +309,7 @@ class HonggSlave(object):
 
         # finally start it
         try:
-            p = subprocess.Popen(cmdArr, env=my_env, stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL)
+            p = subprocess.Popen(cmdArr, stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL)
         except Exception as e:
             logging.debug( "E: " + str(e))
             sys.exit(1)
