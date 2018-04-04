@@ -5,6 +5,7 @@ import random
 import logging
 import os
 from multiprocessing import Process, Queue
+from Queue import Empty
 
 import time
 from . import honggslave
@@ -18,53 +19,97 @@ def doFuzz(config):
     receives data from fuzzing-children via queues
     """
     q = Queue()
-    # have to remove sigint handler before forking children
-    # so ctlr-c works
-    orig = signal.signal(signal.SIGINT, signal.SIG_IGN)
 
     logging.basicConfig(level=logging.ERROR)
-    procs = []
-    n = 0
 
     if not _honggExists(config):
         return
 
+    # special mode, will not fork
     if "nofork" in config and config["nofork"]:
-        r = random.randint(0, 2**32 - 1)
-        fuzzingSlave = honggslave.HonggSlave(config, n, q, r)
-        fuzzingSlave.doActualFuzz()
+        _fuzzNoFork(config, q)
     else:
-        while n < config["processes"]:
-            print("Start fuzzing child #" + str(n))
-            r = random.randint(0, 2**32 - 1)
-            fuzzingSlave = honggslave.HonggSlave(config, n, q, r)
-            p = Process(target=fuzzingSlave.doActualFuzz, args=())
-            procs.append(p)
-            p.start()
-            n += 1
+        _fuzzWithFork(config, q)
+
+
+def _fuzzWithFork(config, q):
+    # have to remove sigint handler before forking children
+    # so ctlr-c works
+    orig = signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+    procs = []
+    n = 0
+
+    # prepare data structure
+    while n < config["processes"]:
+        print("Start fuzzing child #" + str(n))
+        r = random.randint(0, 2**32 - 1)
+
+        proc = {
+            "r": r,
+            "q": q,
+            "config": config,
+            "n": n,
+            "p": None,
+        }
+        procs.append(proc)
+        n += 1
+
+    # start processes
+    for proc in procs:
+        _startThread(proc)
 
     # restore signal handler
     signal.signal(signal.SIGINT, orig)
 
-    fuzzConsole(config, q, procs)
+    _fuzzConsole(config, q, procs)
 
 
-def fuzzConsole(config, q, procs):
+def _startThread(proc):
+    fuzzingSlave = honggslave.HonggSlave(
+        proc["config"],
+        proc["n"],
+        proc["q"],
+        proc["r"])
+    p = Process(target=fuzzingSlave.doActualFuzz, args=())
+    p.start()
+    proc["p"] = p
+
+
+def _fuzzNoFork(config, q):
+    r = random.randint(0, 2**32 - 1)
+    fuzzingSlave = honggslave.HonggSlave(config, 0, q, r)
+    fuzzingSlave.doActualFuzz()
+
+
+def _fuzzConsole(config, q, procs):
     time.sleep(1)
     print("Thread:  Iterations  CorpusNew  CorpusOverall  Crashes  Fuzz/s")
     perf = {}
     while True:
+        # wait for new data from threads
         try:
-            r = q.get()
-            perf[r[0]] = r
-            print("%3d  It: %d  CorpusNew: %d  CorpusOverall %d  Crashes: %d  Timeouts: %d  Fuzz/s: %.1f" % r)
+            try:
+                r = q.get(True, 1)
+                perf[r[0]] = r
+                print("%3d  It: %d  CorpusNew: %d  CorpusOverall %d  Crashes: %d  Timeouts: %d  Fuzz/s: %.1f" % r)
+            except Empty:
+                pass
+
         except KeyboardInterrupt:
             # handle ctrl-c
-            for p in procs:
-                p.terminate()
-                p.join()
+            for proc in procs:
+                proc["p"].terminate()
+                proc["p"].join()
 
             break
+
+        # check regularly if process crashed/exited - if yes, restart it
+        # This may occur if honggfuzz crashed
+        for proc in procs:
+            if proc["p"].exitcode is not None or not proc["p"].is_alive():
+                logging.warn("Restart process")
+                _startThread(proc)
 
     print("Finished")
 
