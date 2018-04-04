@@ -30,12 +30,17 @@ cd ffw/
 
 ## Install FFW dependencies
 
-If its a fresh Ubuntu, install relevant packages:
+If its a fresh Ubuntu, install relevant packages for FFW:
 ```
-apt-get install python python-pip clang gdb
+apt-get install python python-pip gdb
 ```
 
-And pythin dependencies:
+For honggfuzz:
+```
+apt-get install clang binutils-dev libunwind8-dev
+```
+
+And python dependencies:
 ```
 pip install -r requirements.txt
 ```
