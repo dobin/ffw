@@ -275,6 +275,11 @@ class HonggSlave(object):
         cmdArr.append('--stdin_input')
         cmdArr.append('--socket_fuzzer')
 
+        # disable LeakAnalyzer because it makes honggfuzz crash
+        # https://github.com/dobin/ffw/issues/20
+        cmdArr.append('--san_opts')
+        cmdArr.append('detect_leaks=0')
+
         if self.config["debug"]:
             # enable debug mode with log to file
             cmdArr.append("-d")
@@ -301,12 +306,6 @@ class HonggSlave(object):
 
         # create devnull so we can us it to surpress output of the server (2.7 specific)
         DEVNULL = open(os.devnull, 'wb')
-
-        # create environment
-        my_env = os.environ.copy()
-        # disable LeakAnalyzer because it makes honggfuzz crash
-        # https://github.com/dobin/ffw/issues/20
-        my_env["ASAN_OPTIONS"] = "detect_leaks=0"
 
         # finally start it
         try:
