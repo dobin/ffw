@@ -22,10 +22,14 @@ def getInvokeTargetArgs(config, targetPort):
 
     Used to start the process with popen() etc.
     """
-    args = config["target_args"] % ( { "port": targetPort } )
-    argsArr = args.split(" ")
     cmdArr = [ config["target_bin"] ]
-    cmdArr.extend( argsArr )
+
+    # only add arguments if there are really some (issue #23)
+    if "target_args" in config and config["target_args"] is not "":
+        args = config["target_args"] % ( { "port": targetPort } )
+        argsArr = args.split(" ")
+        cmdArr.extend( argsArr )
+
     return cmdArr
 
 
