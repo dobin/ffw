@@ -175,8 +175,12 @@ class HonggSlave(object):
                     couldSend = self._connectAndSendData(networkManager, fuzzingIterationData.fuzzedData)
 
                 if couldSend:
-                    # all ok...
+                    # Notify honggfuzz that we are finished sending the fuzzed data
                     honggComm.writeSocket("okay")
+
+                    # the correct way is to send SIGIO signal to honggfuzz
+                    # https://github.com/google/honggfuzz/issues/200
+                    os.kill(self.fuzzerPid, signal.SIGIO)
                 else:
                     # target seems to be down. Have honggfuzz restart it
                     # and hope for the best, but check after restart if it
