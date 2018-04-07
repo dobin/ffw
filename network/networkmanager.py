@@ -122,31 +122,25 @@ class NetworkManager(object):
     ######################################33
 
     def openConnectionUdp(self):
-        #self.closeConnection()
+        self.closeConnection()
 
-        return self.testServerConnection()
+        if not self.testServerConnection():
+            return False
 
-#        dest = ('127.0.0.1', self.targetPort)
+        logging.info("Open udp connection")
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        dest = ('127.0.0.1', self.targetPort)
+        self.sock.connect(dest)
 
-#        try:
-#            self.sock.sendto("PING", dest)
-#        except Exception as e:
-#            print "E: " + str(e)
-#            return False
-#
-#        return True
+        # this mostly defines the speed of UDP based fuzzing
+        self.sock.settimeout(0.1)
 
-#        result = self.sock.connect_ex(dest)
-#        if result == 0:
-#            return True
-#        else:
-#            return False
+        return True
 
 
     def closeConnectionUdp(self):
-        #print "Close"
-        #self.sock.close()
-        pass
+        logging.info("Close udp connection")
+        self.sock.close()
 
 
     def sendDataUdp(self, message=None):
