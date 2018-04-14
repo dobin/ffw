@@ -82,7 +82,8 @@ class HonggSlave(object):
 
         # connect to honggfuzz
         honggComm = honggcomm.HonggComm()
-        honggComm.openSocket(self.fuzzerPid)
+        if honggComm.openSocket(self.fuzzerPid):
+            print (" connected!")
 
         # test connection first
         if not networkManager.debugServerConnection():
