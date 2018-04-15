@@ -16,17 +16,6 @@ from . import networkservermanager
 import utils
 
 
-GLOBAL_SLEEP = {
-    # how long to wait after server start
-    # can be high as it is not happening so often
-    "sleep_after_server_start": 1,
-
-    # send update interval from child to parent
-    # via queue
-    "communicate_interval": 3
-}
-
-
 def signal_handler(signal, frame):
     # TODO fixme make object so i can kill server
     #stopServer()
@@ -42,24 +31,6 @@ class FuzzingSlave(object):
         self.inputs = inputs
 
 
-    def updateStats(self, iterStats):
-        iterStats["count"] += 1
-
-        # check if we should notify parent
-        currTime = time.time()
-        diffTime = currTime - iterStats["lastUpdateTime"]
-
-        if diffTime > GLOBAL_SLEEP["communicate_interval"]:
-            fuzzPerSec = float(iterStats["count"]) / float(currTime - iterStats["startTime"])
-            # send fuzzing information to parent process
-            self.queue.put( (self.threadId, fuzzPerSec, iterStats["count"], iterStats["crashCount"]) )
-
-            if "nofork" in self.config and self.config["nofork"]:
-                print("%d: %4.2f  %8d  %5d" % (self.threadId, fuzzPerSec, iterStats["count"], iterStats["crashCount"]))
-
-            iterStats["lastUpdateTime"] = currTime
-
-
     def doActualFuzz(self):
         """
         The main fuzzing loop.
@@ -68,13 +39,11 @@ class FuzzingSlave(object):
         sends results via queue to the parent
         Only called once, by the fuzzingmaster
         """
-        global GLOBAL_SLEEP
-
         if "DebugWithFile" in self.config:
             utils.setupSlaveLoggingWithFile(self.threadId)
 
         random.seed(self.initialSeed)
-        logging.info("Setup fuzzing..")
+        logging.info("Setup fuzzing...")
         signal.signal(signal.SIGINT, signal_handler)
 
         targetPort = self.config["baseport"] + self.threadId
@@ -106,7 +75,7 @@ class FuzzingSlave(object):
                 # lets sleep a bit
                 time.sleep(0.5)
 
-            selectedInput = self.getRandomInput()
+            selectedInput = self.selectInput()
 
             fuzzingIterationData = fuzzingiterationdata.FuzzingIterationData(self.config, selectedInput)
             if not fuzzingIterationData.fuzzData():
@@ -120,19 +89,42 @@ class FuzzingSlave(object):
         networkServerManager.stop()
 
 
-    def getRandomInput(self):
+    def selectInput(self):
+        # just randomly select an input for now
         return random.choice(self.inputs)
 
 
+    def updateStats(self, iterStats):
+        """Regularly send our statistics to the master"""
+        iterStats["count"] += 1
+        updateInterval = 5
+
+        # check if we should notify parent
+        currTime = time.time()
+        diffTime = currTime - iterStats["lastUpdateTime"]
+
+        if diffTime > updateInterval:
+            fuzzPerSec = float(iterStats["count"]) / float(currTime - iterStats["startTime"])
+            # send fuzzing information to parent process
+            self.queue.put( (self.threadId, fuzzPerSec, iterStats["count"], iterStats["crashCount"]) )
+
+            if "nofork" in self.config and self.config["nofork"]:
+                print("%d: %4.2f  %8d  %5d" % (self.threadId, fuzzPerSec, iterStats["count"], iterStats["crashCount"]))
+
+            iterStats["lastUpdateTime"] = currTime
+
+
     def exportFuzzResult(self, crashDataModel, fuzzIter):
+        """Write information about an identified crash to disk"""
+        if crashDataModel is None:
+            logging.error("No crash data model. aborting.")
+            return
         if fuzzIter is None:
             logging.error("Received None as fuzz iteration. Wrong server-down detection?")
             return
 
         seed = fuzzIter.seed
-
         crashData = crashDataModel.getData()
-
         data = {
             "fuzzerCrashData": crashData,
             "fuzzIterData": fuzzIter.getData(),

@@ -14,12 +14,11 @@ GLOBAL_SLEEP = {
 
 
 class ClientManager(object):
-    print "Client Manager"
-
     def __init__(self, config, threadId, targetPort):
         self.config = config
         self.threadId = threadId
         self.targetPort = targetPort
+
 
     def execute(self):
         print "Start client"
