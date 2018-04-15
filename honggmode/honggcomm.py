@@ -17,7 +17,7 @@ class HonggComm(object):
 
         # try first the socket with pid
         server_address = '/tmp/honggfuzz_socket.' + str(fuzzerPid)
-        sys.stdout.write('connecting to honggfuzz socket: %s... ' % server_address)
+        logging.info('connecting to honggfuzz socket: %s... ' % server_address)
         tryCount = 0
         while True:
             if tryCount > 4:
@@ -35,7 +35,7 @@ class HonggComm(object):
         if not isConnected:
             # now try without pid (backwards compatibility)
             server_address = '/tmp/honggfuzz_socket'
-            sys.stdout.write('connecting to honggfuzz socket: %s... ' % server_address)
+            logging.info('connecting to honggfuzz socket: %s... ' % server_address)
             tryCount = 0
             while True:
                 if tryCount > 4:
@@ -53,7 +53,7 @@ class HonggComm(object):
 
         self.sock = sock
         return isConnected
-        
+
 
     def readSocket(self):
         logging.debug("SOCKET: Try to recv")

@@ -14,16 +14,6 @@ from . import fuzzingiterationdata
 from . import simpleservermanager
 import utils
 
-GLOBAL_SLEEP = {
-    # how long to wait after server start
-    # can be high as it is not happening so often
-    "sleep_after_server_start": 1,
-
-    # send update interval from child to parent
-    # via queue
-    "communicate_interval": 3
-}
-
 
 def signal_handler(signal, frame):
     # TODO fixme make object so i can kill server
@@ -40,24 +30,6 @@ class FuzzingSlave(object):
         self.inputs = inputs
 
 
-    def updateStats(self, iterStats):
-        iterStats["count"] += 1
-
-        # check if we should notify parent
-        currTime = time.time()
-        diffTime = currTime - iterStats["lastUpdateTime"]
-
-        if diffTime > GLOBAL_SLEEP["communicate_interval"]:
-            fuzzPerSec = float(iterStats["count"]) / float(currTime - iterStats["startTime"])
-            # send fuzzing information to parent process
-            self.queue.put( (self.threadId, fuzzPerSec, iterStats["count"], iterStats["crashCount"]) )
-
-            if "nofork" in self.config and self.config["nofork"]:
-                print("%d: %4.2f  %8d  %5d" % (self.threadId, fuzzPerSec, iterStats["count"], iterStats["crashCount"]))
-
-            iterStats["lastUpdateTime"] = currTime
-
-
     def doActualFuzz(self):
         """
         The main fuzzing loop.
@@ -66,8 +38,6 @@ class FuzzingSlave(object):
         sends results via queue to the parent
         Only called once, by the fuzzingmaster
         """
-        global GLOBAL_SLEEP
-
         if "DebugWithFile" in self.config:
             utils.setupSlaveLoggingWithFile(self.threadId)
 
@@ -87,10 +57,11 @@ class FuzzingSlave(object):
         sendDataResult = None
         previousFuzzingIterationData = None
 
-        # start server, or not
+        # If we do not manage the server by ourselfs, disable it
         if 'disableServer' in self.config and self.config['disableServer']:
             serverManager.dis()
-        serverManager.start()
+        else:
+            serverManager.start()
 
         if not networkManager.waitForServerReadyness():
             logging.error("Error: Could not connect to server.")
@@ -110,7 +81,7 @@ class FuzzingSlave(object):
                 # lets sleep a bit
                 time.sleep(0.5)
 
-            selectedInput = self.getRandomInput()
+            selectedInput = self.selectInput()
 
             # save this iteration data for future crashes
             # we do this at the start, not at the end, so we have to
@@ -192,7 +163,7 @@ class FuzzingSlave(object):
         serverManager.stopServer()
 
 
-    def getRandomInput(self):
+    def selectInput(self):
         return random.choice(self.inputs)
 
 
@@ -252,12 +223,15 @@ class FuzzingSlave(object):
 
 
     def exportFuzzResult(self, crashDataModel, fuzzIter):
+        """Write information about an identified crash to disk"""
+        if crashDataModel is None:
+            logging.error("No crash data model. aborting.")
+            return
         if fuzzIter is None:
             logging.error("Received None as fuzz iteration. Wrong server-down detection?")
             return
 
         seed = fuzzIter.seed
-
         crashData = crashDataModel.getData()
         data = {
             "fuzzerCrashData": crashData,
@@ -281,3 +255,23 @@ class FuzzingSlave(object):
             f.write("Reallydead: %s\n" % str(crashData["reallydead"]))
             f.write("PID: %s\n" % str(crashData["serverpid"]))
             f.write("Asanoutput: %s\n" % crashData["asanOutput"])
+
+
+    def updateStats(self, iterStats):
+        """Regularly send our statistics to the master"""
+        iterStats["count"] += 1
+        updateInterval = 5
+
+        # check if we should notify parent
+        currTime = time.time()
+        diffTime = currTime - iterStats["lastUpdateTime"]
+
+        if diffTime > updateInterval:
+            fuzzPerSec = float(iterStats["count"]) / float(currTime - iterStats["startTime"])
+            # send fuzzing information to parent process
+            self.queue.put( (self.threadId, fuzzPerSec, iterStats["count"], iterStats["crashCount"]) )
+
+            if "nofork" in self.config and self.config["nofork"]:
+                print("%d: %4.2f  %8d  %5d" % (self.threadId, fuzzPerSec, iterStats["count"], iterStats["crashCount"]))
+
+            iterStats["lastUpdateTime"] = currTime

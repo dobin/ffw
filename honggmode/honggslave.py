@@ -15,6 +15,7 @@ from fuzzer.fuzzingiterationdata import FuzzingIterationData
 import utils
 from . import honggcomm
 from . import corpusmanager
+from fuzzer import simpleservermanager
 
 
 def signal_handler(signal, frame):
@@ -78,11 +79,19 @@ class HonggSlave(object):
         self.corpusManager.startWatch()
 
         # start honggfuzz with target binary
-        self._startServer()
+        honggfuzzArgs = self._prepareHonggfuzzArgs()
+        serverManager = simpleservermanager.SimpleServerManager(
+            self.config,
+            self.threadId,
+            targetPort,
+            honggfuzzArgs,
+            True
+        )
+        serverManager.start()
 
         # connect to honggfuzz
         honggComm = honggcomm.HonggComm()
-        if honggComm.openSocket(self.fuzzerPid):
+        if honggComm.openSocket(serverManager.process.pid):
             print (" connected!")
 
         # test connection first
@@ -181,7 +190,7 @@ class HonggSlave(object):
 
                     # the correct way is to send SIGIO signal to honggfuzz
                     # https://github.com/google/honggfuzz/issues/200
-                    os.kill(self.fuzzerPid, signal.SIGIO)
+                    os.kill(serverManager.process.pid, signal.SIGIO)
                 else:
                     # target seems to be down. Have honggfuzz restart it
                     # and hope for the best, but check after restart if it
@@ -266,8 +275,8 @@ class HonggSlave(object):
                 print(" %5d: %11d  %9d  %13d  %7d  %4.2f" % d)
 
 
-    def _startServer(self):
-        """Start the target (-server) via honggfuzz."""
+    def _prepareHonggfuzzArgs(self):
+        """Add all necessary honggfuzz arguments."""
         logging.debug( "Starting server/honggfuzz")
         cmdArr = [ ]
 
@@ -297,29 +306,8 @@ class HonggSlave(object):
 
         # add target to start
         cmdArr.append("--")
-        cmdArr.append(self.config["target_bin"])
 
-        # target binary argument are given as string, split it
-        targetArgs = self.config["target_args"] % ( { "port": self.targetPort } )
-        targetArgsArr = targetArgs.split(' ')
-        cmdArr.extend(targetArgsArr)
-
-        logging.info("Starting server/honggfuzz with args: " + str(cmdArr))
-
-        # change working directory to target bin location
-        os.chdir( self.config["projdir"] + "/bin")
-
-        # create devnull so we can us it to surpress output of the server (2.7 specific)
-        DEVNULL = open(os.devnull, 'wb')
-
-        # finally start it
-        try:
-            p = subprocess.Popen(cmdArr, stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL)
-        except Exception as e:
-            logging.debug( "E: " + str(e))
-            sys.exit(1)
-        time.sleep( 1 )  # wait a bit so we are sure server is really started
-        self.fuzzerPid = p.pid
+        return cmdArr
 
 
     def _sendData(self, networkManager, messages):

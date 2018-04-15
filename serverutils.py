@@ -38,6 +38,7 @@ def setupEnvironment(config):
     Prepare the environment before the server is started.
 
     For example asan options, working directory, ASLR and ulimit.
+    Note that for honggfuzz mode, most of this is ignored.
     """
     # Silence warnings from the ptrace library
     #logging.getLogger().setLevel(logging.ERROR)
@@ -68,7 +69,7 @@ def setupEnvironment(config):
     resource.setrlimit(resource.RLIMIT_CORE, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
 
     # set working directory
-    # TODO FIXME
+    os.chdir(config["projdir"] + "/bin")
 
 
 def getAsanOutput(config, pid):
