@@ -6,7 +6,6 @@ import logging
 import random
 import sys
 
-
 from .fuzzingcrashdata import FuzzingCrashData
 from network import networkmanager
 from . import fuzzingiterationdata
@@ -45,7 +44,10 @@ class FuzzingSlave(object):
         logging.info("Setup fuzzing..")
         signal.signal(signal.SIGINT, signal_handler)
         targetPort = self.config["baseport"] + self.threadId
-        serverManager = simpleservermanager.SimpleServerManager(self.config, self.threadId, targetPort)
+        serverManager = simpleservermanager.SimpleServerManager(
+            self.config,
+            self.threadId,
+            targetPort)
         networkManager = networkmanager.NetworkManager(self.config, targetPort)
 
         iterStats = {
@@ -103,12 +105,16 @@ class FuzzingSlave(object):
                 serverManager.restart()
                 continue
 
-            fuzzingIterationData = fuzzingiterationdata.FuzzingIterationData(self.config, selectedInput)
+            fuzzingIterationData = fuzzingiterationdata.FuzzingIterationData(
+                self.config,
+                selectedInput)
             if not fuzzingIterationData.fuzzData():
                 logging.error("Could not fuzz the data")
                 return
 
-            sendDataResult = self.sendPreData(networkManager, fuzzingIterationData)
+            sendDataResult = self.sendPreData(
+                networkManager,
+                fuzzingIterationData)
             if not sendDataResult:
                 logging.info(" B Could not send, possible crash? (predata)")
                 if networkManager.testServerConnection():
@@ -130,7 +136,9 @@ class FuzzingSlave(object):
                     serverManager.restart()
                     continue
 
-            sendDataResult = self.sendData(networkManager, fuzzingIterationData)
+            sendDataResult = self.sendData(
+                networkManager,
+                fuzzingIterationData)
             if not sendDataResult:
                 logging.info(" C Could not send, possible crash? (postdata)")
                 if networkManager.testServerConnection():
