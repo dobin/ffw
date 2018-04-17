@@ -255,8 +255,10 @@ class HonggSlave(object):
     def _uploadStats(self):
         """Send fuzzing statistics to parent."""
         currTime = time.time()
+        updateInterval = 3
 
-        if currTime > self.iterStats["lastUpdate"] + 3:
+        if currTime > self.iterStats["lastUpdate"] + updateInterval:
+            self.corpusManager.printStats()
             fuzzPerSec = float(self.iterStats["iterCount"]) / float(currTime - self.iterStats["startTime"])
 
             # send fuzzing information to parent process

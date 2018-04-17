@@ -144,6 +144,11 @@ class CorpusManager(object):
         self.loadFile(filename, True)
 
 
+    def printStats(self):
+        for idx, corpus in enumerate(self.corpus):
+            print "  Corpus %d: Children: %d  Crashes: %d" % ( idx, corpus.stats["new"], corpus.stats["crashes"])
+
+
 class FileWatcher(object):
     """
     Abstract pyinotify away.
