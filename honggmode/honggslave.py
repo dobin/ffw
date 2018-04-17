@@ -5,9 +5,7 @@ import time
 import logging
 import random
 import sys
-import pickle
 import os
-import subprocess
 
 from fuzzer.fuzzingcrashdata import FuzzingCrashData
 from network import networkmanager
@@ -16,6 +14,7 @@ import utils
 from . import honggcomm
 from . import corpusmanager
 from fuzzer import simpleservermanager
+from common import crashinfo
 
 
 def signal_handler(signal, frame):
@@ -343,33 +342,4 @@ class HonggSlave(object):
         }
         crashData = FuzzingCrashData(srvCrashData)
         crashData.setFuzzerPos("-")
-        self._exportFuzzResult(crashData, fuzzingIterationData)
-
-
-    def _exportFuzzResult(self, crashDataModel, fuzzIter):
-        seed = fuzzIter.seed
-
-        crashData = crashDataModel.getData()
-
-        data = {
-            "fuzzerCrashData": crashData,
-            "fuzzIterData": fuzzIter.getData(),
-        }
-
-        # pickle file with everything
-        with open(os.path.join(self.config["outcome_dir"], str(seed) + ".ffw"), "w") as f:
-            pickle.dump(data, f)
-
-        # Save a txt log
-        with open(os.path.join(self.config["outcome_dir"], str(seed) + ".txt"), "w") as f:
-            f.write("Seed: %s\n" % seed)
-            f.write("Fuzzer: %s\n" % self.config["fuzzer"])
-            f.write("Target: %s\n" % self.config["target_bin"])
-
-            f.write("Time: %s\n" % data["fuzzIterData"]["time"])
-            f.write("Fuzzerpos: %s\n" % crashData["fuzzerPos"])
-            f.write("Signal: %d\n" % crashData["signum"])
-            f.write("Exitcode: %d\n" % crashData["exitcode"])
-            f.write("Reallydead: %s\n" % str(crashData["reallydead"]))
-            f.write("PID: %s\n" % str(crashData["serverpid"]))
-            f.write("Asanoutput: %s\n" % crashData["asanOutput"])
+        crashinfo.exportFuzzResult(crashData, fuzzingIterationData, self.config)

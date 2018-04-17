@@ -24,7 +24,12 @@ class SimpleServerManager(object):
             - getting some crash information
     """
 
-    def __init__(self, config, threadId, targetPort, prependCmdline = None, hideChildOutput=True):
+    def __init__(self,
+                 config,
+                 threadId,
+                 targetPort,
+                 prependCmdline=None,
+                 hideChildOutput=True):
         self.config = config
         self.process = None
         self.targetPort = targetPort
@@ -43,7 +48,7 @@ class SimpleServerManager(object):
 
 
     def start(self):
-        """Start the server process"""
+        """Start the server process."""
         if self.isDisabled:
             return
 
@@ -61,7 +66,7 @@ class SimpleServerManager(object):
 
 
     def stop(self):
-        """Stop the server"""
+        """Stop the server."""
         if self.isDisabled or self.process is None:
             return
 
@@ -88,7 +93,7 @@ class SimpleServerManager(object):
 
     def _runTarget(self):
         """
-        Actually sStart the server
+        Actually start the server.
         """
         global GLOBAL_SLEEP
         logging.info("Starting server with args: " + str(self.popenArg))

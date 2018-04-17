@@ -5,13 +5,13 @@ import time
 import logging
 import random
 import sys
-import pickle
-import os
+
 
 from .fuzzingcrashdata import FuzzingCrashData
 from network import networkmanager
 from . import fuzzingiterationdata
 from . import simpleservermanager
+from common import crashinfo
 import utils
 
 
@@ -96,7 +96,10 @@ class FuzzingSlave(object):
                 srvCrashData = serverManager.getCrashData()
                 crashData = FuzzingCrashData(srvCrashData)
                 crashData.setFuzzerPos("A")
-                self.exportFuzzResult(crashData, previousFuzzingIterationData)
+                crashinfo.exportFuzzResult(
+                    crashData,
+                    previousFuzzingIterationData,
+                    self.config)
                 serverManager.restart()
                 continue
 
@@ -119,7 +122,10 @@ class FuzzingSlave(object):
                     crashData = FuzzingCrashData(srvCrashData)
                     crashData.setFuzzerPos("B")
                     # TODO really previousFuzzingIterationData? i think so
-                    self.exportFuzzResult(crashData, previousFuzzingIterationData)
+                    crashinfo.exportFuzzResult(
+                        crashData,
+                        previousFuzzingIterationData,
+                        self.config)
                     networkManager.closeConnection()
                     serverManager.restart()
                     continue
@@ -137,7 +143,10 @@ class FuzzingSlave(object):
                     srvCrashData = serverManager.getCrashData()
                     crashData = FuzzingCrashData(srvCrashData)
                     crashData.setFuzzerPos("C")
-                    self.exportFuzzResult(crashData, fuzzingIterationData)
+                    crashinfo.exportFuzzResult(
+                        crashData,
+                        fuzzingIterationData,
+                        self.config)
                     networkManager.closeConnection()
                     serverManager.restart()
                     continue
@@ -150,7 +159,10 @@ class FuzzingSlave(object):
                     srvCrashData = serverManager.getCrashData()
                     crashData = FuzzingCrashData(srvCrashData)
                     crashData.setFuzzerPos("D")
-                    self.exportFuzzResult(crashData, fuzzingIterationData)
+                    crashinfo.exportFuzzResult(
+                        crashData,
+                        fuzzingIterationData,
+                        self.config)
                     networkManager.closeConnection()
 
                 logging.info("Restart server periodically: " + str(iterStats["count"]))
@@ -220,41 +232,6 @@ class FuzzingSlave(object):
                         return False
 
         return True
-
-
-    def exportFuzzResult(self, crashDataModel, fuzzIter):
-        """Write information about an identified crash to disk"""
-        if crashDataModel is None:
-            logging.error("No crash data model. aborting.")
-            return
-        if fuzzIter is None:
-            logging.error("Received None as fuzz iteration. Wrong server-down detection?")
-            return
-
-        seed = fuzzIter.seed
-        crashData = crashDataModel.getData()
-        data = {
-            "fuzzerCrashData": crashData,
-            "fuzzIterData": fuzzIter.getData(),
-        }
-
-        # pickle file with everything
-        with open(os.path.join(self.config["outcome_dir"], str(seed) + ".ffw"), "w") as f:
-            pickle.dump(data, f)
-
-        # Save a txt log
-        with open(os.path.join(self.config["outcome_dir"], str(seed) + ".txt"), "w") as f:
-            f.write("Seed: %s\n" % seed)
-            f.write("Fuzzer: %s\n" % self.config["fuzzer"])
-            f.write("Target: %s\n" % self.config["target_bin"])
-
-            f.write("Time: %s\n" % data["fuzzIterData"]["time"])
-            f.write("Fuzzerpos: %s\n" % crashData["fuzzerPos"])
-            f.write("Signal: %d\n" % crashData["signum"])
-            f.write("Exitcode: %d\n" % crashData["exitcode"])
-            f.write("Reallydead: %s\n" % str(crashData["reallydead"]))
-            f.write("PID: %s\n" % str(crashData["serverpid"]))
-            f.write("Asanoutput: %s\n" % crashData["asanOutput"])
 
 
     def updateStats(self, iterStats):

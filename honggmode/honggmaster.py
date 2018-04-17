@@ -106,12 +106,14 @@ def _fuzzConsole(config, q, procs):
 
         # check regularly if process crashed/exited - if yes, restart it
         # This may occur if honggfuzz crashed
-        for proc in procs:
-            if proc["p"].exitcode is not None or not proc["p"].is_alive():
-                logging.warn("Honggfuzz (and with it the target) crashed. Restarting.")
-                logging.warn("If this is happening often, fuzz with --debug and check")
-                logging.warn("bin/honggfuzz.log and bin/*.fuzz and bin/HONGGFUZZ.REPORT.TXT")
-                _startThread(proc)
+        # Do not restart in debug mode
+        if "debug" not in config:
+            for proc in procs:
+                if proc["p"].exitcode is not None or not proc["p"].is_alive():
+                    logging.warn("Honggfuzz (and with it the target) crashed. Restarting.")
+                    logging.warn("If this is happening often, fuzz with --debug and check")
+                    logging.warn("bin/honggfuzz.log and bin/*.fuzz and bin/HONGGFUZZ.REPORT.TXT")
+                    _startThread(proc)
 
     print("Finished")
 

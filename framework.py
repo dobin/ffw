@@ -9,7 +9,6 @@ import logging
 import argparse
 import os
 import glob
-import ast
 
 from network import replay
 from network import interceptor
@@ -21,7 +20,7 @@ from verifier import minimizer
 from uploader import uploader
 from network import tester
 from network import proto_vnc
-from honggmode import honggmode
+from honggmode import honggmaster
 import distutils.spawn
 
 
@@ -216,7 +215,7 @@ def realMain(config):
         else:
             config["honggmode_option"] = None
 
-        honggmode.doFuzz(config)
+        honggmaster.doFuzz(config)
 
     if args.verify:
         v = verifier.Verifier(config)
