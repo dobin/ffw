@@ -50,7 +50,7 @@ class CorpusManager(object):
 
 
     def addNewCorpus(self, data, seed):
-        """Add new corpus file (identified by fuzzer."""
+        """Add new corpus file (identified by fuzzer)."""
         logging.info("CorpusManager: addNewCorpus: " + str(seed))
 
         # add as file
@@ -146,7 +146,13 @@ class CorpusManager(object):
 
     def printStats(self):
         for idx, corpus in enumerate(self.corpus):
-            print "  Corpus %d: Children: %d  Crashes: %d" % ( idx, corpus.stats["new"], corpus.stats["crashes"])
+            d = (
+                idx,
+                0,
+                0,
+                corpus.stats["new"],
+                corpus.stats["crashes"]
+            print "  Corpus %d:  Parent: %d  Msg: %d  -  Children: %d  Crashes: %d" % )
 
 
 class FileWatcher(object):
