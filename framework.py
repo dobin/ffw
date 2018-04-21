@@ -21,7 +21,7 @@ from network import tester
 from network import proto_vnc
 
 from basicmode import basicmaster
-#from honggmode import honggmaster
+from honggmode import honggmaster
 import distutils.spawn
 
 

@@ -12,6 +12,12 @@ def cap(s, l):
     return s if len(s) <= l else s[0:l - 3] + '...'
 
 
+def xstr(s):
+    if s is None:
+        return '<None>'
+    return str(s)
+
+
 def setupSlaveLoggingWithFile(threadId):
     f = 'ffw-debug-slave-' + str(threadId) + '.log'
 

@@ -3,6 +3,7 @@ import logging
 import os
 
 from networkdata import NetworkData
+from utils import xstr
 
 
 class CorpusData(object):
@@ -56,3 +57,13 @@ class CorpusData(object):
         if next((i for i in self.networkData.messages if i["from"] == "cli"), None) is None:
             logging.error("No client messages found in %s." % self.filename)
             raise ValueError("No client messages found in %s" % self.filename)
+
+
+    def __str__(self):
+        s = ""
+        s += "Filename: " + xstr(self.filename) + "\n"
+        s += "Parent Filename: " + xstr(self.parentFilename) + "\n"
+        s += "NetworkData: \n" + xstr(self.networkData) + "\n"
+        s += "Seed: " + xstr(self.seed) + "\n"
+        s += "Time: " + xstr(self.time) + "\n"
+        return s

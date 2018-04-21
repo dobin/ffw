@@ -19,32 +19,34 @@ class CorpusManager(object):
         self.corpus.append(corpusData)
 
 
-    def addNewcorpusData(self, corpusData):
-        """This fuzzer found a new corpus."""
-        corpusData.writeToFile()
-        self._addCorpusData(corpusData)
-
-
-    def readNewcorpusData(self, filename):
-        """Another fuzzer found a new corpus."""
-        corpusData = CorpusData(self.config, filename=filename)
-        corpusData.readFromFile()
-        self._addCorpusData(corpusData)
-
-
     def loadCorpusFiles(self):
         """Load all initial corpus files from in/."""
         inputFiles = glob.glob(os.path.join(self.config["inputs"], '*'))
         for inputFile in inputFiles:
             filename = os.path.basename(inputFile)
-            corpusData = CorpusData(
-                self.config,
-                filename=filename)
+            corpusData = self._createCorpusData(filename)
             corpusData.readFromFile()
             self._addCorpusData(corpusData)
 
         print("Input corpus files loaded: " + str(len(self.corpus)))
 
 
+    def _createCorpusData(self, filename):
+        """
+        Create A corpus data object.
+
+        It is necessary to overwrite this function in HonggCorpusManager
+        to create HonggCorpusData...
+        """
+        corpusData = CorpusData(
+            self.config,
+            filename=filename)
+        return corpusData
+
+
     def getRandomCorpus(self):
         return random.choice(self.corpus)
+
+
+    def getCorpusCount(self):
+        return len(self.corpus)

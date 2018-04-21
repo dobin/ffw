@@ -8,7 +8,6 @@ import sys
 
 import serverutils
 
-from crashdata import CrashData
 
 GLOBAL_SLEEP = {
     # how long to wait after server start

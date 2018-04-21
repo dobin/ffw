@@ -1,5 +1,7 @@
 import random
 
+from utils import xstr
+
 
 class NetworkData(object):
     def __init__(self, config, networkMessages):
@@ -26,3 +28,17 @@ class NetworkData(object):
     def setFuzzMessageData(self, data):
         self.messages[self.fuzzMsgIdx]['data'] = data
         self.messages[self.fuzzMsgIdx]['isFuzzed'] = True
+
+
+    def __str__(self):
+        s = ""
+        for msg in self.messages:
+            if 'isFuzzed' in msg:
+                d = ( msg['index'], len(msg['data']), True)
+            else:
+                d = ( msg['index'], len(msg['data']), False)
+            s += "  Idx: %i  MsgLen: %i  isFuzzed: %r \n" % d
+
+        s += "fuzzMsgIdx: " + str(self.fuzzMsgIdx)
+
+        return s

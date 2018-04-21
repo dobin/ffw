@@ -1,6 +1,7 @@
+from common.corpusdata import CorpusData
 
 
-class CorpusFile(object):
+class HonggCorpusData(CorpusData):
     """
     Contains all information of input corpus (-files).
 
@@ -11,26 +12,21 @@ class CorpusFile(object):
     but results ignored. This is indicasted by processed.
     """
 
-    def __init__(self, filename, data, processed=True, isExternal=False):
-        self.data = data
-        self.filename = filename
-        self.processed = processed  #
+    def __init__(self,
+                 config,
+                 filename,
+                 networkData=None,
+                 processed=True,
+                 isExternal=False):
+        super(self.__class__, self).__init__(config, filename, networkData)
+
+        self.processed = processed
         self.isExternal = isExternal
         self.stats = {
             'crashes': 0,
             'new': 0,
             'hangs': 0,
         }
-
-        # backward compatibility
-        n = 0
-        for input in data:
-            input["index"] = n
-            n += 1
-
-
-    def getData(self):
-        return self.data
 
 
     def isProcessed(self):
@@ -47,3 +43,10 @@ class CorpusFile(object):
 
     def statsAddHang(self):
         self.stats['hang'] += 1
+
+
+    def __str__(self):
+        s = super(self.__class__, self).__str__()
+        s += "Processed: " + str(self.processed) + "\n"
+        s += "isExternal: " + str(self.isExternal) + "\n"
+        return s
