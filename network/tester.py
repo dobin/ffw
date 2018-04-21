@@ -4,7 +4,7 @@ import logging
 import utils
 import sys
 
-from fuzzer import simpleservermanager
+from target import simpleservermanager
 from . import networkmanager
 
 """

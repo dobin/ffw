@@ -263,3 +263,53 @@ class NetworkManager(object):
 
         logging.info("Server is ready (accepting connections)")
         return True
+
+
+
+
+    def sendPartialPreData(self, networkData):
+        logging.info("Send pre data: ")
+
+        for message in networkData.messages:
+            if message == networkData.fuzzMsgChoice:
+                break
+
+            if message["from"] == "srv":
+                r = self.receiveData(message)
+                if not r:
+                    return False
+
+            if message["from"] == "cli":
+                logging.debug("  Sending pre message: " + str(networkData.messages.index(message)))
+                ret = self.sendData(message)
+                if not ret:
+                    return False
+
+        return True
+
+
+    def sendPartialPostData(self, networkData):
+        logging.info("Send data: ")
+
+        s = False
+        for message in networkData.messages:
+            # skip pre messages
+            if message == networkData.fuzzMsgChoice:
+                s = True
+
+            if s:
+                if message["from"] == "srv":
+                    r = self.receiveData(message)
+                    if not r:
+                        return False
+
+                if message["from"] == "cli":
+                    if "isFuzzed" in message:
+                        logging.debug("  Sending fuzzed message: " + str(networkData.messages.index(message)))
+                    else:
+                        logging.debug("  Sending post message: " + str(networkData.messages.index(message)))
+                    res = self.sendData(message)
+                    if res is False:
+                        return False
+
+        return True

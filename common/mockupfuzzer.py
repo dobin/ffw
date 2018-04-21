@@ -1,6 +1,7 @@
 import copy
 import random
 
+
 class MockupFuzzer(object):
     def __init__(self, config):
         self.config = config

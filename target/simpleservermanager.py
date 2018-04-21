@@ -8,6 +8,7 @@ import sys
 
 import serverutils
 
+from crashdata import CrashData
 
 GLOBAL_SLEEP = {
     # how long to wait after server start
@@ -121,13 +122,14 @@ class SimpleServerManager(object):
         return True
 
 
-    def getCrashData(self):
+    def getCrashInformation(self, crashData):
         """
         Return the data of the crash
         or None if it has not crashed (should not happen)
         """
         if self.isDisabled or self.process is None:
-            return False
+            logging.error("GetCrashData error: " + str(self.process))
+            return None
 
         try:
             if self.process.poll():
@@ -137,12 +139,12 @@ class SimpleServerManager(object):
         except Exception as e:
             logging.warn("Could not poll process, strange: " + str(e))
 
-        crashData = {
-            'asanOutput': serverutils.getAsanOutput(self.config, self.process.pid),
-            'signum': 0,
-            'exitcode': 0,
-            'reallydead': self.process.poll(),
-            'serverpid': self.process.pid,
-        }
+        crashData.setCrashInformation(
+            asanOutput=serverutils.getAsanOutput(self.config, self.process.pid),
+            signum=0,
+            exitcode=0,
+            reallydead=self.process.poll(),
+            serverpid=self.process.pid,
+        )
 
         return crashData

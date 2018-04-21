@@ -1,46 +1,50 @@
-from . import corpusfile
+import os
+import random
+import glob
 
-
-class CorpusIterator(object):
-    """The iter() of CorpusManager class."""
-
-    def __init__(self, corpuses):
-        self.corpuses = corpuses  # Type: Array[CorpusFile]
-        self.current = 0  # Type: Int
-
-    def __iter__(self):
-        return self
-
-    def next(self):
-        if self.current >= len(self.corpuses):
-            raise StopIteration
-        else:
-            self.current += 1
-            return self.corpuses[self.current - 1]
+from corpusdata import CorpusData
 
 
 class CorpusManager(object):
     """
-    Manage the CorpusFiles
+    Manage the corpusDatas
     """
 
     def __init__(self, config):
-        self.corpus = []  # type: Array[CorpusFile]
+        self.corpus = []  # type: Array[corpusData]
         self.config = config  # type: Dict
 
 
-    def __iter__(self):
-        return CorpusIterator(self.corpus)
+    def _addCorpusData(self, corpusData):
+        self.corpus.append(corpusData)
 
 
-    def addNewCorpusFile(self, corpusFile):
+    def addNewcorpusData(self, corpusData):
         """This fuzzer found a new corpus."""
-        corpusFile.write()
-        self.corpus.append(corpusFile)
+        corpusData.writeToFile()
+        self._addCorpusData(corpusData)
 
 
-    def readNewCorpusFile(self, filename):
+    def readNewcorpusData(self, filename):
         """Another fuzzer found a new corpus."""
-        corpusFile = CorpusFile(self.config, filename=filename)
-        corpusFile.read()
-        self.corpus.append(corpusFile)
+        corpusData = CorpusData(self.config, filename=filename)
+        corpusData.readFromFile()
+        self._addCorpusData(corpusData)
+
+
+    def loadCorpusFiles(self):
+        """Load all initial corpus files from in/."""
+        inputFiles = glob.glob(os.path.join(self.config["inputs"], '*'))
+        for inputFile in inputFiles:
+            filename = os.path.basename(inputFile)
+            corpusData = CorpusData(
+                self.config,
+                filename=filename)
+            corpusData.readFromFile()
+            self._addCorpusData(corpusData)
+
+        print("Input corpus files loaded: " + str(len(self.corpus)))
+
+
+    def getRandomCorpus(self):
+        return random.choice(self.corpus)

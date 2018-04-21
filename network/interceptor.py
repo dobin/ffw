@@ -8,7 +8,7 @@ import logging
 import os
 import time
 
-from fuzzer import simpleservermanager
+from target import simpleservermanager
 from network import networkmanager
 
 """

@@ -7,8 +7,8 @@ import logging
 
 from multiprocessing import Process, Queue
 
-from . import fuzzingslave
-from fuzzer_list import fuzzers
+from . import basicslave
+from fuzzer.fuzzer_list import fuzzers
 import utils
 
 
@@ -27,7 +27,6 @@ def doFuzz(config, useCurses):
     printConfig(config)
     if fuzzers[config["fuzzer"]]["type"] == "mut":
         logging.debug("Loading recorded data...")
-        inputs = utils.loadInputs(config)
     else:
         logging.debug("Not loading any data, as generative fuzzer")
         # create fake data.
@@ -50,14 +49,14 @@ def doFuzz(config, useCurses):
 
     if "nofork" in config and config["nofork"]:
         r = random.randint(0, 2**32 - 1)
-        fuzzingSlave = fuzzingslave.FuzzingSlave(config, n, q, r)
-        fuzzingSlave.doActualFuzz()
+        basicSlave = basicslave.BasicSlave(config, n, q, r)
+        basicSlave.doActualFuzz()
     else:
         while n < config["processes"]:
             print("Start child: " + str(n))
             r = random.randint(0, 2**32 - 1)
-            fuzzingSlave = fuzzingslave.FuzzingSlave(config, n, q, r, inputs)
-            p = Process(target=fuzzingSlave.doActualFuzz, args=())
+            basicSlave = basicslave.BasicSlave(config, n, q, r)
+            p = Process(target=basicSlave.doActualFuzz, args=())
             procs.append(p)
             p.start()
             n += 1

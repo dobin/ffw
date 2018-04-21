@@ -151,8 +151,8 @@ class CorpusManager(object):
                 0,
                 0,
                 corpus.stats["new"],
-                corpus.stats["crashes"]
-            print "  Corpus %d:  Parent: %d  Msg: %d  -  Children: %d  Crashes: %d" % )
+                corpus.stats["crashes"])
+            print "  Corpus %d:  Parent: %d  Msg: %d  -  Children: %d  Crashes: %d" % d
 
 
 class FileWatcher(object):

@@ -2,7 +2,7 @@ fuzzers = {
     "Dumb":
     {
         "name": "Dumb",
-        "file": "fuzzer_dumb.py",
+        "file": "fuzzer/fuzzer_dumb.py",
         "args": '%(seed)s "%(input)s" %(output)s',
         "type": "mut"
     },

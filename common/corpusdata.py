@@ -1,7 +1,9 @@
-import json
+import pickle
 import logging
+import os
 
-from networkdata import *
+from networkdata import NetworkData
+
 
 class CorpusData(object):
 
@@ -23,27 +25,29 @@ class CorpusData(object):
         self.basePath = config["inputs"]
 
 
-    def writeToFile(self):
+    def getRawData(self):
         rawData = {
             'parentFilename': self.parentFilename,
-
             'networkData': self.networkData.getRawData(),
-
             'seed': self.seed,
             'time': self.time,
         }
+        return rawData
 
+
+    def writeToFile(self):
+        rawData = self.getRawData()
         with open(self.basePath + self.filename, 'w') as outfile:
-            json.dump(rawData, outfile)
+            pickle.dump(rawData, outfile)
 
 
     def readFromFile(self):
-        data = None
+        filepath = os.path.join(self.basePath, self.filename)
+        with open(filepath, 'r') as infile:
+            rawData = pickle.load(infile)
 
-        with open(self.basePath + self.filename, 'r') as infile:
-            rawData = json.load(infile)
-
-            self.parentFilename = rawData["parentFilename"]
+            if 'parentFilename' in rawData:
+                self.parentFilename = rawData["parentFilename"]
             self.networkData = NetworkData(self.config, rawData["networkData"])
             self.seed = rawData["seed"]
             self.time = rawData["time"]

@@ -1,8 +1,9 @@
 import unittest
 
-from networkdata import *
-from corpusdata import *
-from mockupfuzzer import *
+from common.networkdata import NetworkData
+from common.corpusdata import CorpusData
+from common.mockupfuzzer import MockupFuzzer
+
 
 class CorpusFileTest(unittest.TestCase):
     def _getConfig(self):
@@ -17,12 +18,12 @@ class CorpusFileTest(unittest.TestCase):
             {
                 'data': 'msg 1 cli',
                 'from': 'cli',
-                'idx': 0,
+                'index': 0,
             },
             {
                 'data': 'msg 2 srv',
                 'from': 'srv',
-                'idx': 1,
+                'index': 1,
             }
         ]
 
@@ -36,7 +37,7 @@ class CorpusFileTest(unittest.TestCase):
             {
                 'data': 'msg 1 srv',
                 'from': 'srv',
-                'idx': 0,
+                'index': 0,
             }
         ]
 

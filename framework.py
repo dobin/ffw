@@ -12,7 +12,6 @@ import glob
 
 from network import replay
 from network import interceptor
-from fuzzer import fuzzingmaster
 from fuzzer import fuzzer_list
 from clientfuzzer import clientfuzzermaster
 from verifier import verifier
@@ -20,7 +19,9 @@ from verifier import minimizer
 from uploader import uploader
 from network import tester
 from network import proto_vnc
-from honggmode import honggmaster
+
+from basicmode import basicmaster
+#from honggmode import honggmaster
 import distutils.spawn
 
 
@@ -193,7 +194,7 @@ def realMain(config):
     if args.fuzz:
         if not checkFuzzRequirements(config):
             return False
-        fuzzingmaster.doFuzz(config, args.gui)
+        basicmaster.doFuzz(config, args.gui)
 
     if args.clientfuzz:
         if not checkFuzzRequirements(config):
