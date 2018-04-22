@@ -11,11 +11,13 @@ MAX_CORRUPT = 0.003
 
 CHUNKSIZE = 1024
 
+
 def byteFlip(inFile):
     """
     Flip all bits in the byte
     """
     return chr(ord(inFile.read(1)) ^ 0xFF)
+
 
 def bitFlip(inFile):
     """
@@ -24,6 +26,7 @@ def bitFlip(inFile):
     bit = 1 << random.randrange(0, 8)
     return chr(ord(inFile.read(1)) ^ bit)
 
+
 def randomReplace(inFile):
     """
     Replace a byte with a random byte
@@ -31,12 +34,17 @@ def randomReplace(inFile):
     inFile.seek(1, 1)
     return chr(random.randrange(0, 256))
 
+
 def arithmetic(inFile):
     """
     Perform arithmetic on varying sized values
     """
-    length, pattern, value_max = random.choice([(1,"<b", 0x7f),(2,"<h", 0x7fff),
-        (4,"<l", 0x7fffffff)])
+    length, pattern, value_max = random.choice(
+        [
+            (1, "<b", 0x7f),
+            (2, "<h", 0x7fff),
+            (4, "<l", 0x7fffffff)
+        ])
     tmp = inFile.read(length)
     if len(tmp) < length:
         return tmp
@@ -54,11 +62,13 @@ def arithmetic(inFile):
 
     return struct.pack(pattern, value)
 
+
 def replaceConstant(inFile):
     """
     Replace some bytes with an 'interesting' constant
     """
     raise NotImplementedError()
+
 
 MUTATORS = [
     byteFlip,
@@ -68,20 +78,23 @@ MUTATORS = [
     #replaceConstant,
 ]
 
+
 def copyData(inFile, outFile, count):
     """
     Copy count bytes from the input file to the output file
     """
     current = 0
     while current < count:
-        readSize = min(CHUNKSIZE, count-current)
+        readSize = min(CHUNKSIZE, count - current)
         data = inFile.read(readSize)
         outFile.write(data)
         current += readSize
 
+
 def usage():
     print("%s: <seed> <input file> <output file>" % (sys.argv[0]))
     sys.exit(-1)
+
 
 def main():
     if len(sys.argv) < 4:
@@ -97,7 +110,7 @@ def main():
     offsets = []
     corrupt_pct = (random.random() * (MAX_CORRUPT - MIN_CORRUPT)) + MIN_CORRUPT
     for i in range(int(size * corrupt_pct) + 1):
-        offsets.append(random.randint(0, size-1))
+        offsets.append(random.randint(0, size - 1))
     offsets = sorted(offsets)
 
     # Open the input and output files
@@ -111,7 +124,7 @@ def main():
     while current < size:
         # Copy data to output file
         if current < nextOffset:
-            copyData(inFile, outFile, nextOffset-current)
+            copyData(inFile, outFile, nextOffset - current)
             current = nextOffset
 
         # Choose a mutator
@@ -131,7 +144,8 @@ def main():
         else:
             nextOffset = offsets.pop(0)
 
-    copyData(inFile, outFile, size-current)
+    copyData(inFile, outFile, size - current)
+
 
 if __name__ == '__main__':
     main()

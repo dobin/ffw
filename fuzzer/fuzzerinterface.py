@@ -40,18 +40,14 @@ class FuzzerInterface(object):
             self.config["temp_dir"],
             str(self.seed) + ".out.raw")
 
-        logging.debug("Fuzzing the data1")
         corpusDataNew = copy.deepcopy(corpusData)
         corpusDataNew.seed = self.seed
         corpusDataNew.networkData.selectMessage()
-        logging.debug("Fuzzing the data2")
         initialData = corpusDataNew.networkData.getFuzzMessageData()
 
-        logging.debug("Fuzzing the data3")
         self._writeDataToFile(initialData)
         self._runFuzzer()
         fuzzedData = self._readDataFromFile()
-        logging.debug("Fuzzing the data4")
         corpusDataNew.networkData.setFuzzMessageData(fuzzedData)
         return corpusDataNew
 
@@ -80,7 +76,7 @@ class FuzzerInterface(object):
         try:
             os.remove(self.fuzzingInFile)
         except:
-            print("Failed to remove file %s!" % self.fuzzingInFile)
+            logging.warn("Failed to remove file %s!" % self.fuzzingInFile)
 
         # keep fuzzed files for debugging purposes
         if "keep_temp" in self.config and self.config["keep_temp"]:
@@ -89,7 +85,7 @@ class FuzzerInterface(object):
             try:
                 os.remove(self.fuzzingOutFile)
             except:
-                print("Failed to remove file %s!" % self.fuzzingOutFile)
+                logging.warn("Failed to remove file %s!" % self.fuzzingOutFile)
 
         return data
 
@@ -100,13 +96,13 @@ class FuzzerInterface(object):
 
         fuzzerData = fuzzers[ self.config["fuzzer"] ]
         if not fuzzerData:
-            print("Could not find fuzzer with name: " + self.config["fuzzer"])
+            logging.error("Could not find fuzzer with name: " + self.config["fuzzer"])
             return False
 
         fuzzerBin = self.config["basedir"] + "/" + fuzzerData["file"]
         if not os.path.isfile(fuzzerBin):
-            print("Could not find fuzzer binary: " + fuzzerBin)
-            sys.exit()
+            logging.error("Could not find fuzzer binary: " + fuzzerBin)
+            return False
 
         grammars_string = ""
         if "grammars" in self.config:

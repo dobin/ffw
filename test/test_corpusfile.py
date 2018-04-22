@@ -4,7 +4,7 @@ import unittest
 
 from common.networkdata import NetworkData
 from common.corpusdata import CorpusData
-from common.mockupfuzzer import MockupFuzzer
+from mockupfuzzer import MockupFuzzer
 
 
 class CorpusFileTest(unittest.TestCase):
