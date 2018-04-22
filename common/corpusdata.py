@@ -38,7 +38,8 @@ class CorpusData(object):
 
     def writeToFile(self):
         rawData = self.getRawData()
-        with open(self.basePath + self.filename, 'w') as outfile:
+        path = os.path.join(self.basePath, self.filename)
+        with open(path, 'w') as outfile:
             pickle.dump(rawData, outfile)
 
 

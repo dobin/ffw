@@ -3,11 +3,41 @@ import random
 from utils import xstr
 
 
+# Messages:
+# [
+#   {
+#      'index': <int>,
+#      'data': <string>
+#      'from': <string> 'cli'/'srv'
+#   }
+# ]
+
+
+
 class NetworkData(object):
     def __init__(self, config, networkMessages):
         self.messages = networkMessages  # type: Array[NetworkData]
         self.fuzzMsgIdx = None  # type: int
         self.fuzzMsgChoice = None  # type: NetworkData
+
+        if not self.messagesCheck():
+            raise ValueError('NetworkMessages are invalid')
+
+
+    @staticmethod
+    def createNetworkMessage(frm, data, index):
+        msg = {
+            "from": frm,
+            "data": data,
+            'index': index,
+        }
+
+        return msg
+
+
+    def messagesCheck(self):
+        return True
+
 
     def getRawData(self):
         return self.messages

@@ -10,6 +10,8 @@ import time
 
 from target import simpleservermanager
 from network import networkmanager
+from common.corpusdata import CorpusData
+from common.networkdata import NetworkData
 
 """
 Interceptor.py, standalone binary
@@ -37,13 +39,15 @@ terminateAll = False
 
 
 class ClientTcpThread(threading.Thread):
-    def createDataEntry(self, frm, data):
-        data = {
-            "from": frm,
-            "data": data,
-        }
-
-        return data
+    def createDataEntry(self, frm, data, index):
+        #data = {
+        #    "from": frm,
+        #    "data": data,
+        #    'index': index,
+        #}
+        #
+        #return data
+        return NetworkData.createNetworkMessage(frm, data, index)
 
 
     def __init__(self, config, clientSocket, targetHost, targetPort, threadId):
@@ -102,7 +106,7 @@ class ClientTcpThread(threading.Thread):
                         if len(data) > 0:
                             print("Received from client: " + str(self.__threadId) + ": " + str(len(data)))
                             targetHostData += data
-                            self.data.append( self.createDataEntry("cli", data) )
+                            self.data.append( self.createDataEntry("cli", data, n) )
                             n += 1
                         else:
                             terminate = True
@@ -119,7 +123,7 @@ class ClientTcpThread(threading.Thread):
                         if len(data) > 0:
                             print("Received from server: " + str(self.__threadId) + ": " + str(len(data)))
                             clientData += data
-                            self.data.append( self.createDataEntry("srv", data) )
+                            self.data.append( self.createDataEntry("srv", data, n) )
                             n += 1
                         else:
                             terminate = True
@@ -141,17 +145,19 @@ class ClientTcpThread(threading.Thread):
         # store all the stuff
         print("Got " + str(len(self.data)) + " packets")
         fileName = self.getDataFilename()
+
         print("Storing into file: " + fileName)
-        with open(fileName, 'wb') as f:
-            pickle.dump(self.data, f)
+        networkData = NetworkData(self.config, self.data)
+        corpusData = CorpusData(self.config, fileName, networkData)
+        corpusData.writeToFile()
 
 
     def getDataFilename(self):
         n = 0
-        filename = self.config["inputs"] + "/" + "data_" + str(n) + ".pickle"
+        filename = "data_" + str(n) + ".pickle"
         while os.path.isfile(filename):
             n += 1
-            filename = self.config["inputs"] + "/" + "data_" + str(n) + ".pickle"
+            filename = "data_" + str(n) + ".pickle"
 
         return filename
 
@@ -213,12 +219,7 @@ def performUdpIntercept(config, localHost, localPort, targetHost, targetPort):
                 print("     from: " + str(addrCli))
                 sockTarget.sendto(data, (targetHost, targetPort))
 
-                d = {
-                    "index": n,
-                    "data": data,
-                    "from": "cli",
-                }
-                dataArr.append(d)
+                dataArr.append( self.createDataEntry('cli', data, n) )
                 n += 1
             except socket.timeout:
                 print("cli: recv() timeout from server, continuing...")
@@ -228,12 +229,7 @@ def performUdpIntercept(config, localHost, localPort, targetHost, targetPort):
                 data, addrSrv = sockTarget.recvfrom(1024)
                 if data is not None:
                     print("srv: Received from server: len: " + str(len(data)))
-                    d = {
-                        "index": n,
-                        "data": data,
-                        "from": "srv",
-                    }
-                    dataArr.append(d)
+                    dataArr.append( self.createDataEntry('srv', data, n))
 
                     print("     Forward data from server to: " + str(addrCli))
                     sockListen.sendto(data, addrCli)
@@ -248,9 +244,10 @@ def performUdpIntercept(config, localHost, localPort, targetHost, targetPort):
 
     # store all the stuff
     print("Got " + str(len(dataArr)) + " packets")
-    fileName = config["inputs"] + "/" + "data_0.pickle"
-    with open(fileName, 'wb') as f:
-        pickle.dump(dataArr, f)
+    fileName = "data_0.pickle"
+    networkData = NetworkData(self.config, dataArr)
+    corpusData = CorpusData(self.config, fileName, networkData)
+    corpusData.writeToFile()
 
 
 # called from ffw
