@@ -1,26 +1,10 @@
+#!/usr/bin/env python
+
 import os
 import random
 import glob
 
 from corpusdata import CorpusData
-
-
-class CorpusFileIterator(object):
-    """The iter() of CorpusManager class."""
-
-    def __init__(self, corpuses):
-        self.corpuses = corpuses
-        self.current = 0
-
-    def __iter__(self):
-        return self
-
-    def next(self):
-        if self.current >= len(self.corpuses):
-            raise StopIteration
-        else:
-            self.current += 1
-            return self.corpuses[self.current - 1]
 
 
 class CorpusManager(object):
@@ -72,3 +56,21 @@ class CorpusManager(object):
 
     def getCorpusCount(self):
         return len(self.corpus)
+
+
+class CorpusFileIterator(object):
+    """The iter() of CorpusManager class."""
+
+    def __init__(self, corpuses):
+        self.corpuses = corpuses
+        self.current = 0
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        if self.current >= len(self.corpuses):
+            raise StopIteration
+        else:
+            self.current += 1
+            return self.corpuses[self.current - 1]

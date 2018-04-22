@@ -1,7 +1,4 @@
-#!/usr/bin/python
-#
-# A dumb fuzzer employing several different fuzzing techniques
-#
+#!/usr/bin/env python
 
 import sys
 import os

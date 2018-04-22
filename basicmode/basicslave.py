@@ -10,7 +10,7 @@ from network import networkmanager
 from common.corpusmanager import CorpusManager
 from fuzzer.fuzzerinterface import FuzzerInterface
 from target.servermanager import ServerManager
-from target.crashdata import CrashData
+from common.crashdata import CrashData
 
 import utils
 

@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import unittest
 
 from common.networkdata import NetworkData

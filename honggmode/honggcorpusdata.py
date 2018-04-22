@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from common.corpusdata import CorpusData
 
 

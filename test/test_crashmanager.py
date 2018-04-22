@@ -1,15 +1,17 @@
 #!/usr/bin/env python
 
 import unittest
-import time
+import os
 
 from common.networkdata import NetworkData
 from common.corpusdata import CorpusData
 from common.crashdata import CrashData
+from common.crashmanager import CrashManager
+
 import testutils
 
 
-class CrashDataTest(unittest.TestCase):
+class CrashManagerTest(unittest.TestCase):
     def _getConfig(self):
         config = {
             "inputs": "/tmp/ffw-test/in",
@@ -41,36 +43,29 @@ class CrashDataTest(unittest.TestCase):
 
     def _getCorpusData(self, config):
         networkData = self._getNetworkData(config)
-        corpusData = CorpusData(config, 'data_0.corpus', networkData, seed="42")
+        corpusData = CorpusData(config, 'data0', networkData, seed="42")
         return corpusData
 
 
-    def test_writeread(self):
+    def _getCrashData(self, config):
+        corpusData = self._getCorpusData(config)
+        crashData = CrashData(config, corpusData)
+        return crashData
+
+
+    def test_loadfiles(self):
+        """Test if we can load the initial corpus."""
         config = self._getConfig()
         testutils.prepareFs(config)
 
-        # get some example corpus
-        corpusData = self._getCorpusData(config)
-
-        # assume this corpus crashed the server
-        crashData = CrashData(config, corpusData)
-
-        # write it
+        # write an crashdata file
+        crashData = self._getCrashData(config)
         crashData.writeToFile()
 
-        # try to read it again
-        crashData2 = CrashData(config, filename=crashData.filename)
-        crashData2.readFromFile()
-
-        # test an example of each layer
-        self.assertEqual(crashData.asanOutput, crashData2.asanOutput)
-        self.assertEqual(
-            crashData.corpusData.filename,
-            crashData2.corpusData.filename)
-        self.assertEqual(
-            crashData.corpusData.networkData.messages[0]['data'],
-            crashData2.corpusData.networkData.messages[0]['data'],
-        )
+        # load all corpus files
+        crashManager = CrashManager(config)
+        crashManager.loadCrashFiles()
+        self.assertEqual(crashManager.getCrashCount(), 1)
 
 
 if __name__ == '__main__':

@@ -1,7 +1,8 @@
+#!/usr/bin/env python
+
 import socket
 import time
 import logging
-import sys
 
 
 class HonggComm(object):

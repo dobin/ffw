@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from subprocess import Popen, PIPE, STDOUT
 import logging
 import re

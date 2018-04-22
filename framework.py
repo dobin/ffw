@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # FFW - Fuzzing For Worms
 # Author: Dobin Rutishauser
 

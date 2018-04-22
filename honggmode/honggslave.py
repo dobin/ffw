@@ -11,7 +11,7 @@ from network import networkmanager
 import utils
 from . import honggcomm
 from target.servermanager import ServerManager
-from target.crashdata import CrashData
+from common.crashdata import CrashData
 from honggcorpusmanager import HonggCorpusManager
 from fuzzer.fuzzerinterface import FuzzerInterface
 
