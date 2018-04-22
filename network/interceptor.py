@@ -3,18 +3,16 @@
 import socket
 import threading
 import select
-import pickle
 import logging
 import os
-import time
 
-from target import simpleservermanager
+from target.servermanager import ServerManager
 from network import networkmanager
 from common.corpusdata import CorpusData
 from common.networkdata import NetworkData
 
 """
-Interceptor.py, standalone binary
+Interceptor
 
 it perform a man-in-the-middle attack
 the client has to connect to the specific port of this tool
@@ -34,19 +32,8 @@ A recorded connection can be replayed to test it.
 
 
 # based on: https://gist.github.com/sivachandran/1969859 (no license)
-
-terminateAll = False
-
-
 class ClientTcpThread(threading.Thread):
     def createDataEntry(self, frm, data, index):
-        #data = {
-        #    "from": frm,
-        #    "data": data,
-        #    'index': index,
-        #}
-        #
-        #return data
         return NetworkData.createNetworkMessage(frm, data, index)
 
 
@@ -79,7 +66,7 @@ class ClientTcpThread(threading.Thread):
         targetHostData = ""
         terminate = False
         n = 0
-        while not terminate and not terminateAll:
+        while not terminate:
             inputs = [self.__clientSocket, targetHostSocket]
             outputs = []
 
@@ -162,116 +149,125 @@ class ClientTcpThread(threading.Thread):
         return filename
 
 
-def performTcpIntercept(config, localHost, localPort, targetHost, targetPort):
-    global terminateAll
-    serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    try:
-        serverSocket.bind((localHost, int(localPort)))
-        serverSocket.listen(5)
-    except Exception as e:
-        print("Error binding to: %s:%s: %s" % (localHost, localPort, str(e)))
-        return
+class Interceptor(object):
+    def __init__(self, config, onlyOne=False):
+        self.config = config
+        self.terminateAll = False
+        self.onlyOne = onlyOne
 
-    print("Forwarding everything to %s:%s" % (targetHost, targetPort))
-    print("Waiting for new client on port: " + str(localPort))
 
-    threadId = 0
-    while True:
+    def _performTcpIntercept(self, localHost, localPort, targetHost, targetPort):
+        serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
-            clientSocket, address = serverSocket.accept()
-        except socket.error as e:
-            logging.error("accept() Socket Error: " + str(e))
-            logging.error("Try waiting a bit...")
+            serverSocket.bind((localHost, int(localPort)))
+            serverSocket.listen(5)
+        except Exception as e:
+            print("Error binding to: %s:%s: %s" % (localHost, localPort, str(e)))
+            return
 
-            break
-        except KeyboardInterrupt:
-            print("\nTerminating all clients...")
-            terminateAll = True
-            break
+        print("Forwarding everything to %s:%s" % (targetHost, targetPort))
+        print("Waiting for new client on port: " + str(localPort))
 
-        ClientTcpThread(config, clientSocket, targetHost, targetPort, threadId).start()
-        threadId += 1
-
-    serverSocket.close()
-
-
-def performUdpIntercept(config, localHost, localPort, targetHost, targetPort):
-    dataArr = []
-    n = 0
-
-    # connect to server
-    sockTarget = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-    # listening
-    sockListen = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    print("Listening on: " + str(localHost) + " : " + str(localPort))
-    sockListen.bind((localHost, int(localPort)))
-    sockTarget.settimeout(1.0)
-    sockListen.settimeout(1.0)
-
-    while True:
-        try:
+        threadId = 0
+        while True:
             try:
-                # wait for client msg
-                print("Waiting for client msg...")
-                data, addrCli = sockListen.recvfrom(1024)  # buffer size is 1024 bytes
-                print("cli: received message len: ", str(len(data)))
-                print("     from: " + str(addrCli))
-                sockTarget.sendto(data, (targetHost, targetPort))
+                clientSocket, address = serverSocket.accept()
+            except socket.error as e:
+                logging.error("accept() Socket Error: " + str(e))
+                logging.error("Try waiting a bit...")
 
-                dataArr.append( self.createDataEntry('cli', data, n) )
-                n += 1
-            except socket.timeout:
-                print("cli: recv() timeout from server, continuing...")
+                break
+            except KeyboardInterrupt:
+                print("\nTerminating all clients...")
+                self.terminateAll = True
+                break
 
-            # check if server sends answer
+            ClientTcpThread(self.config, clientSocket, targetHost, targetPort, threadId).start()
+            threadId += 1
+
+            if self.onlyOne:
+                break
+
+        serverSocket.close()
+
+
+    def _performUdpIntercept(self, localHost, localPort, targetHost, targetPort):
+        dataArr = []
+        n = 0
+
+        # connect to server
+        sockTarget = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+        # listening
+        sockListen = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        print("Listening on: " + str(localHost) + " : " + str(localPort))
+        sockListen.bind((localHost, int(localPort)))
+        sockTarget.settimeout(1.0)
+        sockListen.settimeout(1.0)
+
+        while True:
             try:
-                data, addrSrv = sockTarget.recvfrom(1024)
-                if data is not None:
-                    print("srv: Received from server: len: " + str(len(data)))
-                    dataArr.append( self.createDataEntry('srv', data, n))
+                try:
+                    # wait for client msg
+                    print("Waiting for client msg...")
+                    data, addrCli = sockListen.recvfrom(1024)  # buffer size is 1024 bytes
+                    print("cli: received message len: ", str(len(data)))
+                    print("     from: " + str(addrCli))
+                    sockTarget.sendto(data, (targetHost, targetPort))
 
-                    print("     Forward data from server to: " + str(addrCli))
-                    sockListen.sendto(data, addrCli)
-
+                    dataArr.append(self.createDataEntry('cli', data, n) )
                     n += 1
-            except socket.timeout:
-                print("srv: recv() timeout from server, continuing...")
+                except socket.timeout:
+                    print("cli: recv() timeout from server, continuing...")
 
-        except KeyboardInterrupt:
-            print("\nTerminating...")
-            break
+                # check if server sends answer
+                try:
+                    data, addrSrv = sockTarget.recvfrom(1024)
+                    if data is not None:
+                        print("srv: Received from server: len: " + str(len(data)))
+                        dataArr.append( self.createDataEntry('srv', data, n))
 
-    # store all the stuff
-    print("Got " + str(len(dataArr)) + " packets")
-    fileName = "data_0.pickle"
-    networkData = NetworkData(self.config, dataArr)
-    corpusData = CorpusData(self.config, fileName, networkData)
-    corpusData.writeToFile()
+                        print("     Forward data from server to: " + str(addrCli))
+                        sockListen.sendto(data, addrCli)
+
+                        n += 1
+                except socket.timeout:
+                    print("srv: recv() timeout from server, continuing...")
+
+            except KeyboardInterrupt:
+                print("\nTerminating...")
+                break
+
+        # store all the stuff
+        print("Got " + str(len(dataArr)) + " packets")
+        fileName = "data_0.pickle"
+        networkData = NetworkData(self.config, dataArr)
+        corpusData = CorpusData(self.config, fileName, networkData)
+        corpusData.writeToFile()
 
 
-# called from ffw
-def doIntercept(config, interceptorPort, targetPort):
-    localHost = "0.0.0.0"
-    targetHost = "localhost"
+    # called from ffw
+    def doIntercept(self, interceptorPort, targetPort):
+        localHost = "0.0.0.0"
+        targetHost = "localhost"
 
-    config["baseport"] = targetPort
+        self.config["baseport"] = targetPort
 
-    # run the targetserver, as configured in config
-    serverManager = simpleservermanager.SimpleServerManager(config, 0, targetPort)
-    isStarted = serverManager.start()
-    if not isStarted:
-        print("Could not start server, check its output")
-        return
+        # run the targetserver, as configured in config
+        serverManager = ServerManager(self.config, 0, targetPort)
+        isStarted = serverManager.start()
+        if not isStarted:
+            print("Could not start server, check its output")
+            return
 
-    # test connection
-    networkManager = networkmanager.NetworkManager(config, targetPort)
+        # test connection
+        networkManager = networkmanager.NetworkManager(self.config, targetPort)
 
-    if not networkManager.debugServerConnection():
-        return
+        if not networkManager.debugServerConnection():
+            return
 
-    # start mitm server
-    if config["ipproto"] is "tcp":
-        performTcpIntercept(config, localHost, interceptorPort, targetHost, targetPort)
-    else:
-        performUdpIntercept(config, localHost, interceptorPort, targetHost, targetPort)
+        # start mitm server
+        if self.config["ipproto"] is "tcp":
+            self._performTcpIntercept(localHost, interceptorPort, targetHost, targetPort)
+        else:
+            self._performUdpIntercept(localHost, interceptorPort, targetHost, targetPort)

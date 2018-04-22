@@ -8,11 +8,9 @@ import sys
 import pickle
 import os
 
-from fuzzer.fuzzingcrashdata import FuzzingCrashData
-
 from fuzzer import fuzzingiterationdata
-from . import clientmanager
-from . import networkservermanager
+from clientmanager import ClientManager
+from clientfuzzerserver import ClientFuzzerServer
 import utils
 
 
@@ -47,8 +45,8 @@ class FuzzingSlave(object):
         signal.signal(signal.SIGINT, signal_handler)
 
         targetPort = self.config["baseport"] + self.threadId
-        clientManager = clientmanager.ClientManager(self.config, self.threadId, targetPort)
-        networkServerManager = networkservermanager.NetworkServerManager(self.config, targetPort)
+        clientManager = ClientManager(self.config, self.threadId, targetPort)
+        networkServerManager = ClientFuzzerServer(self.config, targetPort)
 
         # start the server
         if not networkServerManager.start():

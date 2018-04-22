@@ -2,15 +2,15 @@ from subprocess import Popen, PIPE, STDOUT
 import logging
 import re
 
-import serverutils
+import target.targetutils
 from . import verifycrashdata
-from .servermanager import ServerManager
+from abstractverifierservermanager import AbstractVerifierServerManager
 
 
-class GdbServerManager(ServerManager):
+class GdbServerManager(AbstractVerifierServerManager):
 
     def __init__(self, config, queue_sync, queue_out, targetPort):
-        ServerManager.__init__(self, config, queue_sync, queue_out, targetPort)
+        AbstractVerifierServerManager.__init__(self, config, queue_sync, queue_out, targetPort)
         self.gdbOutput = None
 
 
@@ -33,7 +33,7 @@ class GdbServerManager(ServerManager):
             analyzerOutput=ret,
             cause="gdb"
         )
-        gdbOutput = serverutils.getAsanOutput(self.config, self.pid)
+        gdbOutput = targetutils.getAsanOutput(self.config, self.pid)
         if gdbOutput is not None:
             crashData.setAsan(gdbOutput)
 

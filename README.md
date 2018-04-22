@@ -75,6 +75,19 @@ For a step-by-step guide:
 * [Setup the feedback-driven fuzzing project tutorial](https://github.com/dobin/ffw/blob/master/docs/tutorial-honggmode.md)
 * [Some fuzzing help and infos](https://github.com/dobin/ffw/blob/master/docs/notes.md)
 
+# Test
+
+Test all:
+
+```
+python -m unittest discover
+```
+
+Test a single module:
+```
+python -m unittest test.test_interceptor
+```
+
 # Alternatives
 
 ## Fuzzotron

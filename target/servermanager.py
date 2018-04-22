@@ -6,7 +6,7 @@ import os
 import subprocess
 import sys
 
-import serverutils
+import targetutils
 
 
 GLOBAL_SLEEP = {
@@ -16,7 +16,7 @@ GLOBAL_SLEEP = {
 }
 
 
-class SimpleServerManager(object):
+class ServerManager(object):
     """
         Manages the server (the fuzzing target) process.
         This includes:
@@ -36,9 +36,9 @@ class SimpleServerManager(object):
         self.isDisabled = False
         self.hideChildOutput = hideChildOutput
 
-        serverutils.setupEnvironment(self.config)
+        targetutils.setupEnvironment(self.config)
 
-        popenArg = serverutils.getInvokeTargetArgs(self.config, self.targetPort)
+        popenArg = targetutils.getInvokeTargetArgs(self.config, self.targetPort)
         if prependCmdline is None:
             self.popenArg = popenArg
         else:
@@ -139,7 +139,7 @@ class SimpleServerManager(object):
             logging.warn("Could not poll process, strange: " + str(e))
 
         crashData.setCrashInformation(
-            asanOutput=serverutils.getAsanOutput(self.config, self.process.pid),
+            asanOutput=targetutils.getAsanOutput(self.config, self.process.pid),
             signum=0,
             exitcode=0,
             reallydead=self.process.poll(),

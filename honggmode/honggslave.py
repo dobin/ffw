@@ -10,7 +10,7 @@ import os
 from network import networkmanager
 import utils
 from . import honggcomm
-from target import simpleservermanager
+from target.servermanager import ServerManager
 from target.crashdata import CrashData
 from honggcorpusmanager import HonggCorpusManager
 from fuzzer.fuzzerinterface import FuzzerInterface
@@ -80,7 +80,7 @@ class HonggSlave(object):
 
         # start honggfuzz with target binary
         honggfuzzArgs = self._prepareHonggfuzzArgs()
-        serverManager = simpleservermanager.SimpleServerManager(
+        serverManager = ServerManager(
             self.config,
             self.threadId,
             targetPort,

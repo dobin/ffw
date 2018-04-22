@@ -17,22 +17,6 @@ import utils
 from . import asanparser
 from . import verifierresult
 
-"""
-Crash Verifier
-
-Verify crashes stored in:
-  ./out
-
-And put successfully verified into:
-  ./verified
-
-A successful verification is if:
-we replay the network messages, and the server crashes, which is
-indicated by either:
-  - the process crashed
-  - cannot connect anymore to the server
-"""
-
 
 sleeptimes = {
     # wait between server start and first connection attempt
@@ -46,6 +30,21 @@ sleeptimes = {
 
 
 class Verifier(object):
+    """
+    Verifies identified crashes.
+
+    Verify crashes stored in:
+      ./out
+
+    And put successfully verified into:
+      ./verified
+
+    A successful verification is if:
+    we replay the network messages, and the server crashes, which is
+    indicated by either:
+      - the process crashed
+      - cannot connect anymore to the server
+    """
 
     def __init__(self, config):
         self.config = config

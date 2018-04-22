@@ -12,6 +12,15 @@ def cap(s, l):
     return s if len(s) <= l else s[0:l - 3] + '...'
 
 
+def filenameWithoutExtension(file_name):
+    if '.' in file_name:
+        separator_index = file_name.rindex('.')
+        base_name = file_name[:separator_index]
+        return base_name
+    else:
+        return file_name
+
+
 def xstr(s):
     if s is None:
         return '<None>'

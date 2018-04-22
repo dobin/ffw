@@ -12,7 +12,8 @@ class CorpusData(object):
                  config,
                  filename=None,
                  networkData=None,
-                 parentFilename=None):
+                 parentFilename=None,
+                 seed=None):
         self.config = config  # Type: Dict
 
         self.filename = filename  # Type: String
@@ -20,7 +21,7 @@ class CorpusData(object):
 
         self.networkData = networkData  # Type: NetworkData
 
-        self.seed = None  # Type: String
+        self.seed = seed  # Type: String
         self.time = None  # Type: String
 
         self.basePath = config["inputs"]
@@ -28,12 +29,21 @@ class CorpusData(object):
 
     def getRawData(self):
         rawData = {
+            'filename': self.filename,
             'parentFilename': self.parentFilename,
             'networkData': self.networkData.getRawData(),
             'seed': self.seed,
             'time': self.time,
         }
         return rawData
+
+
+    def setRawData(self, rawData):
+        self.filename = rawData['filename']
+        self.parentFilename = rawData['parentFilename']
+        self.seed = rawData['seed']
+        self.time = rawData['time']
+        self.networkData = NetworkData(self.config, rawData['networkData'])
 
 
     def writeToFile(self):
@@ -56,7 +66,6 @@ class CorpusData(object):
 
         # check if no client message is found in an input
         if next((i for i in self.networkData.messages if i["from"] == "cli"), None) is None:
-            logging.error("No client messages found in %s." % self.filename)
             raise ValueError("No client messages found in %s" % self.filename)
 
 

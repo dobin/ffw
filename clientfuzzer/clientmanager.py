@@ -1,10 +1,9 @@
-
-import serverutils
 import logging
 import os
 import time
 import subprocess
 
+import target.targetutils
 
 GLOBAL_SLEEP = {
     # how long to wait after server start
@@ -30,7 +29,7 @@ class ClientManager(object):
         Start the server
         """
         global GLOBAL_SLEEP
-        popenArg = serverutils.getInvokeTargetArgs(self.config, self.targetPort)
+        popenArg = targetutils.getInvokeTargetArgs(self.config, self.targetPort)
         logging.info("Starting server with args: " + str(popenArg))
 
         os.chdir( self.config["projdir"] + "/bin")

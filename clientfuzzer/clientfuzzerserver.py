@@ -4,9 +4,7 @@ import sys
 import logging
 
 
-class NetworkServerManager(object):
-    print "Network Server Manager"
-
+class ClientFuzzerServer(object):
     def __init__(self, config, targetPort):
         self.config = config
         self.targetPort = targetPort
@@ -16,7 +14,6 @@ class NetworkServerManager(object):
     def start(self):
         print "Start Server Manager"
         return self._startListen()
-
 
 
     def setFuzzData(self, data):

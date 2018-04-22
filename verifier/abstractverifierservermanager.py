@@ -20,7 +20,7 @@ class StdoutQueue():
         pass
 
 
-class ServerManager(object):
+class AbstractVerifierServerManager(object):
     """
     Abstract servermanager class.
 

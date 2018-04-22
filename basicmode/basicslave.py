@@ -9,7 +9,7 @@ import sys
 from network import networkmanager
 from common.corpusmanager import CorpusManager
 from fuzzer.fuzzerinterface import FuzzerInterface
-from target import simpleservermanager
+from target.servermanager import ServerManager
 from target.crashdata import CrashData
 
 import utils
@@ -50,7 +50,7 @@ class BasicSlave(object):
 
         fuzzerInterface = FuzzerInterface(self.config)
 
-        serverManager = simpleservermanager.SimpleServerManager(
+        serverManager = ServerManager(
             self.config,
             self.threadId,
             targetPort)

@@ -9,34 +9,12 @@ from honggcorpusdata import HonggCorpusData
 from common.corpusmanager import CorpusManager
 
 
-class CorpusFileIterator(object):
-    """The iter() of CorpusManager class."""
-
-    def __init__(self, corpuses):
-        self.corpuses = corpuses
-        self.current = 0
-
-    def __iter__(self):
-        return self
-
-    def next(self):
-        if self.current >= len(self.corpuses):
-            raise StopIteration
-        else:
-            self.current += 1
-            return self.corpuses[self.current - 1]
-
-
 class HonggCorpusManager(CorpusManager):
     """Manage the corpus files for the fuzzer."""
 
     def __init__(self, config):
         super(self.__class__, self).__init__(config)
         self.fileWatcher = FileWatcher(config, self)
-
-
-    def __iter__(self):
-        return CorpusFileIterator(self.corpus)
 
 
     def addNewCorpusData(self, honggCorpusData):

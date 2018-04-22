@@ -1,9 +1,5 @@
 # FFW - Fuzzing For Worms
 # Author: Dobin Rutishauser
-#
-# Parts of it based on:
-#   Framework for fuzzing things
-#   author: Chris Bisnett
 
 import logging
 import argparse
@@ -11,7 +7,7 @@ import os
 import glob
 
 from network import replay
-from network import interceptor
+from network.interceptor import Interceptor
 from fuzzer import fuzzer_list
 from clientfuzzer import clientfuzzermaster
 from verifier import verifier
@@ -185,7 +181,8 @@ def realMain(config):
         print("Interceptor listen on port: " + str(interceptorPort))
         print("Target server port: " + str(targetPort))
 
-        interceptor.doIntercept(config, interceptorPort, targetPort)
+        interceptor = Interceptor(config)
+        interceptor.doIntercept(interceptorPort, targetPort)
 
     if args.test:
         t = tester.Tester(config)

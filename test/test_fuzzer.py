@@ -11,8 +11,10 @@ class CorpusFileTest(unittest.TestCase):
         config = {
             "inputs": "/tmp/",
             "temp_dir": "/tmp/",
-            "basedir": os.path.dirname(os.path.realpath(__file__)),
+            "basedir": os.path.dirname(os.path.realpath(__file__)) + "/..",
         }
+        print "A: " + os.path.dirname(os.path.realpath(__file__))
+
         return config
 
 

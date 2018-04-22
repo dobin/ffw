@@ -53,7 +53,7 @@ def setupEnvironment(config):
     os.environ["MALLOC_CHECK_"] = "2"
 
     # Check ASLR status
-    if config["ignore_aslr_status"] is False:
+    if 'ignore_aslr_status' in config and config["ignore_aslr_status"] is False:
         aslrStatusFile = "/proc/sys/kernel/randomize_va_space"
         d = ""
         with open(aslrStatusFile, "r") as f:
@@ -69,7 +69,7 @@ def setupEnvironment(config):
     resource.setrlimit(resource.RLIMIT_CORE, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
 
     # set working directory
-    os.chdir(config["projdir"] + "/bin")
+    os.chdir(os.path.dirname(os.path.realpath(config["target_bin"])))
 
 
 def getAsanOutput(config, pid):

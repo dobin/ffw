@@ -3,17 +3,6 @@ import random
 from utils import xstr
 
 
-# Messages:
-# [
-#   {
-#      'index': <int>,
-#      'data': <string>
-#      'from': <string> 'cli'/'srv'
-#   }
-# ]
-
-
-
 class NetworkData(object):
     def __init__(self, config, networkMessages):
         self.messages = networkMessages  # type: Array[NetworkData]

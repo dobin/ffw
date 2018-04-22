@@ -4,6 +4,7 @@ import os
 from common.networkdata import NetworkData
 from honggmode.honggcorpusdata import HonggCorpusData
 from honggmode.honggcorpusmanager import HonggCorpusManager
+import testutils
 
 
 class HonggCorpusManagerTest(unittest.TestCase):
@@ -40,27 +41,10 @@ class HonggCorpusManagerTest(unittest.TestCase):
         return corpusData
 
 
-    def _prepareFs(self, config):
-        if not os.path.exists(config["temp"]):
-            os.makedirs(config["temp"])
-
-        if not os.path.exists(config["inputs"]):
-            os.makedirs(config["inputs"])
-        else:
-            for the_file in os.listdir(config["inputs"]):
-                file_path = os.path.join(config["inputs"], the_file)
-                try:
-                    if os.path.isfile(file_path):
-                        os.unlink(file_path)
-                    #elif os.path.isdir(file_path): shutil.rmtree(file_path)
-                except Exception as e:
-                    print(e)
-
-
     def test_loadfiles(self):
         """Test if we can load the initial corpus."""
         config = self._getConfig()
-        self._prepareFs(config)
+        testutils.prepareFs(config)
 
         # write an corpus file
         corpusData = self._getCorpusData(config)
@@ -75,7 +59,7 @@ class HonggCorpusManagerTest(unittest.TestCase):
     def test_getNotified(self):
         """Check if we get notified (and can load) new files."""
         config = self._getConfig()
-        self._prepareFs(config)
+        testutils.prepareFs(config)
 
         # load all corpus - should be empty
         honggCorpusManager = HonggCorpusManager(config)
@@ -104,7 +88,7 @@ class HonggCorpusManagerTest(unittest.TestCase):
     def test_doCreate(self):
         """Test if wo correctly add new corpus we found ourselfs."""
         config = self._getConfig()
-        self._prepareFs(config)
+        testutils.prepareFs(config)
 
         # load all corpus - should be empty
         honggCorpusManager = HonggCorpusManager(config)

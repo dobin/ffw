@@ -16,15 +16,15 @@ from ptrace.debugger.child import createChild
 from ptrace.debugger.process_event import ProcessExit
 from ptrace.debugger.ptrace_signal import ProcessSignal
 
-import serverutils
-from .servermanager import ServerManager
+import target.targetutils
+from .abstractverifierservermanager import AbstractVerifierServerManager
 
 from . import verifycrashdata
 
 
-class DebugServerManager(ServerManager):
+class DebugServerManager(AbstractVerifierServerManager):
     def __init__(self, config, queue_sync, queue_out, targetPort):
-        ServerManager.__init__(self, config, queue_sync, queue_out, targetPort)
+        AbstractVerifierServerManager.__init__(self, config, queue_sync, queue_out, targetPort)
         self.dbg = None
         self.crashEvent = None
         self.proc = None
@@ -34,9 +34,9 @@ class DebugServerManager(ServerManager):
     def _startServer(self):
         # create child via ptrace debugger
         # API: createChild(arguments[], no_stdout, env=None)
-        logging.debug("START: " + str(serverutils.getInvokeTargetArgs(self.config, self.targetPort + 1000)))
+        logging.debug("START: " + str(targetutils.getInvokeTargetArgs(self.config, self.targetPort + 1000)))
         self.pid = createChild(
-            serverutils.getInvokeTargetArgs(self.config, self.targetPort),
+            targetutils.getInvokeTargetArgs(self.config, self.targetPort),
             False,  # no_stdout
             None,
         )
@@ -186,7 +186,7 @@ class DebugServerManager(ServerManager):
             registers=pRegisters,
         )
 
-        asanOutput = serverutils.getAsanOutput(self.config, self.pid)
+        asanOutput = targetutils.getAsanOutput(self.config, self.pid)
         vCrashData.setTemp(asanOutput)
 
         return vCrashData
