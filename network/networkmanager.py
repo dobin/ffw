@@ -196,7 +196,7 @@ class NetworkManager(object):
         n = 0
         alive = False
         while n < 10:
-            print("Check if we can connect to server localhost:" + str(self.targetPort))
+            logging.info("Check if we can connect to server localhost:" + str(self.targetPort))
             alive = self.testServerConnection()
             if alive:
                 return True
@@ -205,7 +205,7 @@ class NetworkManager(object):
             time.sleep(0.5)
 
         if not alive:
-            print("Server not alive, aborting")
+            logging.error("Server not alive, aborting")
             self._printErrAnalysis()
             print("")
             print("Common errors:")
@@ -263,8 +263,6 @@ class NetworkManager(object):
 
         logging.info("Server is ready (accepting connections)")
         return True
-
-
 
 
     def sendPartialPreData(self, networkData):

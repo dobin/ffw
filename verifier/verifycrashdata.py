@@ -60,28 +60,6 @@ class VerifyCrashData():
     def getTemp(self):
         return self.temp
 
-    def __repr__(self):
-        d = ""
-        d += "VerifyCrashData: " + "Faultaddress: " + str(self.faultAddress)
-
-        if self.backtrace:
-            d += " Has_Backtrace"
-        else:
-            d += " NO_Backtrace"
-
-        if self.backtrace:
-            d += " Has_Cause"
-        else:
-            d += " NO_Cause"
-
-        if self.analyzerOutput:
-            d += " Has_AnalyzerOutput"
-        else:
-            d += " NO_AnalyzerOutput"
-
-        d += "\n"
-
-        return d
 
     def __str__(self):
         d = ""

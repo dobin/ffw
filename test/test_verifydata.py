@@ -6,14 +6,16 @@ import time
 from common.networkdata import NetworkData
 from common.corpusdata import CorpusData
 from common.crashdata import CrashData
+from common.verifydata import VerifyData
 import testutils
 
 
-class CrashDataTest(unittest.TestCase):
+class VerifyDataTest(unittest.TestCase):
     def _getConfig(self):
         config = {
             "inputs": "/tmp/ffw-test/in",
             "outcome_dir": "/tmp/ffw-test/out",
+            "verified_dir": "/tmp/ffw-test/verified",
             "fuzzer": "Myfuzzer",
             "target_bin": "bin/mytarget"
         }
@@ -45,34 +47,47 @@ class CrashDataTest(unittest.TestCase):
         return corpusData
 
 
+    def _getCrashData(self, config):
+        corpusData = self._getCorpusData(config)
+        crashData = CrashData(config, corpusData, '-')
+        crashData.setCrashInformation(asanOutput="meh")
+        return crashData
+
+
+    def _getVerifyData(self, config):
+        crashData = self._getCrashData(config)
+        verifyData = VerifyData(config, crashData, faultaddress=1337)
+        return verifyData
+
+
     def test_writeread(self):
         config = self._getConfig()
         testutils.prepareFs(config)
 
-        # get some example corpus
-        corpusData = self._getCorpusData(config)
-
-        # assume this corpus crashed the server
-        crashData = CrashData(config, corpusData)
-        crashData.setCrashInformation(asanOutput="meh")
+        # get some example verifyData
+        verifyData = self._getVerifyData(config)
 
         # write it
-        crashData.writeToFile()
+        verifyData.writeToFile()
 
         # try to read it again
-        crashData2 = CrashData(config, filename=crashData.filename)
-        crashData2.readFromFile()
+        verifyData2 = VerifyData(config, filename=verifyData.filename)
+        verifyData2.readFromFile()
 
         # test an example of each layer
         self.assertEqual(
-            crashData.asanOutput,
-            crashData2.asanOutput)
+            verifyData.faultaddress,
+            verifyData2.faultaddress
+        )
         self.assertEqual(
-            crashData.corpusData.filename,
-            crashData2.corpusData.filename)
+            verifyData.crashData.asanOutput,
+            verifyData2.crashData.asanOutput)
         self.assertEqual(
-            crashData.corpusData.networkData.messages[0]['data'],
-            crashData2.corpusData.networkData.messages[0]['data'],
+            verifyData.crashData.corpusData.seed,
+            verifyData2.crashData.corpusData.seed)
+        self.assertEqual(
+            verifyData.crashData.corpusData.networkData.messages[0]['data'],
+            verifyData2.crashData.corpusData.networkData.messages[0]['data'],
         )
 
 

@@ -2,6 +2,7 @@
 
 import glob
 import os
+import logging
 
 from crashdata import CrashData
 
@@ -31,7 +32,7 @@ class CrashManager(object):
             crashData.readFromFile()
             self._addCrashData(crashData)
 
-        print("Input crash files loaded: " + str(len(self.crash)))
+        logging.info("Input crash files loaded: " + str(len(self.crash)))
 
 
     def _createCrashData(self, filename):

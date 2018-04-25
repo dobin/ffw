@@ -3,6 +3,7 @@
 import os
 import random
 import glob
+import logging
 
 from corpusdata import CorpusData
 
@@ -34,7 +35,7 @@ class CorpusManager(object):
             corpusData.readFromFile()
             self._addCorpusData(corpusData)
 
-        print("Input corpus files loaded: " + str(len(self.corpus)))
+        logging.info("Input corpus files loaded: " + str(len(self.corpus)))
 
 
     def _createCorpusData(self, filename):

@@ -2,6 +2,7 @@
 
 import pickle
 import os
+import logging
 import utils
 
 from common.corpusdata import CorpusData
@@ -44,6 +45,7 @@ class CrashData():
 
     def getRawData(self):
         crashDataRaw = {
+            "filename": self.filename,
             "asanOutput": self.asanOutput,
             "signum": self.signum,
             "exitcode": self.exitcode,
@@ -51,23 +53,20 @@ class CrashData():
             "reallydead": self.reallydead,
             "serverpid": self.serverpid,
             "fuzzerPos": self.fuzzerPos,
-        }
 
-        data = {
-            "crashData": crashDataRaw,
             "corpusData": self.corpusData.getRawData(),
         }
 
-        return data
+        return crashDataRaw
 
 
     def setRawData(self, rawData):
-        self.asanOutput = rawData['crashData']['asanOutput']
-        self.signum = rawData['crashData']['signum']
-        self.exitcode = rawData['crashData']['exitcode']
-        self.reallydead = rawData['crashData']['reallydead']
-        self.serverpid = rawData['crashData']['serverpid']
-        self.fuzzerPos = rawData['crashData']['fuzzerPos']
+        self.asanOutput = rawData['asanOutput']
+        self.signum = rawData['signum']
+        self.exitcode = rawData['exitcode']
+        self.reallydead = rawData['reallydead']
+        self.serverpid = rawData['serverpid']
+        self.fuzzerPos = rawData['fuzzerPos']
 
         self.corpusData = CorpusData(self.config)
         self.corpusData.setRawData(rawData['corpusData'])
