@@ -44,7 +44,7 @@ class FuzzingSlave(object):
         logging.info("Setup fuzzing...")
         signal.signal(signal.SIGINT, signal_handler)
 
-        targetPort = self.config["baseport"] + self.threadId
+        targetPort = self.config["target_port"] + self.threadId
         clientManager = ClientManager(self.config, self.threadId, targetPort)
         networkServerManager = ClientFuzzerServer(self.config, targetPort)
 
@@ -106,7 +106,7 @@ class FuzzingSlave(object):
             # send fuzzing information to parent process
             self.queue.put( (self.threadId, fuzzPerSec, iterStats["count"], iterStats["crashCount"]) )
 
-            if "nofork" in self.config and self.config["nofork"]:
+            if "fuzzer_nofork" in self.config and self.config["fuzzer_nofork"]:
                 print("%d: %4.2f  %8d  %5d" % (self.threadId, fuzzPerSec, iterStats["count"], iterStats["crashCount"]))
 
             iterStats["lastUpdateTime"] = currTime

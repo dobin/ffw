@@ -3,7 +3,6 @@
 import time
 import os
 import logging
-import defaultconfig
 import sys
 import resource
 
@@ -80,7 +79,7 @@ def getAsanOutput(config, pid):
     logging.info("Get asan output: " + str(fileName))
 
     # omg wait for the file to appear (necessary?)
-    time.sleep(defaultconfig.DefaultConfig["sleep_for_asan_file"])
+    time.sleep(0.1)
 
     # it may not exist, which aint bad (e.g. no asan support)
     if not os.path.isfile(fileName):

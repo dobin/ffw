@@ -21,7 +21,7 @@
 
     # if you cant specify the port on the command line,
     # hardcode it here. Note that it will work only with one fuzzing instance.
-    "baseport": 20000,
+    "target_port": 20000,
 
     # how many fuzzing instances should we start
     "processes": 1,
@@ -71,7 +71,7 @@
     "grammars": "grammars/",
 
     # Directory of input files
-    "inputs": "in",
+    "input_dir": "in",
 
     # Directory of verified files
     "verified_dir": "verified",

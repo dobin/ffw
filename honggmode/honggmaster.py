@@ -26,7 +26,7 @@ def doFuzz(config):
         return
 
     # special mode, will not fork
-    if "nofork" in config and config["nofork"]:
+    if "fuzzer_nofork" in config and config["fuzzer_nofork"]:
         _fuzzNoFork(config, q)
     else:
         _fuzzWithFork(config, q)

@@ -116,7 +116,7 @@ class FileWatcher(object):
 
 
     def start(self):
-        watchPath = self.config["inputs"]
+        watchPath = self.config["input_dir"]
         self.notifier = pyinotify.Notifier(self.wm, self.handler, timeout=10)
         self.wdd = self.wm.add_watch(watchPath, self.mask, rec=False)
 

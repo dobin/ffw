@@ -11,7 +11,7 @@ from fuzzer.fuzzerinterface import FuzzerInterface
 class CorpusFileTest(unittest.TestCase):
     def _getConfig(self):
         config = {
-            "inputs": "/tmp/",
+            "input_dir": "/tmp/",
             "temp_dir": "/tmp/",
             "basedir": os.path.dirname(os.path.realpath(__file__)) + "/..",
         }

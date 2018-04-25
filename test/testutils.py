@@ -34,7 +34,7 @@ def prepareFs(config):
             _delDir(config['verified_dir'])
 
     if 'inputs' in config:
-        if not os.path.exists(config["inputs"]):
-            os.makedirs(config["inputs"])
+        if not os.path.exists(config["input_dir"]):
+            os.makedirs(config["input_dir"])
         else:
-            _delDir(config["inputs"])
+            _delDir(config["input_dir"])

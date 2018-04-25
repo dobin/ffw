@@ -20,6 +20,7 @@ from network import proto_vnc
 
 from basicmode import basicmaster
 from honggmode import honggmaster
+import defaultconfig
 import distutils.spawn
 
 
@@ -43,7 +44,7 @@ def checkFuzzRequirements(config):
     if fuzzer_list.fuzzers[config["fuzzer"]]["type"] == "gen":
         return True
 
-    f = config["projdir"] + '/in/*.pickle'
+    f = os.path.join(config["input_dir"], '*.pickle')
     if len( glob.glob(f)) <= 0:
         print "No intercepted data found: " + str(f)
         return False
@@ -79,6 +80,8 @@ def setupLoggingStandard():
 
 
 def loadConfig(configfilename, basedir):
+    #defaultConfig = defaultconfig.DefaultConfig
+
     rawData = open(configfilename, 'r').read()
 
     # hmm this produces some strange behaviour upon string comparison
@@ -91,11 +94,15 @@ def loadConfig(configfilename, basedir):
 
     # cleanup. Damn this is ugly.
     pyData["target_bin"] = pyData["projdir"] + pyData["target_bin"]
+
+    pyData["input_dir"] = pyData["projdir"] + pyData["input_dir"]
     pyData["temp_dir"] = pyData["projdir"] + pyData["temp_dir"]
     pyData["outcome_dir"] = pyData["projdir"] + pyData["outcome_dir"]
-    pyData["grammars"] = pyData["projdir"] + pyData["grammars"]
-    pyData["inputs"] = pyData["projdir"] + pyData["inputs"]
     pyData["verified_dir"] = pyData["projdir"] + pyData["verified_dir"]
+
+    pyData["grammars"] = pyData["projdir"] + pyData["grammars"]
+
+
 
     return pyData
 
@@ -178,7 +185,7 @@ def realMain(config):
         if args.targetport:
             targetPort = args.targetport
         else:
-            targetPort = config["baseport"]
+            targetPort = config["target_port"]
 
         print("Interceptor listen on port: " + str(interceptorPort))
         print("Target server port: " + str(targetPort))

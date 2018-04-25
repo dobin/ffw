@@ -4,8 +4,8 @@ from subprocess import Popen, PIPE, STDOUT
 import logging
 import re
 
-import target.targetutils
-from . import verifycrashdata
+from servercrashdata import ServerCrashData
+from target import targetutils
 from abstractverifierservermanager import AbstractVerifierServerManager
 
 
@@ -30,16 +30,16 @@ class GdbServerManager(AbstractVerifierServerManager):
                 res.append(backtraceFrames[i].rstrip("\n\r"))
             i += 1
 
-        crashData = verifycrashdata.VerifyCrashData(
+        serverCrashData = ServerCrashData(
             backtrace=res,
             analyzerOutput=ret,
-            cause="gdb"
+            analyzerType="gdb"
         )
         gdbOutput = targetutils.getAsanOutput(self.config, self.pid)
         if gdbOutput is not None:
-            crashData.setAsan(gdbOutput)
+            serverCrashData.setAsan(gdbOutput)
 
-        return crashData
+        return serverCrashData
 
 
     def _waitForCrash(self):

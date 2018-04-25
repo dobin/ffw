@@ -12,7 +12,7 @@ import testutils
 class CrashDataTest(unittest.TestCase):
     def _getConfig(self):
         config = {
-            "inputs": "/tmp/ffw-test/in",
+            "input_dir": "/tmp/ffw-test/in",
             "outcome_dir": "/tmp/ffw-test/out",
             "fuzzer": "Myfuzzer",
             "target_bin": "bin/mytarget"

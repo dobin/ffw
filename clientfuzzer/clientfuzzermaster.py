@@ -26,7 +26,7 @@ def doFuzz(config, useCurses):
     procs = []
     n = 0
 
-    if "nofork" in config and config["nofork"]:
+    if "fuzzer_nofork" in config and config["fuzzer_nofork"]:
         r = random.randint(0, 2**32 - 1)
         fuzzingSlave = clientfuzzerslave.FuzzingSlave(config, n, q, r)
         fuzzingSlave.doActualFuzz()

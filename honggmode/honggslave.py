@@ -68,7 +68,7 @@ class HonggSlave(object):
         logging.info("Setup fuzzing..")
         random.seed(self.initialSeed)
         signal.signal(signal.SIGINT, signal_handler)
-        targetPort = self.config["baseport"] + self.threadId
+        targetPort = self.config["target_port"] + self.threadId
         self.targetPort = targetPort
 
         fuzzerInterface = FuzzerInterface(self.config)
@@ -273,7 +273,7 @@ class HonggSlave(object):
             self.queue.put( d )
             self.iterStats["lastUpdate"] = currTime
 
-            if "nofork" in self.config and self.config["nofork"]:
+            if "fuzzer_nofork" in self.config and self.config["fuzzer_nofork"]:
                 print(" %5d: %11d  %9d  %13d  %7d  %4.2f" % d)
 
 

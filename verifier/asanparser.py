@@ -4,12 +4,12 @@ import sys
 import re
 import logging
 
-from . import verifycrashdata
+from servercrashdata import ServerCrashData
 
 
-class AsanParser:
+class AsanParser(object):
     """
-    Parses ASAN output files
+    Parses ASAN output files.
 
     If a binary is compiled with ASAN, it will/should create output or file
     which contains detailed information about the vulnerability and crash.
@@ -43,11 +43,12 @@ class AsanParser:
 
     def getAsCrashData(self):
         asanData = self.getAsanData()
-        crashData = verifycrashdata.VerifyCrashData(
+        crashData = ServerCrashData(
             backtrace=asanData["backtrace"],
             cause=asanData["cause"],
             analyzerOutput=self.data,
             faultAddress=asanData["faultAddress"],
+            analyzerType='asan',
         )
         return crashData
 

@@ -13,7 +13,7 @@ import testutils
 class VerifyDataTest(unittest.TestCase):
     def _getConfig(self):
         config = {
-            "inputs": "/tmp/ffw-test/in",
+            "input_dir": "/tmp/ffw-test/in",
             "outcome_dir": "/tmp/ffw-test/out",
             "verified_dir": "/tmp/ffw-test/verified",
             "fuzzer": "Myfuzzer",

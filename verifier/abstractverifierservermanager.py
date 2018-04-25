@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import logging
-import serverutils
+from target import targetutils
 
 
 class StdoutQueue():
@@ -41,7 +41,7 @@ class AbstractVerifierServerManager(object):
         self.pid = None
 
         self.stdoutQueue = StdoutQueue(queue_out)
-        serverutils.setupEnvironment(config)
+        targetutils.setupEnvironment(config)
 
 
     def startAndWait(self):
@@ -83,7 +83,7 @@ class AbstractVerifierServerManager(object):
 
         # _getCrashDetails could return None
         if crashData is not None:
-            #logging.debug("DebugServer: send to queue_sync")
+            logging.debug("DebugServer: send to queue_sync")
             self.queue_sync.put( ("data", crashData) )
 
         self._stopServer()

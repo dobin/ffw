@@ -33,7 +33,7 @@ config = {
 
     # if you cant specify the port on the command line,
     # hardcode it here. Note that it will work only with one fuzzing instance.
-    "baseport": 20000,
+    "target_port": 20000,
 
     # how many fuzzing instances should we start
     "processes": 1,
@@ -83,7 +83,7 @@ config = {
     "grammars": PROJDIR + "grammars/",
 
     # Directory of input files
-    "inputs": PROJDIR + "in",
+    "input_dir": PROJDIR + "in",
 
     # Directory of verified files
     "verified_dir": PROJDIR + "verified",

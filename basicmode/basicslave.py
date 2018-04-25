@@ -43,7 +43,7 @@ class BasicSlave(object):
         random.seed(self.initialSeed)
         logging.info("Setup fuzzing..")
         signal.signal(signal.SIGINT, signal_handler)
-        targetPort = self.config["baseport"] + self.threadId
+        targetPort = self.config["target_port"] + self.threadId
 
         corpusManager = CorpusManager(self.config)
         corpusManager.loadCorpusFiles()
@@ -108,12 +108,6 @@ class BasicSlave(object):
                 continue
 
             corpusData = fuzzerInterface.fuzz(selectedCorpusData)
-            #corpusData = corpusData.corpusData(
-            #    self.config,
-            #    selectedCorpusData)
-            #if not corpusData.fuzzData():
-            #    logging.error("Could not fuzz the data")
-            #    return
 
             sendDataResult = networkManager.sendPartialPreData(corpusData.networkData)
             if not sendDataResult:
@@ -191,7 +185,7 @@ class BasicSlave(object):
             # send fuzzing information to parent process
             self.queue.put( (self.threadId, fuzzPerSec, iterStats["count"], iterStats["crashCount"]) )
 
-            if "nofork" in self.config and self.config["nofork"]:
+            if "fuzzer_nofork" in self.config and self.config["fuzzer_nofork"]:
                 print("%d: %4.2f  %8d  %5d" % (self.threadId, fuzzPerSec, iterStats["count"], iterStats["crashCount"]))
 
             iterStats["lastUpdateTime"] = currTime

@@ -1,11 +1,5 @@
 #!/usr/bin/python
 
-"""
-The classes used to implement access to the server.
-
-Related to servermanager.py, but with more debugging.
-"""
-
 import logging
 import signal
 import os
@@ -16,10 +10,10 @@ from ptrace.debugger.child import createChild
 from ptrace.debugger.process_event import ProcessExit
 from ptrace.debugger.ptrace_signal import ProcessSignal
 
-import target.targetutils
+from target import targetutils
 from .abstractverifierservermanager import AbstractVerifierServerManager
 
-from . import verifycrashdata
+from servercrashdata import ServerCrashData
 
 
 class DebugServerManager(AbstractVerifierServerManager):
@@ -68,7 +62,6 @@ class DebugServerManager(AbstractVerifierServerManager):
 
 
     def _waitForCrash(self):
-        #subprocess.call("echo AAA1; ls -l /proc/" + str(self.pid), shell=True)
         while True:
             logging.info("DebugServer: Waiting for process event")
             event = self.dbg.waitProcessEvent()
@@ -93,7 +86,6 @@ class DebugServerManager(AbstractVerifierServerManager):
 
         if event is not None and event.signum != 15:
             logging.info("DebugServer: Event Result: Crash")
-            #subprocess.call("echo AAA2; ls -l /proc/" + str(self.pid), shell=True)
             self.crashEvent = event
             return True
         else:
@@ -174,7 +166,9 @@ class DebugServerManager(AbstractVerifierServerManager):
             print(("GetCrashDetails exception: " + str(e)))
 
 
-        vCrashData = verifycrashdata.VerifyCrashData(
+        asanOutput = targetutils.getAsanOutput(self.config, self.pid)
+
+        serverCrashData = ServerCrashData(
             faultAddress=faultAddress,
             faultOffset=faultOffset,
             module=module,
@@ -184,9 +178,8 @@ class DebugServerManager(AbstractVerifierServerManager):
             stackAddr=str(stackAddr),
             backtrace=backtraceFrames,
             registers=pRegisters,
+            asanOutput=asanOutput,
+            analyzerType='ptrace',
         )
 
-        asanOutput = targetutils.getAsanOutput(self.config, self.pid)
-        vCrashData.setTemp(asanOutput)
-
-        return vCrashData
+        return serverCrashData

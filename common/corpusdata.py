@@ -26,7 +26,7 @@ class CorpusData(object):
         self.seed = seed  # Type: String
         self.time = None  # Type: String
 
-        self.basePath = config["inputs"]
+        self.basePath = config["input_dir"]
 
 
     def getRawData(self):

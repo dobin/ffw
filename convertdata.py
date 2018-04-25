@@ -1,5 +1,6 @@
 import sys
 import pickle
+import os
 
 filename = sys.argv[1]
 filenameOut = sys.argv[2]
@@ -17,6 +18,7 @@ if "index" not in data[0]:
 
 
 newData = {
+    'filename': os.path.basename(filename),
     'parentFilename': None,
     'networkData': data,
     'seed': None,

@@ -231,11 +231,11 @@ class NetworkManager(object):
         os.system(cmdNetstat)
 
 
-    def sendMessages(self, msgArr):
+    def sendMessages(self, networkData):
         if not self.openConnection():
             return False
 
-        for message in msgArr:
+        for message in networkData.messages:
             if self.config["maxmsg"] and message["index"] > self.config["maxmsg"]:
                 break
 

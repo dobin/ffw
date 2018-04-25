@@ -7,6 +7,7 @@ import utils
 
 from common.crashdata import CrashData
 
+
 class VerifyData(object):
 
     def __init__(self,
@@ -21,17 +22,21 @@ class VerifyData(object):
         self.config = config
         self.crashData = crashData
 
+        self.analyzerType = analyzerType
         if filename is not None:
             self.filename = filename
         elif crashData is not None:
             self.filename = utils.filenameWithoutExtension(crashData.filename)
+            self.filename += "." + self.analyzerType
             self.filename += '.verified'
+        else:
+            self.filename = None
 
         self.faultaddress = faultaddress
         self.backtrace = backtrace
         self.cause = cause
         self.analyzerOutput = analyzerOutput
-        self.analyzerType = analyzerType
+
 
         self.processStdout = None
 

@@ -251,7 +251,7 @@ class Interceptor(object):
         localHost = "0.0.0.0"
         targetHost = "localhost"
 
-        self.config["baseport"] = targetPort
+        self.config["target_port"] = targetPort
 
         # run the targetserver, as configured in config
         serverManager = ServerManager(self.config, 0, targetPort)

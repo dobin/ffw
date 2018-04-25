@@ -47,7 +47,7 @@ def doFuzz(config, useCurses):
     procs = []
     n = 0
 
-    if "nofork" in config and config["nofork"]:
+    if "fuzzer_nofork" in config and config["fuzzer_nofork"]:
         r = random.randint(0, 2**32 - 1)
         basicSlave = basicslave.BasicSlave(config, n, q, r)
         basicSlave.doActualFuzz()
@@ -127,5 +127,5 @@ def printConfig(config):
     print("  Running fuzzer:   ", config["fuzzer"])
     print("  Outcomde dir:     ", config["outcome_dir"])
     print("  Target:           ", config["target_bin"])
-    print("  Input dir:        ", config["inputs"])
+    print("  Input dir:        ", config["input_dir"])
     print("  Analyze response: ", config["response_analysis"])

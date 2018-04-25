@@ -13,12 +13,12 @@ from interceptorclientmockup import MockupClient
 class InterceptorTest(unittest.TestCase):
     def _getConfig(self):
         config = {
-            "inputs": "/tmp/ffw-test/in/",
+            "input_dir": "/tmp/ffw-test/in/",
             "temp_dir": "/tmp/ffw-test/temp/",
 
             "basedir": os.path.dirname(os.path.realpath(__file__)),
             "projdir": os.path.dirname(os.path.realpath(__file__)) + "/test",
-            "baseport": 20000,
+            "target_port": 20000,
             "target_bin": os.path.dirname(os.path.realpath(__file__)) + "/interceptorservermockup.py",
             "target_args": "%(port)i",
             "ipproto": "tcp",
@@ -29,7 +29,7 @@ class InterceptorTest(unittest.TestCase):
     def test_tcpintercept(self):
         #logging.basicConfig(level=logging.DEBUG)
         config = self._getConfig()
-        baseport = config["baseport"]
+        baseport = config["target_port"]
         targetPort = 10000
 
         mockupClient = MockupClient(targetPort)
@@ -38,7 +38,7 @@ class InterceptorTest(unittest.TestCase):
         # start interceptor in background
         interceptorThread = threading.Thread(
             target=interceptor.doIntercept,
-            args=(targetPort, config["baseport"]))
+            args=(targetPort, config["target_port"]))
         interceptorThread.start()
         time.sleep(1)
 
@@ -61,7 +61,7 @@ class InterceptorTest(unittest.TestCase):
                 break
 
         # check if we got teh data
-        filename = config["inputs"] + "data_0.pickle"
+        filename = config["input_dir"] + "data_0.pickle"
         corpusData = CorpusData(config, filename)
         corpusData.readFromFile()
 

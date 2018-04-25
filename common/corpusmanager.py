@@ -28,7 +28,7 @@ class CorpusManager(object):
 
     def loadCorpusFiles(self):
         """Load all initial corpus files from in/."""
-        inputFiles = glob.glob(os.path.join(self.config["inputs"], '*'))
+        inputFiles = glob.glob(os.path.join(self.config["input_dir"], '*'))
         for inputFile in inputFiles:
             filename = os.path.basename(inputFile)
             corpusData = self._createCorpusData(filename)

@@ -10,7 +10,7 @@ from mockupfuzzer import MockupFuzzer
 class CorpusFileTest(unittest.TestCase):
     def _getConfig(self):
         config = {
-            "inputs": "/tmp/",
+            "input_dir": "/tmp/",
         }
         return config
 

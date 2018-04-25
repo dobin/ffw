@@ -19,7 +19,7 @@ class FuzzerInterface(object):
         self.seed = None
 
     def _generateSeed(self):
-        self.seed = random.randint(0, 2**64 - 1)
+        self.seed = str(random.randint(0, 2**64 - 1))
 
 
     def fuzz(self, corpusData):

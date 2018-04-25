@@ -73,7 +73,7 @@ config = {
     "fuzzer": "Radamsa",
 
     # Directory of input files
-    "inputs": PROJDIR + "in",
+    "input_dir": PROJDIR + "in",
 
     # Directory of verified files
     "verified_dir": PROJDIR + "verified",
@@ -81,7 +81,7 @@ config = {
     # if you have multiple ffw fuzzers active,
     # change this between them
     # Use something between 20'0000 and 30'000 or bad stuff may happen
-    "baseport": 20000,
+    "target_port": 20000,
 
     # dont change this
     "basedir": BASEDIR,
