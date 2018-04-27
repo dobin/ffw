@@ -1,8 +1,8 @@
-fuzzers = {
+mutators = {
     "Dumb":
     {
         "name": "Dumb",
-        "file": "fuzzer/fuzzer_dumb.py",
+        "file": "mutator/mutator_dumb.py",
         "args": '%(seed)s "%(input)s" %(output)s',
         "type": "mut"
     },

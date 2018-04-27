@@ -5,24 +5,15 @@ import os
 
 from common.corpusdata import CorpusData
 from common.networkdata import NetworkData
-from fuzzer.fuzzerinterface import FuzzerInterface
+from mutator.mutatorinterface import MutatorInterface, testMutatorConfig
+import testutils
 
 
 class CorpusFileTest(unittest.TestCase):
-    def _getConfig(self):
-        config = {
-            "input_dir": "/tmp/",
-            "temp_dir": "/tmp/",
-            "basedir": os.path.dirname(os.path.realpath(__file__)) + "/..",
-        }
-
-        return config
-
-
     def _getNetworkData(self, config):
         networkMessages = [
             {
-                'data': 'msg 1 cli',
+                'data': 'msg 1 cli AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
                 'from': 'cli',
                 'index': 0,
             },
@@ -38,19 +29,16 @@ class CorpusFileTest(unittest.TestCase):
         return networkData
 
 
-    def _getCorpusData(self, config):
-        networkData = self._getNetworkData(config)
-        corpusData = CorpusData(config, 'data0', networkData)
-        return corpusData
-
-
     def test_dumbfuzzer(self):
-        config = self._getConfig()
-        config['fuzzer'] = 'Dumb'
-        fuzzerInterface = FuzzerInterface(config)
+        config = testutils.getConfig()
+        config['mutator'] = 'Dumb'
+        self.assertTrue(testMutatorConfig(config, testForInputFiles=False))
+        mutatorInterface = MutatorInterface(config)
 
-        corpusData = self._getCorpusData(config)
-        fuzzedCorpusData = fuzzerInterface.fuzz(corpusData)
+        corpusData = testutils.getCorpusData(
+            config,
+            networkData=self._getNetworkData(config))
+        fuzzedCorpusData = mutatorInterface.fuzz(corpusData)
 
         # note that we only have one cli message, which is at index 0
         self.assertNotEqual(corpusData.networkData.messages[0]['data'],
@@ -58,12 +46,15 @@ class CorpusFileTest(unittest.TestCase):
 
 
     def test_radamsafuzzer(self):
-        config = self._getConfig()
-        config['fuzzer'] = 'Radamsa'
-        fuzzerInterface = FuzzerInterface(config)
+        config = testutils.getConfig()
+        config['mutator'] = 'Radamsa'
+        self.assertTrue(testMutatorConfig(config, testForInputFiles=False))
+        mutatorInterface = MutatorInterface(config)
 
-        corpusData = self._getCorpusData(config)
-        fuzzedCorpusData = fuzzerInterface.fuzz(corpusData)
+        corpusData = testutils.getCorpusData(
+            config,
+            networkData=self._getNetworkData(config))
+        fuzzedCorpusData = mutatorInterface.fuzz(corpusData)
 
         # note that we only have one cli message, which is at index 0
         self.assertNotEqual(corpusData.networkData.messages[0]['data'],

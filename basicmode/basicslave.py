@@ -8,7 +8,7 @@ import sys
 
 from network import networkmanager
 from common.corpusmanager import CorpusManager
-from fuzzer.fuzzerinterface import FuzzerInterface
+from mutator.mutatorinterface import MutatorInterface
 from target.servermanager import ServerManager
 from common.crashdata import CrashData
 
@@ -48,7 +48,7 @@ class BasicSlave(object):
         corpusManager = CorpusManager(self.config)
         corpusManager.loadCorpusFiles()
 
-        fuzzerInterface = FuzzerInterface(self.config)
+        mutatorInterface = MutatorInterface(self.config)
 
         serverManager = ServerManager(
             self.config,
@@ -107,7 +107,7 @@ class BasicSlave(object):
                 serverManager.restart()
                 continue
 
-            corpusData = fuzzerInterface.fuzz(selectedCorpusData)
+            corpusData = mutatorInterface.fuzz(selectedCorpusData)
 
             sendDataResult = networkManager.sendPartialPreData(corpusData.networkData)
             if not sendDataResult:

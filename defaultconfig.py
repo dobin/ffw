@@ -49,7 +49,7 @@ DefaultConfig = {
     "keep_temp": False,
 
     # which fuzzer should be used
-    "fuzzer": "Radamsa",
+    "mutator": "Radamsa",
 
     # Dharma grammars
     "grammars": "grammars/",

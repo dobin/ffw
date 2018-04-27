@@ -10,7 +10,6 @@ import glob
 
 from network import replay
 from network.interceptor import Interceptor
-from fuzzer import fuzzer_list
 from clientfuzzer import clientfuzzermaster
 from verifier import verifier
 from verifier import minimizer
@@ -20,41 +19,7 @@ from network import proto_vnc
 
 from basicmode import basicmaster
 from honggmode import honggmaster
-import defaultconfig
-import distutils.spawn
-
-
-def checkRequirements(config):
-    if not os.path.isfile(config["target_bin"]):
-        print "Target binary not found: " + str(config["target_bin"])
-        return False
-
-    if not os.path.isdir(config["temp_dir"]):
-        print "Temp directory not found: " + str(config["temp_dir"])
-        return False
-
-
-    if not os.path.isfile(config["target_bin"]):
-        print "Target Binary not found: " + str(config["target_bin"])
-        return False
-
-    if distutils.spawn.find_executable("gdb") is None:
-        print "GDB not installed?"
-        return False
-
-    return True
-
-
-def checkFuzzRequirements(config):
-    if fuzzer_list.fuzzers[config["fuzzer"]]["type"] == "gen":
-        return True
-
-    f = os.path.join(config["input_dir"], '*.pickle')
-    if len( glob.glob(f)) <= 0:
-        print "No intercepted data found: " + str(f)
-        return False
-
-    return True
+from configmanager import ConfigManager
 
 
 # https://stackoverflow.com/questions/9321741/printing-to-screen-and-writing-to-a-file-at-the-same-time
@@ -82,44 +47,6 @@ def setupLoggingWithFile(config):
 def setupLoggingStandard():
     logging.basicConfig(format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                         datefmt='%m-%d %H:%M')
-
-
-def loadConfig(configfilename, basedir):
-    config = defaultconfig.DefaultConfig.copy()
-
-    rawData = open(configfilename, 'r').read()
-    # hmm this produces some strange behaviour upon string comparison
-    # of the values of the dict
-    #pyData = ast.literal_eval(rawData)
-    pyData = eval(rawData)
-
-
-    requiredConfigKeys = [
-        'name',
-        'target_bin',
-        'target_args',
-        'target_port',
-        'ipproto']
-    for key in requiredConfigKeys:
-        if key not in pyData:
-            print "Configuration directive not found: " + key
-            return None
-
-    pyData["basedir"] = basedir
-    pyData["projdir"] = os.getcwd() + "/"
-
-    for key in pyData:
-        config[key] = pyData[key]
-
-    # cleanup. Damn this is ugly.
-    config["target_bin"] = config["projdir"] + config["target_bin"]
-    config["input_dir"] = config["projdir"] + config["input_dir"]
-    config["temp_dir"] = config["projdir"] + config["temp_dir"]
-    config["outcome_dir"] = config["projdir"] + config["outcome_dir"]
-    config["verified_dir"] = config["projdir"] + config["verified_dir"]
-    config["grammars"] = config["projdir"] + config["grammars"]
-
-    return config
 
 
 def realMain(config):
@@ -155,6 +82,7 @@ def realMain(config):
     args = parser.parse_args()
 
     # wtf is this
+    configManager = ConfigManager()
     if config is None:
         if args.config is None:
             print "No config specified. Either start via fuzzing.py, or with --config <configfile>"
@@ -164,12 +92,12 @@ def realMain(config):
                 print "Please specify FFW basedir"
                 return False
             else:
-                config = loadConfig(args.config, args.basedir)
+                config = configManager.loadConfigByFile(args.config, args.basedir)
                 if config is None:
                     print "Invalid config"
                     return False
 
-    if not checkRequirements(config):
+    if not configManager.checkRequirements(config):
         print "Requirements not met."
         return
 
@@ -218,17 +146,17 @@ def realMain(config):
         t.test()
 
     if args.fuzz:
-        if not checkFuzzRequirements(config):
+        if not configManager.checkFuzzRequirements(config):
             return False
         basicmaster.doFuzz(config, args.gui)
 
     if args.clientfuzz:
-        if not checkFuzzRequirements(config):
+        if not configManager.checkFuzzRequirements(config):
             return False
         clientfuzzermaster.doFuzz(config, args.gui)
 
     if args.honggmode:
-        if not checkFuzzRequirements(config):
+        if not configManager.checkFuzzRequirements(config):
             return False
 
         if args.honggcov == "hw" or config["honggcov"] == "hw":

@@ -13,7 +13,7 @@ from . import honggcomm
 from target.servermanager import ServerManager
 from common.crashdata import CrashData
 from honggcorpusmanager import HonggCorpusManager
-from fuzzer.fuzzerinterface import FuzzerInterface
+from mutator.mutatorinterface import MutatorInterface
 
 
 def signal_handler(signal, frame):
@@ -71,7 +71,7 @@ class HonggSlave(object):
         targetPort = self.config["target_port"] + self.threadId
         self.targetPort = targetPort
 
-        fuzzerInterface = FuzzerInterface(self.config)
+        mutatorInterface = MutatorInterface(self.config)
 
         networkManager = networkmanager.NetworkManager(self.config, targetPort)
         self.corpusManager = HonggCorpusManager(self.config)
@@ -177,7 +177,7 @@ class HonggSlave(object):
                     self.iterStats["iterCount"] += 1
 
                     corpus = self.corpusManager.getRandomCorpus()
-                    honggCorpusData = fuzzerInterface.fuzz(corpus)
+                    honggCorpusData = mutatorInterface.fuzz(corpus)
                     #if not honggCorpusData.fuzzData():
                     #    logging.error("Could not fuzz the data")
                     #    return

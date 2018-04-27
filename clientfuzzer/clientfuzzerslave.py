@@ -8,7 +8,6 @@ import sys
 import pickle
 import os
 
-from fuzzer import fuzzingiterationdata
 from clientmanager import ClientManager
 from clientfuzzerserver import ClientFuzzerServer
 import utils

@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 
 import os
+from configmanager import ConfigManager
+
+from common.networkdata import NetworkData
+from common.corpusdata import CorpusData
+from common.crashdata import CrashData
+from common.verifydata import VerifyData
 
 
 def _delDir(directory):
@@ -38,3 +44,55 @@ def prepareFs(config):
             os.makedirs(config["input_dir"])
         else:
             _delDir(config["input_dir"])
+
+
+def getConfig():
+    config = {
+        "input_dir": "/tmp/ffw-test/corpus",
+        "temp_dir": "/tmp/ffw-test/temp",
+    }
+    basedir = os.path.dirname(os.path.realpath(__file__)) + "/..",
+
+    config['basedir'] = basedir[0]
+
+    return config
+
+
+def getNetworkData(config):
+    networkMessages = [
+        {
+            'data': 'msg 1 cli',
+            'from': 'cli',
+            'index': 0,
+        },
+        {
+            'data': 'msg 2 srv',
+            'from': 'srv',
+            'index': 1,
+        }
+    ]
+
+    networkData = NetworkData(config,
+                              networkMessages)
+    return networkData
+
+
+def getCorpusData(config, networkData=None, filename='data0'):
+    if networkData is None:
+        networkData = getNetworkData(config)
+
+    corpusData = CorpusData(config, filename, networkData)
+    return corpusData
+
+
+def getCrashData(config):
+    corpusData = getCorpusData(config)
+    crashData = CrashData(config, corpusData, '-')
+    crashData.setCrashInformation(asanOutput="meh")
+    return crashData
+
+
+def getVerifyData(config):
+    crashData = getCrashData(config)
+    verifyData = VerifyData(config, crashData, faultaddress=1337)
+    return verifyData

@@ -7,29 +7,74 @@ import subprocess
 import copy
 import time
 import sys
+import glob
 
-from fuzzer_list import fuzzers
+from mutator_list import mutators
 import utils
 
 
-class FuzzerInterface(object):
+def testMutatorConfig(config, testForInputFiles=True):
+    """
+    Test if config for mutator is ok.
 
+    This is not being used for mutator related unit tests.
+    """
+    # Unit tests to not provide input files
+    # But this check is still part of the fuzzer check
+    if testForInputFiles:
+        if mutators[ config["mutator"] ]["type"] is not "gen":
+            f = os.path.join(config["input_dir"], '*.pickle')
+            if len( glob.glob(f)) <= 0:
+                print "No intercepted data found: " + str(f)
+                return False
+
+    if not config["mutator"] in mutators:
+        logging.error("Could not find fuzzer with name: " + self.config["fuzzer"])
+        return False
+    fuzzerData = mutators[ config["mutator"] ]
+
+    fuzzerBin = config["basedir"] + "/" + fuzzerData["file"]
+    if not os.path.isfile(fuzzerBin):
+        logging.error("Could not find fuzzer binary: " + fuzzerBin)
+        return False
+
+    return True
+
+
+class MutatorInterface(object):
     def __init__(self, config):
         self.config = config
         self.seed = None
+        self._loadConfig()
+
+
+    def _loadConfig(self):
+        # checked in testMutatorConfig
+        self.fuzzerData = mutators[ self.config["mutator"] ]
+
+        # checked in testMutatorConfig
+        self.fuzzerBin = self.config["basedir"] + "/" + self.fuzzerData["file"]
+
+        # not checked atm
+        self.grammars_string = ""
+        if "grammars" in self.config:
+            for root, dirs, files in os.walk(self.config["grammars"]):
+                for element in files:
+                    self.grammars_string += self.config["grammars"] + element + " "
+
+        # check generative fuzzer
+        if self.fuzzerData["type"] is not "mut":
+            logging.debug("Not loading any data, as generative fuzzer")
+            # create fake data.
+            # TODO
+
 
     def _generateSeed(self):
         self.seed = str(random.randint(0, 2**64 - 1))
 
 
     def fuzz(self, corpusData):
-        """
-        Creates self.fuzzedData.
-
-        By selecting a message, and mutate it by calling a fuzzer
-        returns False if something went wrong
-        """
-        logging.debug("Fuzzing the data")
+        logging.debug("Fuzz the data")
 
         self._generateSeed()
 
@@ -53,7 +98,7 @@ class FuzzerInterface(object):
 
 
     def _writeDataToFile(self, data):
-        """Write the data to be fuzzed to a file."""
+        """Write the data to be mutated to a file."""
         file = open(self.fuzzingInFile, "w")
         file.write(data)
         file.close()
@@ -61,7 +106,7 @@ class FuzzerInterface(object):
 
     def _readDataFromFile(self):
         """
-        Read the fuzzed data
+        Read the mutated data.
 
         The fuzzer has generated a new file with fuzzed data.
         Read it, then remove that file.
@@ -92,30 +137,15 @@ class FuzzerInterface(object):
 
     def _runFuzzer(self):
         """Call external fuzzer"""
-        logging.info("Call fuzzer, seed: " + str(self.seed))
+        logging.info("Call mutator, seed: " + str(self.seed))
 
-        fuzzerData = fuzzers[ self.config["fuzzer"] ]
-        if not fuzzerData:
-            logging.error("Could not find fuzzer with name: " + self.config["fuzzer"])
-            return False
-
-        fuzzerBin = self.config["basedir"] + "/" + fuzzerData["file"]
-        if not os.path.isfile(fuzzerBin):
-            logging.error("Could not find fuzzer binary: " + fuzzerBin)
-            return False
-
-        grammars_string = ""
-        if "grammars" in self.config:
-            for root, dirs, files in os.walk(self.config["grammars"]):
-                for element in files:
-                    grammars_string += self.config["grammars"] + element + " "
-
-        args = fuzzerData["args"] % ({
+        args = self.fuzzerData["args"] % ({
             "seed": self.seed,
-            "grammar": grammars_string,
+            "grammar": self.grammars_string,
             "input": self.fuzzingInFile,
             "output": self.fuzzingOutFile})
-        logging.debug("CMD: " + args)
-        subprocess.call(fuzzerBin + " " + args, shell=True)
+
+        logging.debug("Mutator command args: " + args)
+        subprocess.call(self.fuzzerBin + " " + args, shell=True)
 
         return True

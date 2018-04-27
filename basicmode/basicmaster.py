@@ -8,7 +8,6 @@ import logging
 from multiprocessing import Process, Queue
 
 from . import basicslave
-from fuzzer.fuzzer_list import fuzzers
 import utils
 
 
@@ -23,26 +22,6 @@ def doFuzz(config, useCurses):
     # have to remove sigint handler before forking children
     # so ctlr-c works
     orig = signal.signal(signal.SIGINT, signal.SIG_IGN)
-
-    printConfig(config)
-    if fuzzers[config["fuzzer"]]["type"] == "mut":
-        logging.debug("Loading recorded data...")
-    else:
-        logging.debug("Not loading any data, as generative fuzzer")
-        # create fake data.
-        # an list with: a list of network messages
-        inputs = [
-            [
-                {
-                    "data": "",
-                    "from": "cli",
-                },
-                {
-                    "data": "",
-                    "from": "srv",
-                },
-            ]
-        ]
 
     procs = []
     n = 0
@@ -120,12 +99,3 @@ def fuzzConsole(config, q, procs):
             break
 
     print("Finished")
-
-
-def printConfig(config):
-    print("Config:  ")
-    print("  Running fuzzer:   ", config["fuzzer"])
-    print("  Outcomde dir:     ", config["outcome_dir"])
-    print("  Target:           ", config["target_bin"])
-    print("  Input dir:        ", config["input_dir"])
-    print("  Analyze response: ", config["response_analysis"])
