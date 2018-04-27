@@ -63,7 +63,7 @@ config = {
 
     # input/output for fuzzer is generated here (so he can mutate it)
     # also ASAN log files
-    "temp_dir": PROJDIR + "temp",
+    "temp_dir": PROJDIR + "temp_dir",
 
     # fuzzing results are stored in out/
     "outcome_dir": PROJDIR + "out",
