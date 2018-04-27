@@ -15,11 +15,11 @@ def _delDir(directory):
 
 
 def prepareFs(config):
-    if 'temp' in config:
-        if not os.path.exists(config["temp"]):
-            os.makedirs(config["temp"])
+    if 'temp_dir' in config:
+        if not os.path.exists(config["temp_dir"]):
+            os.makedirs(config["temp_dir"])
         else:
-            _delDir(config["temp"])
+            _delDir(config["temp_dir"])
 
     if 'outcome_dir' in config:
         if not os.path.exists(config["outcome_dir"]):
@@ -33,7 +33,7 @@ def prepareFs(config):
         else:
             _delDir(config['verified_dir'])
 
-    if 'inputs' in config:
+    if 'input_dir' in config:
         if not os.path.exists(config["input_dir"]):
             os.makedirs(config["input_dir"])
         else:

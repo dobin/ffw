@@ -55,7 +55,7 @@
 
     # input/output for fuzzer is generated here (so he can mutate it)
     # also ASAN log files
-    "temp_dir": "temp",
+    "temp_dir": "temp_dir",
 
     # keep generated output files
     "keep_temp": False,

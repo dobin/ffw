@@ -57,7 +57,7 @@ DefaultConfig = {
 
     # input/output for fuzzer is generated here (so he can mutate it)
     # also ASAN log files
-    "temp_dir": "temp",
+    "temp_dir": "temp_dir",
     # fuzzing results are stored in out/
     "outcome_dir": "crashes",
     # Directory of input files

@@ -13,7 +13,7 @@ class HonggCorpusManagerTest(unittest.TestCase):
     def _getConfig(self):
         config = {
             "input_dir": "/tmp/ffw-test/in/",
-            "temp": "/tmp/ffw-test/temp/"
+            "temp_dir": "/tmp/ffw-test/temp/"
         }
         return config
 

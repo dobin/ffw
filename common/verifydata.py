@@ -22,7 +22,11 @@ class VerifyData(object):
         self.config = config
         self.crashData = crashData
 
-        self.analyzerType = analyzerType
+        if analyzerType is not None:
+            self.analyzerType = analyzerType
+        else:
+            self.analyzerType = ''
+
         if filename is not None:
             self.filename = filename
         elif crashData is not None:
