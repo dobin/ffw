@@ -4,7 +4,6 @@
 #   target_bin
 #   target_args
 #   target_port
-#   port
 #   ipproto
 #
 # often:
@@ -57,7 +56,7 @@ DefaultConfig = {
 
     # input/output for fuzzer is generated here (so he can mutate it)
     # also ASAN log files
-    "temp_dir": "temp_dir",
+    "temp_dir": "temp",
     # fuzzing results are stored in out/
     "outcome_dir": "crashes",
     # Directory of input files

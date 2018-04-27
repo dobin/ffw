@@ -33,6 +33,11 @@ def checkRequirements(config):
         print "Temp directory not found: " + str(config["temp_dir"])
         return False
 
+
+    if not os.path.isfile(config["target_bin"]):
+        print "Target Binary not found: " + str(config["target_bin"])
+        return False
+
     if distutils.spawn.find_executable("gdb") is None:
         print "GDB not installed?"
         return False
@@ -80,31 +85,41 @@ def setupLoggingStandard():
 
 
 def loadConfig(configfilename, basedir):
-    #defaultConfig = defaultconfig.DefaultConfig
+    config = defaultconfig.DefaultConfig.copy()
 
     rawData = open(configfilename, 'r').read()
-
     # hmm this produces some strange behaviour upon string comparison
     # of the values of the dict
     #pyData = ast.literal_eval(rawData)
     pyData = eval(rawData)
 
+
+    requiredConfigKeys = [
+        'name',
+        'target_bin',
+        'target_args',
+        'target_port',
+        'ipproto']
+    for key in requiredConfigKeys:
+        if key not in pyData:
+            print "Configuration directive not found: " + key
+            return None
+
     pyData["basedir"] = basedir
     pyData["projdir"] = os.getcwd() + "/"
 
+    for key in pyData:
+        config[key] = pyData[key]
+
     # cleanup. Damn this is ugly.
-    pyData["target_bin"] = pyData["projdir"] + pyData["target_bin"]
+    config["target_bin"] = config["projdir"] + config["target_bin"]
+    config["input_dir"] = config["projdir"] + config["input_dir"]
+    config["temp_dir"] = config["projdir"] + config["temp_dir"]
+    config["outcome_dir"] = config["projdir"] + config["outcome_dir"]
+    config["verified_dir"] = config["projdir"] + config["verified_dir"]
+    config["grammars"] = config["projdir"] + config["grammars"]
 
-    pyData["input_dir"] = pyData["projdir"] + pyData["input_dir"]
-    pyData["temp_dir"] = pyData["projdir"] + pyData["temp_dir"]
-    pyData["outcome_dir"] = pyData["projdir"] + pyData["outcome_dir"]
-    pyData["verified_dir"] = pyData["projdir"] + pyData["verified_dir"]
-
-    pyData["grammars"] = pyData["projdir"] + pyData["grammars"]
-
-
-
-    return pyData
+    return config
 
 
 def realMain(config):
@@ -139,15 +154,20 @@ def realMain(config):
     parser.add_argument('--basedir', help='FFW base directory')
     args = parser.parse_args()
 
+    # wtf is this
     if config is None:
         if args.config is None:
             print "No config specified. Either start via fuzzing.py, or with --config <configfile>"
-            return
+            return False
         else:
             if not args.basedir:
                 print "Please specify FFW basedir"
+                return False
             else:
                 config = loadConfig(args.config, args.basedir)
+                if config is None:
+                    print "Invalid config"
+                    return False
 
     if not checkRequirements(config):
         print "Requirements not met."
