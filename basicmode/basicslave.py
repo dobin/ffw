@@ -47,6 +47,9 @@ class BasicSlave(object):
 
         corpusManager = CorpusManager(self.config)
         corpusManager.loadCorpusFiles()
+        if corpusManager.getCorpusCount() == 0:
+            logging.error("No corpus input data found in: " + self.config['input_dir'])
+            return
 
         mutatorInterface = MutatorInterface(self.config)
 

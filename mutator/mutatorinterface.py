@@ -13,21 +13,12 @@ from mutator_list import mutators
 import utils
 
 
-def testMutatorConfig(config, testForInputFiles=True):
+def testMutatorConfig(config):
     """
     Test if config for mutator is ok.
 
     This is not being used for mutator related unit tests.
     """
-    # Unit tests to not provide input files
-    # But this check is still part of the fuzzer check
-    if testForInputFiles:
-        if mutators[ config["mutator"] ]["type"] is not "gen":
-            f = os.path.join(config["input_dir"], '*.pickle')
-            if len( glob.glob(f)) <= 0:
-                print "No intercepted data found: " + str(f)
-                return False
-
     if not config["mutator"] in mutators:
         logging.error("Could not find fuzzer with name: " + self.config["fuzzer"])
         return False
@@ -85,15 +76,14 @@ class MutatorInterface(object):
             self.config["temp_dir"],
             str(self.seed) + ".out.raw")
 
-        corpusDataNew = copy.deepcopy(corpusData)
-        corpusDataNew.seed = self.seed
-        corpusDataNew.networkData.selectMessage()
+        corpusDataNew = corpusData.createFuzzChild(self.seed)
         initialData = corpusDataNew.networkData.getFuzzMessageData()
 
         self._writeDataToFile(initialData)
         self._runFuzzer()
         fuzzedData = self._readDataFromFile()
         corpusDataNew.networkData.setFuzzMessageData(fuzzedData)
+
         return corpusDataNew
 
 

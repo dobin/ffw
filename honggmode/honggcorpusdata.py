@@ -19,11 +19,13 @@ class HonggCorpusData(CorpusData):
                  filename,
                  networkData=None,
                  processed=True,
-                 isExternal=False):
+                 isExternal=False,
+                 parentFilename=None):
         super(self.__class__, self).__init__(config, filename, networkData)
 
         self.processed = processed
         self.isExternal = isExternal
+
         self.stats = {
             'crashes': 0,
             'new': 0,

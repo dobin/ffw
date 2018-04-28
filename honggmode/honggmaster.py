@@ -6,8 +6,9 @@ import logging
 import os
 from multiprocessing import Process, Queue
 from Queue import Empty
-
 import time
+
+from honggcorpusmanager import HonggCorpusManager
 from . import honggslave
 
 
@@ -23,6 +24,13 @@ def doFuzz(config):
     logging.basicConfig(level=logging.ERROR)
 
     if not _honggExists(config):
+        return
+
+    # this corpusManager is only to test if we have input files
+    corpusManager = HonggCorpusManager(config)
+    corpusManager.loadCorpusFiles()
+    if corpusManager.getCorpusCount() == 0:
+        logging.error("No corpus input data found in: " + config['input_dir'])
         return
 
     # special mode, will not fork

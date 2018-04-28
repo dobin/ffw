@@ -103,6 +103,8 @@ class Verifier(object):
             serverCrashDataPtraceAsan = self._serverCrashDataWithPtraceAsan(
                 serverCrashDataPtrace.asanOutput
             )
+        else:
+            serverCrashDataPtraceAsan = None
         serverCrashDataGdb = self._verifyCrashWithGdb(crashData)
 
         serverCrashDataMerged = self._mergeVerifyCrashData(

@@ -6,6 +6,7 @@ import os
 from common.networkdata import NetworkData
 from honggmode.honggcorpusdata import HonggCorpusData
 from honggmode.honggcorpusmanager import HonggCorpusManager
+from mutator.mutatorinterface import MutatorInterface
 import testutils
 
 
@@ -13,7 +14,9 @@ class HonggCorpusManagerTest(unittest.TestCase):
     def _getConfig(self):
         config = {
             "input_dir": "/tmp/ffw-test/in/",
-            "temp_dir": "/tmp/ffw-test/temp/"
+            "temp_dir": "/tmp/ffw-test/temp/",
+            "mutator": "Dumb",
+            "basedir": os.path.dirname(os.path.realpath(__file__)) + "/..",
         }
         return config
 
@@ -56,6 +59,34 @@ class HonggCorpusManagerTest(unittest.TestCase):
         honggCorpusManager = HonggCorpusManager(config)
         honggCorpusManager.loadCorpusFiles()
         self.assertEqual(honggCorpusManager.getCorpusCount(), 1)
+
+
+    def test_loadfilesdep(self):
+        """Load files, and test its dependencies (parent)."""
+        config = self._getConfig()
+        testutils.prepareFs(config)
+
+        # write an corpus file
+        corpusData = self._getCorpusData(config)
+        corpusData.writeToFile()
+
+        # wrie a fuzzed file
+        mutatorInterface = MutatorInterface(config)
+        corpusDataFuzzed = mutatorInterface.fuzz(corpusData)
+        corpusDataFuzzed.writeToFile()
+
+        # load all corpus files
+        honggCorpusManager = HonggCorpusManager(config)
+        honggCorpusManager.loadCorpusFiles()
+        self.assertEqual(honggCorpusManager.getCorpusCount(), 2)
+
+        for corpus in honggCorpusManager:
+            if corpus.getParentCorpus() is not None:
+                self.assertNotEqual(corpus.filename, 'data0')
+                self.assertEqual(corpus.getParentCorpus().filename, 'data0')
+            else:
+                # this is the main
+                self.assertEqual(corpus.filename, 'data0')
 
 
     def test_getNotified(self):

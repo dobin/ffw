@@ -3,12 +3,14 @@
 import pickle
 import logging
 import os
+import copy
 
 from networkdata import NetworkData
-from utils import xstr
+from utils import xstr, filenameWithoutExtension, shortSeed
 
 
 class CorpusData(object):
+    """Dual: Corpus or Fuzzed Data."""
 
     def __init__(self,
                  config,
@@ -20,13 +22,35 @@ class CorpusData(object):
 
         self.filename = filename  # Type: String
         self.parentFilename = parentFilename  # Type: String
-
         self.networkData = networkData  # Type: NetworkData
 
         self.seed = seed  # Type: String
         self.time = None  # Type: String
 
         self.basePath = config["input_dir"]
+
+        self._parent = None
+
+
+    def getParentCorpus(self):
+        return self._parent
+
+    def createFuzzChild(self, seed):
+        corpusData = copy.deepcopy(self)
+        corpusData.parentFilename = self.filename
+        corpusData._parent = self
+        corpusData.seed = seed
+        corpusData.networkData.selectMessage()
+
+        corpusData.createNewFilename()
+        return corpusData
+
+
+    def createNewFilename(self):
+        self.filename = filenameWithoutExtension(self.filename)
+        self.filename += '_msg' + str(self.networkData.getFuzzMessageIndex())
+        self.filename += '_' + shortSeed(self.seed)
+        self.filename += '.pickle'
 
 
     def getRawData(self):
@@ -51,6 +75,7 @@ class CorpusData(object):
     def writeToFile(self):
         rawData = self.getRawData()
         path = os.path.join(self.basePath, self.filename)
+        logging.debug("Write corpus to file: " + path)
         with open(path, 'w') as outfile:
             pickle.dump(rawData, outfile)
 
@@ -59,12 +84,7 @@ class CorpusData(object):
         filepath = os.path.join(self.basePath, self.filename)
         with open(filepath, 'r') as infile:
             rawData = pickle.load(infile)
-
-            if 'parentFilename' in rawData:
-                self.parentFilename = rawData["parentFilename"]
-            self.networkData = NetworkData(self.config, rawData["networkData"])
-            self.seed = rawData["seed"]
-            self.time = rawData["time"]
+            self.setRawData(rawData)
 
         # check if no client message is found in an input
         if next((i for i in self.networkData.messages if i["from"] == "cli"), None) is None:
@@ -74,7 +94,6 @@ class CorpusData(object):
     def __str__(self):
         s = ""
         s += "Filename: " + xstr(self.filename) + "\n"
-        s += "Parent Filename: " + xstr(self.parentFilename) + "\n"
         s += "NetworkData: \n" + xstr(self.networkData) + "\n"
         s += "Seed: " + xstr(self.seed) + "\n"
         s += "Time: " + xstr(self.time) + "\n"

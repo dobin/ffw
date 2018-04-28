@@ -23,7 +23,8 @@ class CrashData():
             self.filename = filename
         elif corpusData is not None:
             self.filename = utils.filenameWithoutExtension(corpusData.filename)
-            self.filename += '_' + self.corpusData.seed
+            self.filename += '_msg' + str(self.corpusData.networkData.getFuzzMessageIndex())
+            self.filename += '_' + utils.shortSeed(self.corpusData.seed)
             self.filename += '.crash'
 
         self.writeTxt = False

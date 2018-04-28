@@ -76,6 +76,9 @@ class HonggSlave(object):
         networkManager = networkmanager.NetworkManager(self.config, targetPort)
         self.corpusManager = HonggCorpusManager(self.config)
         self.corpusManager.loadCorpusFiles()
+        if self.corpusManager.getCorpusCount() == 0:
+            logging.error("No corpus input data found in: " + self.config['input_dir'])
+            return
         self.corpusManager.startWatch()
 
         # start honggfuzz with target binary
@@ -178,10 +181,6 @@ class HonggSlave(object):
 
                     corpus = self.corpusManager.getRandomCorpus()
                     honggCorpusData = mutatorInterface.fuzz(corpus)
-                    #if not honggCorpusData.fuzzData():
-                    #    logging.error("Could not fuzz the data")
-                    #    return
-
                     couldSend = self._connectAndSendData(networkManager, honggCorpusData.networkData)
 
                 if couldSend:
@@ -208,7 +207,7 @@ class HonggSlave(object):
                 if honggCorpusData is not None:
                     logging.info( "--[ Adding file to corpus...")
                     self.corpusManager.addNewCorpusData(honggCorpusData)
-                    ###honggCorpusData.getParentCorpus().statsAddNew()
+                    honggCorpusData.getParentCorpus().statsAddNew()
 
                     self.iterStats["corpusCount"] += 1
 
@@ -334,6 +333,6 @@ class HonggSlave(object):
 
     def _handleCrash(self, honggCorpusData):
         # update stats
-        honggCorpusData.getParentCorpus().statsAddCrash()
+        #honggCorpusData.getParentCorpus().statsAddCrash()
         crashData = CrashData(self.config, honggCorpusData, '-')
         crashData.writeToFile()

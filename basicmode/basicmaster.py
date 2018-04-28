@@ -7,6 +7,7 @@ import logging
 
 from multiprocessing import Process, Queue
 
+from common.corpusmanager import CorpusManager
 from . import basicslave
 import utils
 
@@ -25,6 +26,13 @@ def doFuzz(config, useCurses):
 
     procs = []
     n = 0
+
+    # this corpusManager is only to test if we have input files
+    corpusManager = CorpusManager(config)
+    corpusManager.loadCorpusFiles()
+    if corpusManager.getCorpusCount() == 0:
+        logging.error("No corpus input data found in: " + config['input_dir'])
+        return
 
     if "fuzzer_nofork" in config and config["fuzzer_nofork"]:
         r = random.randint(0, 2**32 - 1)
@@ -72,7 +80,6 @@ def fuzzCurses(config, q, procs):
                 "crashcount": r[3],
             }
             gui.updateGui(screen, boxes, data)
-            #print "%d: %4d  %8d  %5d" % r
         except KeyboardInterrupt:
             # handle ctrl-c
             for p in procs:
@@ -84,12 +91,28 @@ def fuzzCurses(config, q, procs):
             break
 
 
+def checkIfOneAlive(procs):
+    oneAlive = False
+    for p in procs:
+        if p.is_alive():
+            oneAlive = True
+
+    return oneAlive
+
+
 def fuzzConsole(config, q, procs):
     print("Thread#  Fuzz/s   Count   Crashes")
     while True:
         try:
-            r = q.get()
-            print("%d: %4.2f  %8d  %5d" % r)
+            try:
+                r = q.get(timeout=3)
+                print("%d: %4.2f  %8d  %5d" % r)
+            except:
+                # check if at least one process is alive
+                # if not, exit
+                if not checkIfOneAlive(procs):
+                    break
+
         except KeyboardInterrupt:
             # handle ctrl-c
             for p in procs:

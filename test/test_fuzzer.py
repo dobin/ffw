@@ -10,6 +10,16 @@ import testutils
 
 
 class CorpusFileTest(unittest.TestCase):
+    def _getConfig(self):
+        config = {
+            "input_dir": "/tmp/ffw-test/in",
+            "temp_dir": "/tmp/ffw-test/temp",
+            "basedir": os.path.dirname(os.path.realpath(__file__)) + "/..",
+        }
+
+        return config
+
+
     def _getNetworkData(self, config):
         networkMessages = [
             {
@@ -29,15 +39,19 @@ class CorpusFileTest(unittest.TestCase):
         return networkData
 
 
+    def _getCorpusData(self, config):
+        networkData = self._getNetworkData(config)
+        corpusData = CorpusData(config, 'data0', networkData)
+        return corpusData
+
+
     def test_dumbfuzzer(self):
-        config = testutils.getConfig()
+        config = self._getConfig()
         config['mutator'] = 'Dumb'
-        self.assertTrue(testMutatorConfig(config, testForInputFiles=False))
+        self.assertTrue(testMutatorConfig(config))
         mutatorInterface = MutatorInterface(config)
 
-        corpusData = testutils.getCorpusData(
-            config,
-            networkData=self._getNetworkData(config))
+        corpusData = self._getCorpusData(config)
         fuzzedCorpusData = mutatorInterface.fuzz(corpusData)
 
         # note that we only have one cli message, which is at index 0
@@ -46,14 +60,12 @@ class CorpusFileTest(unittest.TestCase):
 
 
     def test_radamsafuzzer(self):
-        config = testutils.getConfig()
+        config = self._getConfig()
         config['mutator'] = 'Radamsa'
-        self.assertTrue(testMutatorConfig(config, testForInputFiles=False))
+        self.assertTrue(testMutatorConfig(config))
         mutatorInterface = MutatorInterface(config)
 
-        corpusData = testutils.getCorpusData(
-            config,
-            networkData=self._getNetworkData(config))
+        corpusData = self._getCorpusData(config)
         fuzzedCorpusData = mutatorInterface.fuzz(corpusData)
 
         # note that we only have one cli message, which is at index 0

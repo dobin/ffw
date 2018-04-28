@@ -7,12 +7,19 @@ from utils import xstr
 
 class NetworkData(object):
     def __init__(self, config, networkMessages):
-        self.messages = networkMessages  # type: Array[NetworkData]
+        self.messages = networkMessages  # type: Array[]
         self.fuzzMsgIdx = None  # type: int
-        self.fuzzMsgChoice = None  # type: NetworkData
+        self.fuzzMsgChoice = None  # type:
 
         if not self.messagesCheck():
             raise ValueError('NetworkMessages are invalid')
+
+        # recover, if networkMessages is already fuzzed
+        # Like when reading corpus file
+        for idx, message in enumerate(self.messages):
+            if 'isFuzzed' in message and message['isFuzzed']:
+                self.fuzzMsxIdx = idx
+                self.fuzzmsgChoice = message
 
 
     @staticmethod
@@ -44,6 +51,10 @@ class NetworkData(object):
 
     def getFuzzMessageData(self):
         return self.messages[self.fuzzMsgIdx]['data']
+
+
+    def getFuzzMessageIndex(self):
+        return self.fuzzMsgIdx
 
 
     def setFuzzMessageData(self, data):

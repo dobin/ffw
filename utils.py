@@ -27,6 +27,10 @@ def xstr(s):
     return str(s)
 
 
+def shortSeed(s):
+    return s[:5]
+
+
 def setupSlaveLoggingWithFile(threadId):
     f = 'ffw-debug-slave-' + str(threadId) + '.log'
 
