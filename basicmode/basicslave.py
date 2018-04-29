@@ -11,6 +11,8 @@ from common.corpusmanager import CorpusManager
 from mutator.mutatorinterface import MutatorInterface
 from target.servermanager import ServerManager
 from common.crashdata import CrashData
+from target.linuxnamespace import LinuxNamespace
+
 
 import utils
 
@@ -43,12 +45,19 @@ class BasicSlave(object):
         random.seed(self.initialSeed)
         logging.info("Setup fuzzing..")
         signal.signal(signal.SIGINT, signal_handler)
-        targetPort = self.config["target_port"] + self.threadId
+        if 'use_netnamespace' in self.config and self.config['use_netnamespace']:
+            linuxNamespace = LinuxNamespace(self.threadId)
+            linuxNamespace.apply()
+            targetPort = self.config["target_port"]
+        else:
+            targetPort = self.config["target_port"] + self.threadId
+
 
         corpusManager = CorpusManager(self.config)
         corpusManager.loadCorpusFiles()
         if corpusManager.getCorpusCount() == 0:
-            logging.error("No corpus input data found in: " + self.config['input_dir'])
+            logging.error("No corpus input data found in: " +
+                          self.config['input_dir'])
             return
 
         mutatorInterface = MutatorInterface(self.config)
@@ -112,7 +121,8 @@ class BasicSlave(object):
 
             corpusData = mutatorInterface.fuzz(selectedCorpusData)
 
-            sendDataResult = networkManager.sendPartialPreData(corpusData.networkData)
+            sendDataResult = networkManager.sendPartialPreData(
+                corpusData.networkData)
             if not sendDataResult:
                 logging.info(" B Could not send, possible crash? (predata)")
                 if networkManager.testServerConnection():
@@ -130,7 +140,8 @@ class BasicSlave(object):
                     serverManager.restart()
                     continue
 
-            sendDataResult = networkManager.sendPartialPostData(corpusData.networkData)
+            sendDataResult = networkManager.sendPartialPostData(
+                corpusData.networkData)
             if not sendDataResult:
                 logging.info(" C Could not send, possible crash? (postdata)")
                 if networkManager.testServerConnection():
@@ -148,7 +159,9 @@ class BasicSlave(object):
                     continue
 
             # restart server periodically
-            if iterStats["count"] > 0 and iterStats["count"] % self.config["restart_server_every"] == 0:
+            if (iterStats["count"] > 0 and
+                    iterStats["count"] % self.config["restart_server_every"] == 0):
+
                 if not networkManager.testServerConnection():
                     logging.info("Detected Crash (D)")
                     iterStats["crashCount"] += 1
@@ -157,7 +170,8 @@ class BasicSlave(object):
                     crashData.writeToFile()
                     networkManager.closeConnection()
 
-                logging.info("Restart server periodically: " + str(iterStats["count"]))
+                logging.info("Restart server periodically: " +
+                             str(iterStats["count"]))
                 serverManager.restart()
                 if not networkManager.testServerConnection():
                     logging.error("Error: Could not connect to server after restart. abort.")
@@ -184,11 +198,21 @@ class BasicSlave(object):
         diffTime = currTime - iterStats["lastUpdateTime"]
 
         if diffTime > updateInterval:
-            fuzzPerSec = float(iterStats["count"]) / float(currTime - iterStats["startTime"])
+            fuzzPerSec = (float(iterStats["count"]) /
+                          float(currTime - iterStats["startTime"]))
             # send fuzzing information to parent process
-            self.queue.put( (self.threadId, fuzzPerSec, iterStats["count"], iterStats["crashCount"]) )
+            self.queue.put( (
+                self.threadId,
+                fuzzPerSec,
+                iterStats["count"],
+                iterStats["crashCount"]) )
 
             if "fuzzer_nofork" in self.config and self.config["fuzzer_nofork"]:
-                print("%d: %4.2f  %8d  %5d" % (self.threadId, fuzzPerSec, iterStats["count"], iterStats["crashCount"]))
+                print("%d: %4.2f  %8d  %5d" % (
+                      self.threadId,
+                      fuzzPerSec,
+                      iterStats["count"],
+                      iterStats["crashCount"]
+                      ) )
 
             iterStats["lastUpdateTime"] = currTime

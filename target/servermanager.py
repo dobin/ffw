@@ -53,7 +53,8 @@ class ServerManager(object):
             return
 
         if not os.path.isfile(self.config["target_bin"]):
-            logging.error("Could not find target file: " + str(self.config["target_bin"]))
+            logging.error("Could not find target file: " +
+                          str(self.config["target_bin"]))
             sys.exit(1)
 
         self._runTarget()
@@ -99,14 +100,20 @@ class ServerManager(object):
         logging.info("Starting server with args: " + str(self.popenArg))
 
         if self.hideChildOutput:
-            # create devnull so we can us it to surpress output of the server (2.7 specific)
+            # create devnull so we can us it to surpress output of the server
+            # (2.7 specific)
             DEVNULL = open(os.devnull, 'wb')
-            p = subprocess.Popen(self.popenArg, stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL)
+            p = subprocess.Popen(
+                self.popenArg,
+                stdin=DEVNULL,
+                stdout=DEVNULL,
+                stderr=DEVNULL)
         else:
             # we want to see stdout / stderr
             p = subprocess.Popen(self.popenArg)
 
-        time.sleep( GLOBAL_SLEEP["sleep_after_server_start"] )  # wait a bit so we are sure server is really started
+            # wait a bit so we are sure server is really started
+        time.sleep( GLOBAL_SLEEP["sleep_after_server_start"] )
         logging.info("  Pid: " + str(p.pid) )
 
         # check if process is really alive (check exit code)
@@ -127,7 +134,9 @@ class ServerManager(object):
         or None if it has not crashed (should not happen)
         """
         if self.isDisabled or self.process is None:
-            logging.error("GetCrashData error: " + str(self.process))
+            msg = "Could not get crash information, process doesnt exist "
+            msg += "(not started?): " + str(self.process)
+            logging.warn(msg)
             return None
 
         try:

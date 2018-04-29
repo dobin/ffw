@@ -15,6 +15,7 @@ def errcheck(ret, func, args):
         e = get_errno()
         raise OSError(e, os.strerror(e))
 
+
 libc = CDLL('libc.so.6', use_errno=True)
 libc.setns.errcheck = errcheck
 
