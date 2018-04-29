@@ -26,6 +26,14 @@ class HonggCorpusManager(CorpusManager):
 
     def readNewCorpusData(self, filename):
         """Another fuzzer found a new corpus."""
+        # we are notified when the file is created, not when it is written
+        # Wait here till it has data
+        fileSize = 0
+        while fileSize is 0:
+            st = os.stat(filename)
+            fileSize = st.st_size
+            time.sleep(0.1)
+
         corpusData = HonggCorpusData(
             self.config,
             filename=filename,

@@ -14,6 +14,7 @@ from target.servermanager import ServerManager
 from common.crashdata import CrashData
 from honggcorpusmanager import HonggCorpusManager
 from mutator.mutatorinterface import MutatorInterface
+from target.linuxnamespace import LinuxNamespace
 
 
 def signal_handler(signal, frame):
@@ -65,11 +66,19 @@ class HonggSlave(object):
         if "DebugWithFile" in self.config:
             utils.setupSlaveLoggingWithFile(self.threadId)
 
+        if 'use_netnamespace' in self.config and self.config['use_netnamespace']:
+            logging.error("Using linux namespace")
+            linuxNamespace = LinuxNamespace(self.threadId)
+            linuxNamespace.apply()
+            targetPort = self.config["target_port"]
+        else:
+            targetPort = self.config["target_port"] + self.threadId
+        self.targetPort = targetPort
+
         logging.info("Setup fuzzing..")
         random.seed(self.initialSeed)
         signal.signal(signal.SIGINT, signal_handler)
-        targetPort = self.config["target_port"] + self.threadId
-        self.targetPort = targetPort
+
 
         mutatorInterface = MutatorInterface(self.config)
 

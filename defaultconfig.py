@@ -1,14 +1,4 @@
 
-# TBD:
-#   name
-#   target_bin
-#   target_args
-#   target_port
-#   ipproto
-#
-# often:
-#   processes
-
 
 DefaultConfig = {
     # which version of the software are we fuzzing (optional)
@@ -16,6 +6,9 @@ DefaultConfig = {
 
     # additional comment about this project (optional)
     "comment": "",
+
+    # should we use linux namespaces? (required root, therefore default off)
+    "use_netnamespace": False,
 
     # how many fuzzing instances should we start
     "processes": 1,

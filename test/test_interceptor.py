@@ -29,7 +29,6 @@ class InterceptorTest(unittest.TestCase):
     def test_tcpintercept(self):
         #logging.basicConfig(level=logging.DEBUG)
         config = self._getConfig()
-        baseport = config["target_port"]
         targetPort = 10000
 
         mockupClient = MockupClient(targetPort)

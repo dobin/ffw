@@ -49,8 +49,8 @@ class CorpusData(object):
 
     def createNewFilename(self):
         self.filename = filenameWithoutExtension(self.filename)
-        self.filename += '_msg' + str(self.networkData.getFuzzMessageIndex())
-        self.filename += '_' + shortSeed(self.seed)
+        self.filename += '.' + shortSeed(self.seed)
+        self.filename += '_m' + str(self.networkData.getFuzzMessageIndex())
         self.filename += '.pickle'
 
 
