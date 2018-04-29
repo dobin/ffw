@@ -98,11 +98,20 @@ class HonggCorpusManager(CorpusManager):
         for idx, corpus in enumerate(self.corpus):
             d = (
                 idx,
-                0,
+                utils.shortSeed(corpus.seed),
+                utils.xstr(self._getIdxOfCorpus(corpus._parent)),
                 utils.xstr(corpus.networkData.getFuzzMessageIndex()),
                 corpus.stats["new"],
                 corpus.stats["crashes"])
-            print "  Corpus %d:  Parent: %d  Msg: %s  -  Children: %d  Crashes: %d" % d
+            print "  Corpus %3d  (%5s):  Parent: %3s  Msg: %3s  Children: %3d  Crashes: %3d" % d
+
+
+    def _getIdxOfCorpus(self, theCorpus):
+        for idx, corpus in enumerate(self.corpus):
+            if corpus is theCorpus:
+                return idx
+
+        return None
 
 
     def _createCorpusData(self, filename):

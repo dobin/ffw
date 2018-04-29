@@ -23,11 +23,14 @@ def filenameWithoutExtension(file_name):
 
 def xstr(s):
     if s is None:
-        return '<None>'
+        return '-'
     return str(s)
 
 
 def shortSeed(s):
+    if s is None:
+        return '-'
+
     return s[:5]
 
 
