@@ -35,6 +35,7 @@ class CorpusData(object):
     def getParentCorpus(self):
         return self._parent
 
+
     def createFuzzChild(self, seed):
         corpusData = copy.deepcopy(self)
         corpusData.parentFilename = self.filename

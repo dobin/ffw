@@ -88,8 +88,13 @@ class CorpusFileTest(unittest.TestCase):
         corpusDataChild = fuzzer.fuzz(corpusDataParent)
 
         # note that we only have one cli message, which is at index 0
+        self.assertEqual(corpusDataChild.networkData.fuzzMsgIdx, 0)
         self.assertNotEqual(corpusDataParent.networkData.messages[0]['data'],
                             corpusDataChild.networkData.messages[0]['data'])
+
+        self.assertNotEqual(corpusDataChild.filename, corpusDataChild.parentFilename)
+        self.assertEqual(corpusDataChild._parent, corpusDataParent)
+
 
 
 if __name__ == '__main__':

@@ -11,12 +11,11 @@ class MockupFuzzer(object):
 
 
     def _generateSeed(self):
-        self.seed = random.randint(0, 2**64 - 1)
+        return str(random.randint(0, 2**64 - 1))
 
 
     def fuzz(self, corpusData):
-        corpusDataNew = copy.deepcopy(corpusData)
-
+        corpusDataNew = corpusData.createFuzzChild(self.seed)
         corpusDataNew.networkData.selectMessage()
         msg = corpusDataNew.networkData.getFuzzMessageData()
         msg += "A"

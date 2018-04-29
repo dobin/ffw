@@ -4,6 +4,7 @@ import logging
 import pyinotify
 import time
 import os
+import utils
 
 from honggcorpusdata import HonggCorpusData
 from common.corpusmanager import CorpusManager
@@ -35,6 +36,15 @@ class HonggCorpusManager(CorpusManager):
         self._addCorpusData(corpusData)
 
 
+    def loadCorpusFiles(self):
+        """Not only load, but also fix all the references."""
+        super(self.__class__, self).loadCorpusFiles()
+
+        for corpus in self:
+            if corpus.parentFilename is not None:
+                corpus._parent = self._getCorpusByFilename(corpus.parentFilename)
+
+
     def hasNewExternalCorpus(self):
         for corpus in self.corpus:
             if not corpus.isProcessed():
@@ -46,6 +56,14 @@ class HonggCorpusManager(CorpusManager):
     def getNewExternalCorpus(self):
         for corpus in self.corpus:
             if not corpus.isProcessed():
+                return corpus
+
+        return None
+
+
+    def _getCorpusByFilename(self, filename):
+        for corpus in self.corpus:
+            if corpus.filename == filename:
                 return corpus
 
         return None
@@ -81,10 +99,10 @@ class HonggCorpusManager(CorpusManager):
             d = (
                 idx,
                 0,
-                0,
+                utils.xstr(corpus.networkData.getFuzzMessageIndex()),
                 corpus.stats["new"],
                 corpus.stats["crashes"])
-            print "  Corpus %d:  Parent: %d  Msg: %d  -  Children: %d  Crashes: %d" % d
+            print "  Corpus %d:  Parent: %d  Msg: %s  -  Children: %d  Crashes: %d" % d
 
 
     def _createCorpusData(self, filename):
