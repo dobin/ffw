@@ -93,7 +93,9 @@ class NetworkManager(object):
 
     def receiveDataTcp(self, message=None):
         """Receive data from the server."""
-        self.sock.settimeout(0.01)
+        # 0.1 and 0.01 is too few
+        # e.g. for libiec61850
+        self.sock.settimeout(1)
         try:
             data = self.sock.recv(1024)
             if self.config["protoObj"] is not None and message is not None:

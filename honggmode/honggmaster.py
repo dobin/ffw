@@ -132,7 +132,7 @@ def _honggExists(config):
         return False
 
     if not os.path.isfile(config["honggpath"]):
-        logging.error("Invalid path to honggfuzz: " + config["honggpath"])
+        logging.error('Invalid path to honggfuzz in config["honggpath"]: ' + config["honggpath"])
         return False
 
     return True

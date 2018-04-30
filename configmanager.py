@@ -1,10 +1,14 @@
-
+import logging
 import os
 import distutils.spawn
 from mutator.mutatorinterface import testMutatorConfig
 import defaultconfig
 
+
 class ConfigManager(object):
+    def __init__(self):
+        self.config = None
+
     def _isRoot(self):
         return os.geteuid() == 0
 
@@ -29,8 +33,8 @@ class ConfigManager(object):
         return True
 
 
-    def checkFuzzRequirements(self, config):
-        if not testMutatorConfig(config):
+    def checkFuzzRequirements(self, config, type):
+        if not testMutatorConfig(config, type):
             return False
 
         if 'use_netnamespace' in config and config['use_netnamespace']:
@@ -45,8 +49,11 @@ class ConfigManager(object):
         return True
 
 
-
     def loadConfigByFile(self, configfilename, basedir):
+        if not os.path.isfile(configfilename):
+            logging.error("Config file does not exist: " + configfilename)
+            return None
+
         rawData = open(configfilename, 'r').read()
         # hmm this produces some strange behaviour upon string comparison
         # of the values of the dict
@@ -76,6 +83,8 @@ class ConfigManager(object):
         config["outcome_dir"] = config["projdir"] + config["outcome_dir"]
         config["verified_dir"] = config["projdir"] + config["verified_dir"]
         config["grammars"] = config["projdir"] + config["grammars"]
+
+        self.config = config
 
         return config
 

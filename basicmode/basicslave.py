@@ -111,6 +111,10 @@ class BasicSlave(object):
 
             # previous fuzz generated a crash
             if not networkManager.openConnection():
+                if previousCorpusData is None:
+                    logging.warn("Detected crash, but we didnt yet send any bad data?!")
+                    continue
+
                 logging.info("Detected Crash (A)")
                 iterStats["crashCount"] += 1
                 crashData = CrashData(self.config, previousCorpusData, 'A')

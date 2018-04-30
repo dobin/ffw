@@ -4,25 +4,25 @@ import random
 import logging
 import os
 import subprocess
-import copy
-import time
-import sys
-import glob
 
 from mutator_list import mutators
 import utils
 
 
-def testMutatorConfig(config):
+def testMutatorConfig(config, mode):
     """
     Test if config for mutator is ok.
 
     This is not being used for mutator related unit tests.
     """
     if not config["mutator"] in mutators:
-        logging.error("Could not find fuzzer with name: " + self.config["fuzzer"])
+        logging.error("Could not find fuzzer with name: " + config["mutator"])
         return False
     fuzzerData = mutators[ config["mutator"] ]
+
+    if fuzzerData['type'] is 'gen' and mode is 'hongg':
+        logging.error("Using a generative fuzzer in honggmode is not really possible")
+        return False
 
     fuzzerBin = config["basedir"] + "/" + fuzzerData["file"]
     if not os.path.isfile(fuzzerBin):

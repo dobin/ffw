@@ -130,13 +130,13 @@ def realMain(config):
         ffwTest(config, args)
 
     if args.fuzz:
-        ffwBasicFuzz(config, args)
+        ffwBasicFuzz(configManager, args)
 
     if args.clientfuzz:
-        ffwClientFuzz(config, args)
+        ffwClientFuzz(configManager, args)
 
     if args.honggmode:
-        ffwHonggmode(config, args)
+        ffwHonggmode(configManager, args)
 
     if args.verify:
         ffwVerify(config, args)
@@ -175,14 +175,16 @@ def ffwTest(config, args):
     t.test()
 
 
-def ffwBasicFuzz(config, args):
-    if not configManager.checkFuzzRequirements(config):
+def ffwBasicFuzz(configManager, args):
+    config = configManager.config
+    if not configManager.checkFuzzRequirements(config, 'basic'):
         return False
     basicmaster.doFuzz(config, args.gui)
 
 
-def ffwHonggmode(config, args):
-    if not configManager.checkFuzzRequirements(config):
+def ffwHonggmode(configManager, args):
+    config = configManager.config
+    if not configManager.checkFuzzRequirements(config, 'hongg'):
         return False
 
     if args.honggcov == "hw" or config["honggcov"] == "hw":
@@ -200,7 +202,8 @@ def ffwHonggmode(config, args):
     honggmaster.doFuzz(config)
 
 
-def ffwClientFuzz(config, args):
+def ffwClientFuzz(configManager, args):
+    config = configManager.config
     if not configManager.checkFuzzRequirements(config):
         return False
     clientfuzzermaster.doFuzz(config, args.gui)
@@ -231,7 +234,7 @@ def ffwReplay(config, args):
         replayer.replayFile(args.targetport, args.file)
 
 
-def ffwReplay(config, args):
+def ffwUpload(config, args):
     if args.basic_auth_user and args.basic_auth_password:
         u = uploader.Uploader(config, args.url, args.basic_auth_user, args.basic_auth_password)
     else:

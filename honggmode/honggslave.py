@@ -67,7 +67,6 @@ class HonggSlave(object):
             utils.setupSlaveLoggingWithFile(self.threadId)
 
         if 'use_netnamespace' in self.config and self.config['use_netnamespace']:
-            logging.error("Using linux namespace")
             linuxNamespace = LinuxNamespace(self.threadId)
             linuxNamespace.apply()
             targetPort = self.config["target_port"]
@@ -78,7 +77,6 @@ class HonggSlave(object):
         logging.info("Setup fuzzing..")
         random.seed(self.initialSeed)
         signal.signal(signal.SIGINT, signal_handler)
-
 
         mutatorInterface = MutatorInterface(self.config)
 

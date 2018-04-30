@@ -41,6 +41,8 @@ class Tester():
             print("Could not connect. Are you sure you have the right port?")
             serverManager.stop()
             return
+        else:
+            print("Initial test successful - could connect to server.")
 
 
         for corpusData in corpusManager:

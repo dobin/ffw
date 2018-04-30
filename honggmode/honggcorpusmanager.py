@@ -111,7 +111,7 @@ class HonggCorpusManager(CorpusManager):
                 utils.xstr(corpus.networkData.getFuzzMessageIndex()),
                 corpus.stats["new"],
                 corpus.stats["crashes"])
-            print "  Corpus %3d  (%5s):  Parent: %3s  Msg: %3s  Children: %3d  Crashes: %3d" % d
+            print "    Corpus %3d  (%5s):  Parent: %3s  Msg: %3s  Children: %3d  Crashes: %3d" % d
 
 
     def _getIdxOfCorpus(self, theCorpus):
