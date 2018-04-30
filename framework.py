@@ -124,80 +124,117 @@ def realMain(config):
         setupLoggingStandard()
 
     if args.intercept:
-        interceptorPort = 10000
-        targetPort = 20000
-
-        if args.listenport:
-            interceptorPort = args.listenport
-
-        if args.targetport:
-            targetPort = args.targetport
-        else:
-            targetPort = config["target_port"]
-
-        print("Interceptor listen on port: " + str(interceptorPort))
-        print("Target server port: " + str(targetPort))
-
-        interceptor = Interceptor(config)
-        interceptor.doIntercept(interceptorPort, targetPort)
+        ffwIntercept(config, args)
 
     if args.test:
-        t = tester.Tester(config)
-        t.test()
+        ffwTest(config, args)
 
     if args.fuzz:
-        if not configManager.checkFuzzRequirements(config):
-            return False
-        basicmaster.doFuzz(config, args.gui)
+        ffwBasicFuzz(config, args)
 
     if args.clientfuzz:
-        if not configManager.checkFuzzRequirements(config):
-            return False
-        clientfuzzermaster.doFuzz(config, args.gui)
+        ffwClientFuzz(config, args)
 
     if args.honggmode:
-        if not configManager.checkFuzzRequirements(config):
-            return False
-
-        if args.honggcov == "hw" or config["honggcov"] == "hw":
-            config["honggmode_option"] = "--linux_perf_bts_edge"
-
-            if os.geteuid() != 0:
-                logging.error("--honggcov hw hardware coverage requires root")
-                return
-        elif args.honggcov == "sw" or config["honggcov"] == "sw":
-            config["honggmode_option"] = None  # sw is default
-        else:
-            config["honggmode_option"] = None
-
-        honggmaster.doFuzz(config)
+        ffwHonggmode(config, args)
 
     if args.verify:
-        v = verifier.Verifier(config)
-
-        if args.file:
-            v.verifyFile(args.file)
-        else:
-            v.verifyOutDir()
+        ffwVerify(config, args)
 
     if args.minimize:
-        mini = minimizer.Minimizer(config)
-        mini.minimizeOutDir()
+        ffwMinimize(config, args)
 
     if args.replay:
-        replayer = replay.Replayer(config)
-
-        if not args.file:
-            print "Use --file to specify a file to be replayed"
-        elif not args.targetport:
-            print "Use --targetport to specify port to send data to"
-        else:
-            replayer.replayFile(args.targetport, args.file)
+        ffwReplay(config, args)
 
     if args.upload:
-        if args.basic_auth_user and args.basic_auth_password:
-            u = uploader.Uploader(config, args.url, args.basic_auth_user, args.basic_auth_password)
-        else:
-            u = uploader.Uploader(config, args.url, None, None)
+        ffwUpload(config, args)
 
-        u.uploadVerifyDir()
+
+def ffwIntercept(config, args):
+    interceptorPort = 10000
+    targetPort = 20000
+
+    if args.listenport:
+        interceptorPort = args.listenport
+
+    if args.targetport:
+        targetPort = args.targetport
+    else:
+        targetPort = config["target_port"]
+
+    print("Interceptor listen on port: " + str(interceptorPort))
+    print("Target server port: " + str(targetPort))
+
+    interceptor = Interceptor(config)
+    interceptor.doIntercept(interceptorPort, targetPort)
+
+
+def ffwTest(config, args):
+    t = tester.Tester(config)
+    t.test()
+
+
+def ffwBasicFuzz(config, args):
+    if not configManager.checkFuzzRequirements(config):
+        return False
+    basicmaster.doFuzz(config, args.gui)
+
+
+def ffwHonggmode(config, args):
+    if not configManager.checkFuzzRequirements(config):
+        return False
+
+    if args.honggcov == "hw" or config["honggcov"] == "hw":
+        config["honggmode_option"] = "--linux_perf_bts_edge"
+
+        if os.geteuid() != 0:
+            logging.error('"--honggcov hw" hardware coverage requires root')
+            return
+
+    elif args.honggcov == "sw" or config["honggcov"] == "sw":
+        config["honggmode_option"] = None  # sw is default
+    else:
+        config["honggmode_option"] = None
+
+    honggmaster.doFuzz(config)
+
+
+def ffwClientFuzz(config, args):
+    if not configManager.checkFuzzRequirements(config):
+        return False
+    clientfuzzermaster.doFuzz(config, args.gui)
+
+
+def ffwVerify(config, args):
+    v = verifier.Verifier(config)
+
+    if args.file:
+        v.verifyFile(args.file)
+    else:
+        v.verifyOutDir()
+
+
+def ffwMinimize(config, args):
+    mini = minimizer.Minimizer(config)
+    mini.minimizeOutDir()
+
+
+def ffwReplay(config, args):
+    replayer = replay.Replayer(config)
+
+    if not args.file:
+        print "Use --file to specify a file to be replayed"
+    elif not args.targetport:
+        print "Use --targetport to specify port to send data to"
+    else:
+        replayer.replayFile(args.targetport, args.file)
+
+
+def ffwReplay(config, args):
+    if args.basic_auth_user and args.basic_auth_password:
+        u = uploader.Uploader(config, args.url, args.basic_auth_user, args.basic_auth_password)
+    else:
+        u = uploader.Uploader(config, args.url, None, None)
+
+    u.uploadVerifyDir()

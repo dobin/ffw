@@ -5,6 +5,10 @@ from mutator.mutatorinterface import testMutatorConfig
 import defaultconfig
 
 class ConfigManager(object):
+    def _isRoot(self):
+        return os.geteuid() == 0
+
+
     def checkRequirements(self, config):
         if not os.path.isfile(config["target_bin"]):
             print "Target binary not found: " + str(config["target_bin"])
@@ -26,7 +30,20 @@ class ConfigManager(object):
 
 
     def checkFuzzRequirements(self, config):
-        return testMutatorConfig(config)
+        if not testMutatorConfig(config):
+            return False
+
+        if 'use_netnamespace' in config and config['use_netnamespace']:
+            if not self._isRoot():
+                print('"use_namespace" active but you are not root.')
+                print('This requires root')
+                print('(and also nested namespaces in container)')
+                return False
+            else:
+                print('Rember "use_netnamespace requires nesting in container"')
+
+        return True
+
 
 
     def loadConfigByFile(self, configfilename, basedir):
