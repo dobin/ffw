@@ -100,7 +100,7 @@ def _fuzzConsole(config, q, procs):
             try:
                 r = q.get(True, 1)
                 perf[r[0]] = r
-                print("%3d  It: %d  CorpusNew: %d  CorpusOverall %d  Crashes: %d  Timeouts: %d  Fuzz/s: %.1f" % r)
+                print("%3d  It: %4d  CorpusNew: %2d  CorpusOverall %2d  Crashes: %2d  Timeouts: %2d  Fuzz/s: %.1f" % r)
             except Empty:
                 pass
 

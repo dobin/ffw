@@ -29,7 +29,7 @@ class Tester():
 
     def test(self):
         targetPort = self.config["target_port"]
-        serverManager = ServerManager(self.config, 0, targetPort)
+        serverManager = ServerManager(self.config, 0, targetPort, hideChildOutput=False)
         networkManager = networkmanager.NetworkManager(self.config, targetPort)
         corpusManager = CorpusManager(self.config)
         corpusManager.loadCorpusFiles()

@@ -172,6 +172,7 @@ class Interceptor(object):
         while True:
             try:
                 clientSocket, address = serverSocket.accept()
+                print("Got new client")
             except socket.error as e:
                 logging.error("accept() Socket Error: " + str(e))
                 logging.error("Try waiting a bit...")
@@ -239,7 +240,7 @@ class Interceptor(object):
                 break
 
         # store all the stuff
-        logging.info("Got " + str(len(dataArr)) + " packets")
+        print("Got " + str(len(dataArr)) + " packets")
         fileName = "data_0.pickle"
         networkData = NetworkData(self.config, dataArr)
         corpusData = CorpusData(self.config, fileName, networkData)

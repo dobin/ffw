@@ -265,7 +265,9 @@ class HonggSlave(object):
         updateInterval = 3
 
         if currTime > self.iterStats["lastUpdate"] + updateInterval:
-            self.corpusManager.printStats()
+            # only show detailed stats if we dont have many processes
+            if self.config['processes'] <= 2:
+                self.corpusManager.printStats()
             fuzzPerSec = float(self.iterStats["iterCount"]) / float(currTime - self.iterStats["startTime"])
 
             # send fuzzing information to parent process
