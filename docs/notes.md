@@ -1,5 +1,30 @@
 # Fuzzing Problems FAQ
 
+## Nesting
+
+### Docker
+
+### LXC
+
+### Proxmox LXC
+
+Add to container config:
+```
+lxc.apparmor.profile: unconfined
+lxc.cgroup.devices.allow: a
+lxc.cap.drop:
+```
+
+Via: [Proxmox / LXC – Running Docker Inside A Container](https://www.solaris-cookbook.eu/virtualisation/proxmox/proxmox-lxc-running-docker-inside-container/)
+
+### LXD
+
+```
+lxc config set <container> security.nesting true
+lxc config set <container> security.privileged true
+```
+
+
 ## "Could not connect" / "Socket Error"
 
 Note: If your project is unable to specify a target port
@@ -20,11 +45,6 @@ so it takes the listening port from the command line.
 
 Make sure you compile the target with the correct flags,
 or the correct honggfuzz based compiler. Also set the hfuzz flags:
-
-Set arguments manually:
-```
-export CFLAGS="-fsanitize-coverage=trace-pc-guard,indirect-calls,trace-cmp -fsanitizer=address"
-```
 
 Or:
 
