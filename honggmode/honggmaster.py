@@ -1,15 +1,16 @@
 #!/usr/bin/env python2
 
+import sys
 import signal
 import random
 import logging
 import os
 from multiprocessing import Process, Queue
 from Queue import Empty
-import time
 
 from honggcorpusmanager import HonggCorpusManager
 from . import honggslave
+from honggstats import HonggStats
 
 
 def doFuzz(config):
@@ -91,20 +92,28 @@ def _fuzzNoFork(config, q):
 
 
 def _fuzzConsole(config, q, procs):
-    time.sleep(1)
     print("Thread:  Iterations  CorpusNew  CorpusOverall  Crashes  Fuzz/s")
-    perf = {}
+    honggStats = HonggStats(len(procs))
+
+    n = 0
     while True:
+        if n % 5 == 0:
+            honggStats.writePlotData()
+            honggStats.writeFuzzerStats()
+
         # wait for new data from threads
         try:
             try:
                 r = q.get(True, 1)
-                perf[r[0]] = r
+                honggStats.addToStats(r)
                 print("%3d  It: %4d  CorpusNew: %2d  CorpusOverall %2d  Crashes: %2d  Timeouts: %2d  Fuzz/s: %.1f" % r)
             except Empty:
                 pass
 
         except KeyboardInterrupt:
+            honggStats.writeFuzzerStats()
+            honggStats.finish()
+
             # handle ctrl-c
             for proc in procs:
                 proc["p"].terminate()
@@ -123,6 +132,7 @@ def _fuzzConsole(config, q, procs):
                     logging.warn("bin/honggfuzz.log and bin/*.fuzz and bin/HONGGFUZZ.REPORT.TXT")
                     _startThread(proc)
 
+        n += 1
     print("Finished")
 
 
