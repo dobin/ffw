@@ -228,7 +228,7 @@ class NetworkManager(object):
 
         print("")
 
-        cmdNetstat = "netstat -anp | grep %s 2>/dev/null" % (binaryName)
+        cmdNetstat = "lsof -i -P | grep %s 2>/dev/null" % (binaryName)
         print("Check if port is open: " + cmdNetstat)
         os.system(cmdNetstat)
 
@@ -256,8 +256,8 @@ class NetworkManager(object):
         n = 0
         while not self.testServerConnection():
             logging.debug("Trying to connect")
-            if n > 10:
-                logging.error("Server no ready after 10 tries.. aborting")
+            if n > 20:
+                logging.error("WaitForServerReadyNess: Server no ready after 20 tries of 0.2s (4s).. aborting")
                 return False
 
             time.sleep(0.2)

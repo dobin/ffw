@@ -115,11 +115,12 @@ class HonggSlave(object):
         # Note that at the end, there may be still commands in the socket
         # queue which we need to ignore on the fuzzing loop.
         initialCorpusIter = iter(self.corpusManager)
-        logging.info("Performing warmup")
+        print("Performing warmup. This can take some time.")
         while True:
             logging.debug("A warmup loop...")
 
             try:
+                sys.stdout.write('.')
                 initialCorpusData = initialCorpusIter.next()
             except StopIteration:
                 break
