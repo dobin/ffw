@@ -348,10 +348,9 @@ class HonggSlave(object):
 
 
     def _handleCrash(self, honggCorpusData):
-        # update stats
-        #honggCorpusData.getParentCorpus().statsAddCrash()
         crashData = CrashData(self.config, honggCorpusData, '-')
         crashData.writeToFile()
+        #honggCorpusData.getParentCorpus().statsAddCrash()
 
         if self.config['tweetcrash']:
             msg = "Found crash in " + self.config['name']

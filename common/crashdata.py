@@ -27,6 +27,11 @@ class CrashData():
             self.filename += '_m' + str(self.corpusData.networkData.getFuzzMessageIndex())
             self.filename += '.crash'
 
+        # our parent spawned us - attribute it to them
+        if corpusData.getParentCorpus is not None:
+            corpusData.getParentCorpus().statsAddCrash()
+
+        # should we write a .txt file additional to the pickle?
         self.writeTxt = False
 
         self.asanOutput = None
