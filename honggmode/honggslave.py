@@ -91,6 +91,7 @@ class HonggSlave(object):
         if self.corpusManager.getCorpusCount() == 0:
             logging.error("No corpus input data found in: " + self.config['input_dir'])
             return
+        # watch for new files / corpus
         self.corpusManager.startWatch()
 
         # start honggfuzz with target binary
@@ -111,7 +112,7 @@ class HonggSlave(object):
 
         # test connection first
         if not networkManager.debugServerConnection():
-            logging.error("Damn.")
+            logging.error("Bootstrap: Could not connect to server.")
             return
 
         # warmup
@@ -141,7 +142,10 @@ class HonggSlave(object):
                 # We dont really care what the fuzzer sends us
                 # BUT it should be always "New!"
                 # It should never be "Cras"
-                logging.debug("received: " + honggData)
+                if honggData is "New!":
+                    logging.debug("Honggfuzz answered correctly, received: " + honggData)
+                else:
+                    logging.warn("Honggfuzz answered wrong, it should be New! but is: " + honggData)
 
         # the actual fuzzing
         logging.info("Performing fuzzing")
