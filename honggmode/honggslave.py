@@ -10,6 +10,7 @@ import os
 from network import networkmanager
 import utils
 from . import honggcomm
+from twitterinterface import TwitterInterface
 from target.servermanager import ServerManager
 from common.crashdata import CrashData
 from honggcorpusmanager import HonggCorpusManager
@@ -45,7 +46,11 @@ class HonggSlave(object):
             "startTime": time.time(),
         }
         self.fuzzerPid = None
+        self.tweeter = None
 
+        if self.config['tweetcrash']:
+            self.twitterInterface = TwitterInterface(self.config)
+            self.twitterInterface.load()
 
     def doActualFuzz(self):
         """
@@ -121,6 +126,7 @@ class HonggSlave(object):
 
             try:
                 sys.stdout.write('.')
+                sys.stdout.flush()
                 initialCorpusData = initialCorpusIter.next()
             except StopIteration:
                 break
@@ -346,3 +352,8 @@ class HonggSlave(object):
         #honggCorpusData.getParentCorpus().statsAddCrash()
         crashData = CrashData(self.config, honggCorpusData, '-')
         crashData.writeToFile()
+
+        if self.config['tweetcrash']:
+            msg = "Found crash in " + self.config['name']
+            msg += ""
+            self.twitterInterface.tweet(msg)

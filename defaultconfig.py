@@ -47,6 +47,8 @@ DefaultConfig = {
     # Dharma grammars
     "grammars": "grammars/",
 
+    'tweetcrash': False,
+
     # input/output for fuzzer is generated here (so he can mutate it)
     # also ASAN log files
     "temp_dir": "temp",
