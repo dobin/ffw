@@ -38,23 +38,20 @@ class ConfigManager(object):
         if not testMutatorConfig(config, type):
             return False
 
-        with open('/proc/sys/kernel/core_pattern', 'r') as f:
-            data = f.read()
-            if data[:4] != "core":
-                logging.error("Wrong core pattern: " + data)
-                logging.error("Do: echo core >/proc/sys/kernel/core_pattern")
-                return False
+        if config['handle_corefiles']:
+            with open('/proc/sys/kernel/core_pattern', 'r') as f:
+                data = f.read()
+                if data[:4] != "core":
+                    logging.error("Wrong core pattern: " + data)
+                    logging.error("Do: echo core >/proc/sys/kernel/core_pattern")
+                    return False
 
-        with open('/proc/sys/fs/suid_dumpable', 'r') as f:
-            data = f.read()
-            if data[:1] != "1":
-                logging.error("Suid is dumpable: " + data)
-                logging.error("Do: echo 1 > /proc/sys/fs/suid_dumpable")
-                return False
-
-        # ulimit -c unlimited
-        resource.setrlimit(resource.RLIMIT_CORE,
-                           (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
+            with open('/proc/sys/fs/suid_dumpable', 'r') as f:
+                data = f.read()
+                if data[:1] != "1":
+                    logging.error("Suid is dumpable: " + data)
+                    logging.error("Do: echo 1 > /proc/sys/fs/suid_dumpable")
+                    return False
 
         if 'use_netnamespace' in config and config['use_netnamespace']:
             if not self._isRoot():

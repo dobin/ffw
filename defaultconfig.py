@@ -25,6 +25,9 @@ DefaultConfig = {
     # should we abort if aslr is enabled?
     "ignore_aslr_status": True,
 
+    # yet not 100% defined what it is doing, not necessary
+    "handle_corefiles": False,
+
     # have a special app protocol implemented? use it here
     "proto": None,
 

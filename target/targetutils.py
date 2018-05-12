@@ -52,23 +52,23 @@ def setupEnvironment(config):
     os.environ["MALLOC_CHECK_"] = "2"
 
     # Check ASLR status
-    if 'ignore_aslr_status' in config and config["ignore_aslr_status"] is False:
+    if config["ignore_aslr_status"] is False:
         aslrStatusFile = "/proc/sys/kernel/randomize_va_space"
         d = ""
         with open(aslrStatusFile, "r") as f:
             d = f.read()
-        config["env_aslr_status"] = d
-        if "disable_aslr_check" not in config and d is not "0":
-            logging.error("ASLR Enabled, please disable it:")
-            logging.error(" echo 0 | sudo tee /proc/sys/kernel/randomize_va_space")
-            sys.exit(1)
+
+            if "disable_aslr_check" not in config and d is not "0":
+                logging.error("ASLR Enabled, please disable it:")
+                logging.error(" echo 0 | sudo tee /proc/sys/kernel/randomize_va_space")
+                sys.exit(1)
 
     # set resources
-    # core file:
-    resource.setrlimit(resource.RLIMIT_CORE, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
+    if config['handle_corefiles']:
+        resource.setrlimit(resource.RLIMIT_CORE, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
 
     # set working directory
-    os.chdir(os.path.dirname(os.path.realpath(config["target_bin"])))
+    os.chdir(config["target_dir"])
 
 
 def getAsanOutput(config, pid):

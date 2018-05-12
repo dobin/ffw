@@ -5,6 +5,7 @@ import logging
 import os
 import subprocess
 import sys
+import resource
 
 import targetutils
 
@@ -16,6 +17,12 @@ GLOBAL_SLEEP = {
 }
 
 
+# https://stackoverflow.com/questions/1689505/python-ulimit-and-nice-for-subprocess-call-subprocess-popen
+# Not needed, kept for later
+def preexec_fn():
+    resource.setrlimit(resource.RLIMIT_CORE, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
+
+
 class ServerManager(object):
     """
         Manages the server (the fuzzing target) process.
@@ -23,7 +30,6 @@ class ServerManager(object):
             - handling the process (start, stop)
             - getting some crash information
     """
-
     def __init__(self,
                  config,
                  threadId,
@@ -112,7 +118,7 @@ class ServerManager(object):
             # we want to see stdout / stderr
             p = subprocess.Popen(self.popenArg)
 
-            # wait a bit so we are sure server is really started
+        # wait a bit so we are sure server is really started
         time.sleep( GLOBAL_SLEEP["sleep_after_server_start"] )
         logging.info("  Pid: " + str(p.pid) )
 
