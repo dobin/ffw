@@ -62,13 +62,13 @@ class BasicSlave(object):
 
         mutatorInterface = MutatorInterface(self.config)
 
-        serverManager = ServerManager(
+        self.serverManager = ServerManager(
             self.config,
             self.threadId,
             targetPort)
-        networkManager = networkmanager.NetworkManager(self.config, targetPort)
+        self.networkManager = networkmanager.NetworkManager(self.config, targetPort)
 
-        iterStats = {
+        self.iterStats = {
             "count": 0,  # number of iterations
             "crashCount": 0,  # number of crashes, absolute
             "startTime": time.time(),
@@ -79,11 +79,11 @@ class BasicSlave(object):
 
         # If we do not manage the server by ourselfs, disable it
         if 'disableServer' in self.config and self.config['disableServer']:
-            serverManager.dis()
+            self.serverManager.dis()
         else:
-            serverManager.start()
+            self.serverManager.start()
 
-        if not networkManager.waitForServerReadyness():
+        if not self.networkManager.waitForServerReadyness():
             logging.error("Error: Could not connect to server.")
             # TODO: better error, because server could not be started. stdout?
             return
@@ -93,7 +93,7 @@ class BasicSlave(object):
 
         corpusData = None
         while True:
-            self.updateStats(iterStats)
+            self.updateStats()
             logging.debug("\n\n")
             logging.debug("A fuzzing loop...")
 
@@ -110,79 +110,61 @@ class BasicSlave(object):
             corpusData = None
 
             # previous fuzz generated a crash
-            if not networkManager.openConnection():
+            if not self.networkManager.openConnection():
                 if previousCorpusData is None:
                     logging.warn("Detected crash, but we didnt yet send any bad data?!")
                     continue
 
-                logging.info("Detected Crash (A)")
-                iterStats["crashCount"] += 1
-                crashData = CrashData(self.config, previousCorpusData, 'A')
-                serverManager.getCrashInformation(crashData)
-                crashData.writeToFile()
-                serverManager.restart()
+                self._handleCrash(previousCorpusData, 'A')
                 continue
 
             corpusData = mutatorInterface.fuzz(selectedCorpusData)
 
-            sendDataResult = networkManager.sendPartialPreData(
+            sendDataResult = self.networkManager.sendPartialPreData(
                 corpusData.networkData)
             if not sendDataResult:
                 logging.info(" B Could not send, possible crash? (predata)")
-                if networkManager.testServerConnection():
+                if self.networkManager.testServerConnection():
                     logging.info(" B Broken connection... continue")
-                    networkManager.closeConnection()
+                    self.networkManager.closeConnection()
                     continue
                 else:
-                    logging.info("Detected Crash (B)")
-                    iterStats["crashCount"] += 1
                     # TODO really previousCorpusData? i think so
-                    crashData = CrashData(self.config, previousCorpusData, 'B')
-                    serverManager.getCrashInformation(crashData)
-                    crashData.writeToFile()
-                    networkManager.closeConnection()
-                    serverManager.restart()
+                    self._handleCrash(previousCorpusData, 'B')
+                    self.networkManager.closeConnection()
+                    self.serverManager.restart()
                     continue
 
-            sendDataResult = networkManager.sendPartialPostData(
+            sendDataResult = self.networkManager.sendPartialPostData(
                 corpusData.networkData)
             if not sendDataResult:
                 logging.info(" C Could not send, possible crash? (postdata)")
-                if networkManager.testServerConnection():
+                if self.networkManager.testServerConnection():
                     logging.info("C Broken connection... continue")
-                    networkManager.closeConnection()
+                    self.networkManager.closeConnection()
                     continue
                 else:
-                    logging.info("Detected Crash (C)")
-                    iterStats["crashCount"] += 1
-                    crashData = CrashData(self.config, corpusData, 'C')
-                    serverManager.getCrashInformation(crashData)
-                    crashData.writeToFile()
-                    networkManager.closeConnection()
-                    serverManager.restart()
+                    self._handleCrash(corpusData, 'C')
+                    self.networkManager.closeConnection()
                     continue
 
             # restart server periodically
-            if (iterStats["count"] > 0 and
-                    iterStats["count"] % self.config["restart_server_every"] == 0):
+            if (self.iterStats["count"] > 0 and
+                    self.iterStats["count"] % self.config["restart_server_every"] == 0):
 
-                if not networkManager.testServerConnection():
-                    logging.info("Detected Crash (D)")
-                    iterStats["crashCount"] += 1
-                    crashData = CrashData(self.config, corpusData, 'D')
-                    serverManager.getCrashInformation(crashData)
-                    crashData.writeToFile()
-                    networkManager.closeConnection()
+                if not self.networkManager.testServerConnection():
+                    self._handleCrash(corpusData, 'D')
+                    self.networkManager.closeConnection()
 
                 logging.info("Restart server periodically: " +
-                             str(iterStats["count"]))
-                serverManager.restart()
-                if not networkManager.testServerConnection():
+                             str(self.iterStats["count"]))
+                self.serverManager.restart()
+                if not self.networkManager.testServerConnection():
                     logging.error("Error: Could not connect to server after restart. abort.")
                     return
 
         # all done, terminate server
-        serverManager.stopServer()
+        self.serverManager.stopServer()
 
 
     def printFuzzData(self, fuzzData):
@@ -192,31 +174,40 @@ class BasicSlave(object):
             print("    FROM: " + str( message["from"] ))
 
 
-    def updateStats(self, iterStats):
-        """Regularly send our statistics to the master"""
-        iterStats["count"] += 1
+    def updateStats(self):
+        """Regularly send our statistics to the master."""
+        self.iterStats["count"] += 1
         updateInterval = 5
 
         # check if we should notify parent
         currTime = time.time()
-        diffTime = currTime - iterStats["lastUpdateTime"]
+        diffTime = currTime - self.iterStats["lastUpdateTime"]
 
         if diffTime > updateInterval:
-            fuzzPerSec = (float(iterStats["count"]) /
-                          float(currTime - iterStats["startTime"]))
+            fuzzPerSec = (float(self.iterStats["count"]) /
+                          float(currTime - self.iterStats["startTime"]))
             # send fuzzing information to parent process
             self.queue.put( (
                 self.threadId,
                 fuzzPerSec,
-                iterStats["count"],
-                iterStats["crashCount"]) )
+                self.iterStats["count"],
+                self.iterStats["crashCount"]) )
 
             if "fuzzer_nofork" in self.config and self.config["fuzzer_nofork"]:
                 print("%d: %4.2f  %8d  %5d" % (
                       self.threadId,
                       fuzzPerSec,
-                      iterStats["count"],
-                      iterStats["crashCount"]
+                      self.iterStats["count"],
+                      self.iterStats["crashCount"]
                       ) )
 
-            iterStats["lastUpdateTime"] = currTime
+            self.iterStats["lastUpdateTime"] = currTime
+
+
+    def _handleCrash(self, corpusData, fuzzerPos):
+        print("Detected Crash at " + fuzzerPos)
+        self.iterStats["crashCount"] += 1
+        crashData = CrashData(self.config, corpusData, fuzzerPos)
+        self.serverManager.getCrashInformation(crashData)
+        crashData.writeToFile()
+        self.serverManager.restart()
