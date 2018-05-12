@@ -1,7 +1,6 @@
 import framework
 
 import sys
-import ast
 
 """
 The first way to use FFW is to create a subdirectory in ffw/, and then

@@ -141,10 +141,13 @@ class ClientTcpThread(threading.Thread):
 
     def getDataFilename(self):
         n = 0
-        filename = "data_" + str(n) + ".pickle"
-        while os.path.isfile(filename):
+        filename = "intercept" + str(n) + ".pickle"
+        path = os.path.join(self.config["input_dir"], filename)
+
+        while os.path.isfile(path):
             n += 1
-            filename = "data_" + str(n) + ".pickle"
+            filename = "intercept" + str(n) + ".pickle"
+            path = os.path.join(self.config["input_dir"], filename)
 
         return filename
 
@@ -272,3 +275,5 @@ class Interceptor(object):
             self._performTcpIntercept(localHost, interceptorPort, targetHost, targetPort)
         else:
             self._performUdpIntercept(localHost, interceptorPort, targetHost, targetPort)
+
+        serverManager.stop()
