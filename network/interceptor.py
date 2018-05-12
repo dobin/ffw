@@ -133,7 +133,7 @@ class ClientTcpThread(threading.Thread):
         logging.info("Got " + str(len(self.data)) + " packets")
         fileName = self.getDataFilename()
 
-        logging.info("Storing into file: " + fileName)
+        print("Storing into file: " + fileName)
         networkData = NetworkData(self.config, self.data)
         corpusData = CorpusData(self.config, fileName, networkData)
         corpusData.writeToFile()

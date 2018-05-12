@@ -124,10 +124,11 @@ class HonggSlave(object):
         print("Performing warmup. This can take some time.")
         while True:
             logging.debug("A warmup loop...")
-
             try:
-                sys.stdout.write('.')
-                # sys.stdout.flush()  # generates errors
+                # this generates errors because multiple processes
+                # try to write to stdout
+                # sys.stdout.write('.')
+                # sys.stdout.flush()
                 initialCorpusData = initialCorpusIter.next()
             except StopIteration:
                 break
@@ -343,7 +344,8 @@ class HonggSlave(object):
                     return False
 
             if message["from"] == "cli":
-                logging.debug("  Sending message: " + str(networkData.messages.index(message)))
+                logging.debug("  Sending message: " +
+                              str(networkData.messages.index(message)))
                 res = networkManager.sendData(message)
                 if res is False:
                     return False
@@ -352,6 +354,16 @@ class HonggSlave(object):
 
 
     def _handleCrash(self, honggCorpusData):
+        # check if core exists
+        n = 0
+        while n < 4:
+            corepath = os.path.join(self.config['target_dir'], 'core')
+            if os.path.isfile(corepath):
+                break
+
+            time.sleep(0.1)
+            n += 1
+
         crashData = CrashData(self.config, honggCorpusData, '-')
         crashData.writeToFile()
 

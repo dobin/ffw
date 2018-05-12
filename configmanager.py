@@ -3,6 +3,7 @@ import os
 import distutils.spawn
 from mutator.mutatorinterface import testMutatorConfig
 import defaultconfig
+import resource
 
 
 class ConfigManager(object):
@@ -36,6 +37,24 @@ class ConfigManager(object):
     def checkFuzzRequirements(self, config, type):
         if not testMutatorConfig(config, type):
             return False
+
+        with open('/proc/sys/kernel/core_pattern', 'r') as f:
+            data = f.read()
+            if data[:4] != "core":
+                logging.error("Wrong core pattern: " + data)
+                logging.error("Do: echo core >/proc/sys/kernel/core_pattern")
+                return False
+
+        with open('/proc/sys/fs/suid_dumpable', 'r') as f:
+            data = f.read()
+            if data[:1] != "1":
+                logging.error("Suid is dumpable: " + data)
+                logging.error("Do: echo 1 > /proc/sys/fs/suid_dumpable")
+                return False
+
+        # ulimit -c unlimited
+        resource.setrlimit(resource.RLIMIT_CORE,
+                           (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
 
         if 'use_netnamespace' in config and config['use_netnamespace']:
             if not self._isRoot():
@@ -78,6 +97,7 @@ class ConfigManager(object):
 
         # cleanup. Damn this is ugly.
         config["target_bin"] = config["projdir"] + config["target_bin"]
+        config["target_dir"] = os.path.dirname(os.path.realpath(config['target_bin']))
         config["input_dir"] = config["projdir"] + config["input_dir"]
         config["temp_dir"] = config["projdir"] + config["temp_dir"]
         config["outcome_dir"] = config["projdir"] + config["outcome_dir"]
