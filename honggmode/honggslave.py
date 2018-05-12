@@ -127,7 +127,7 @@ class HonggSlave(object):
 
             try:
                 sys.stdout.write('.')
-                sys.stdout.flush()
+                # sys.stdout.flush()  # generates errors
                 initialCorpusData = initialCorpusIter.next()
             except StopIteration:
                 break
