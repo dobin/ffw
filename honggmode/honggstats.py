@@ -48,7 +48,8 @@ class HonggStats(object):
         # pending_favs, map_size, unique_crashes, unique_hangs, max_depth,
         # execs_per_sec
         self.f.write(str(int(time.time())) + ', ')  # unixtime
-        self.f.write(str(self.stats['iterCount']) + ', ')  # cycles_done
+        #self.f.write(str(self.stats['iterCount']) + ', ')  # cycles_done
+        self.f.write('0' + ', ')  # cycles_done
         self.f.write('0' + ', ')  # cur_path
         self.f.write(str(self.stats['corpusCount']) + ', ')  # paths_total
         self.f.write('0' + ', ')  # pending_total
@@ -58,6 +59,7 @@ class HonggStats(object):
         self.f.write(str(self.stats['timeoutCount']) + ', ')  # unique_hangs
         self.f.write('0' + ', ')  # max_depth
         self.f.write(str(self.stats['fps']) + '\n')  # execs_per_sec
+        self.f.flush()
 
 
     def addToStats(self, r):
@@ -73,12 +75,12 @@ class HonggStats(object):
         if cnt > 0:
             self.stats['last_path'] = self.getUnixTime()
 
-        cnt = r[3] - prev_r[3]
+        cnt = r[4] - prev_r[4]
         self.stats['crashCount'] += cnt
         if cnt > 0:
             self.stats['last_crash'] = self.getUnixTime()
 
-        cnt = r[4] - prev_r[4]
+        cnt = r[5] - prev_r[5]
         self.stats['timeoutCount'] += cnt
         if cnt > 0:
             self.stats['last_hang'] = self.getUnixTime()
