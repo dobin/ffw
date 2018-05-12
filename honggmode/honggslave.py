@@ -355,15 +355,17 @@ class HonggSlave(object):
 
     def _handleCrash(self, honggCorpusData):
         # check if core exists
-        n = 0
-        while n < 4:
-            corepath = os.path.join(self.config['target_dir'], 'core')
-            if os.path.isfile(corepath):
-                break
+        if self.config['handle_corefiles']:
+            n = 0
+            while n < 4:
+                corepath = os.path.join(self.config['target_dir'], 'core')
+                if os.path.isfile(corepath):
+                    break
 
-            time.sleep(0.1)
-            n += 1
+                time.sleep(0.1)
+                n += 1
 
+        print('Found crash!')
         crashData = CrashData(self.config, honggCorpusData, '-')
         crashData.writeToFile()
 
