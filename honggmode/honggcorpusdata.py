@@ -26,27 +26,15 @@ class HonggCorpusData(CorpusData):
         self.processed = processed
         self.isExternal = isExternal
 
-        self.stats = {
-            'crashes': 0,
-            'new': 0,
-            'hangs': 0,
-        }
+        self.stats['new'] = 0
 
 
     def isProcessed(self):
         return self.processed
 
 
-    def statsAddCrash(self):
-        self.stats['crashes'] += 1
-
-
     def statsAddNew(self):
         self.stats['new'] += 1
-
-
-    def statsAddHang(self):
-        self.stats['hang'] += 1
 
 
     def __str__(self):

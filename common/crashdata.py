@@ -28,7 +28,7 @@ class CrashData():
             self.filename += '.crash'
 
         # our parent spawned us - attribute it to them
-        if corpusData is not None and corpusData.getParentCorpus is not None:
+        if corpusData is not None and corpusData.getParentCorpus() is not None:
             corpusData.getParentCorpus().statsAddCrash()
 
         # should we write a .txt file additional to the pickle?

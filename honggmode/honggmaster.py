@@ -94,6 +94,7 @@ def _fuzzNoFork(config, q):
 def _fuzzConsole(config, q, procs):
     print("Thread:  Iterations  CorpusNew  CorpusOverall  Crashes  Fuzz/s")
     honggStats = HonggStats(len(procs))
+    honggStats.start()
 
     n = 0
     while True:

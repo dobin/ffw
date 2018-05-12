@@ -142,7 +142,7 @@ class HonggSlave(object):
                 # We dont really care what the fuzzer sends us
                 # BUT it should be always "New!"
                 # It should never be "Cras"
-                if honggData is "New!":
+                if honggData == "New!":
                     logging.debug("Honggfuzz answered correctly, received: " + honggData)
                 else:
                     logging.warn("Honggfuzz answered wrong, it should be New! but is: " + honggData)

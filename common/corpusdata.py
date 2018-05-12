@@ -28,8 +28,11 @@ class CorpusData(object):
         self.time = None  # Type: String
 
         self.basePath = config["input_dir"]
-
         self._parent = None
+        self.stats = {
+            'crashes': 0,
+            'hangs': 0,
+        }
 
 
     def getParentCorpus(self):
@@ -90,6 +93,14 @@ class CorpusData(object):
         # check if no client message is found in an input
         if next((i for i in self.networkData.messages if i["from"] == "cli"), None) is None:
             raise ValueError("No client messages found in %s" % self.filename)
+
+
+    def statsAddCrash(self):
+        self.stats['crashes'] += 1
+
+
+    def statsAddHang(self):
+        self.stats['hang'] += 1
 
 
     def __str__(self):
