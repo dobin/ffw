@@ -85,7 +85,7 @@ class HonggSlave(object):
                 subprocess.call( [ 'ip', 'link', 'set', 'dev', 'lo', 'up' ] )
                 self.realDoActualFuzz()
         else:
-            self.readDoActualfuzz()
+            self.realDoActualfuzz()
 
 
     def realDoActualFuzz(self):
