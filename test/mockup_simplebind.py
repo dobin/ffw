@@ -5,12 +5,17 @@
 
 import socket
 import logging
+import time
+import os
 
 try:
     sockRed = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sockRed.bind( ('localhost', 1234) )
+    arg = ('localhost', 1234)
+    sockRed.bind( arg )
     sockRed.listen(5)
-
+    print(str(os.getpid()) + ": Sleep for 1: " + str(arg))
+    time.sleep(1)
+    print("Finish")
     sockRed.close()
     exit(0)
 except Exception as e:
