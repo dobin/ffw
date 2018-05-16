@@ -208,11 +208,7 @@ class NetworkManager(object):
             time.sleep(0.5)
 
         if not alive:
-<<<<<<< HEAD
-            logging.error("NET Server not alive, aborting")
-=======
-            logging.error("Server not alive, aborting - " + str(self.targetPort))
->>>>>>> 12f6f40fad7887ebee5c895ac47c2af6264e2f99
+            logging.error("NET  Server not alive, aborting - " + str(self.targetPort))
             self._printErrAnalysis()
             print("")
             print("Common errors:")
