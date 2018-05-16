@@ -11,8 +11,6 @@ from common.corpusmanager import CorpusManager
 from mutator.mutatorinterface import MutatorInterface
 from target.servermanager import ServerManager
 from common.crashdata import CrashData
-from target.linuxnamespace import LinuxNamespace
-
 
 import utils
 
@@ -32,6 +30,30 @@ class BasicSlave(object):
 
 
     def doActualFuzz(self):
+        if self.config['use_netnamespace']:
+            namespaceName = 'ffw-' + str(self.threadId)
+            namespacePath = '/var/run/netns/' + namespaceName
+
+            # delete namespace if it already exists
+            # so the commands below do not generate errors
+            if os.path.isfile(namespacePath):
+                subprocess.call( [ 'ip', 'netns', 'del', namespaceName ] )
+
+            # add namespace
+            subprocess.call( [ 'ip', 'netns', 'add', namespaceName ] )
+
+            # enter namespace
+            with Namespace(namespacePath, 'net'):
+                # namespace is naked - add loopback interface
+                # IMPORTANT - or you get 'network unreachable' on fuzzing
+                subprocess.call( [ 'ip', 'addr', 'add', '127.0.0.1/8', 'dev', 'lo' ] )
+                subprocess.call( [ 'ip', 'link', 'set', 'dev', 'lo', 'up' ] )
+                self.realDoActualFuzz()
+        else:
+            self.readDoActualfuzz()
+
+
+    def realDoActualFuzz(self):
         """
         The main fuzzing loop.
 
@@ -46,8 +68,6 @@ class BasicSlave(object):
         logging.info("Setup fuzzing..")
         signal.signal(signal.SIGINT, signal_handler)
         if 'use_netnamespace' in self.config and self.config['use_netnamespace']:
-            linuxNamespace = LinuxNamespace(self.threadId)
-            linuxNamespace.apply()
             targetPort = self.config["target_port"]
         else:
             targetPort = self.config["target_port"] + self.threadId

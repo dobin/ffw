@@ -15,8 +15,8 @@ from target.servermanager import ServerManager
 from common.crashdata import CrashData
 from honggcorpusmanager import HonggCorpusManager
 from mutator.mutatorinterface import MutatorInterface
-from target.linuxnamespace import LinuxNamespace
-
+from nsenter import Namespace
+import subprocess
 
 def signal_handler(signal, frame):
     # TODO fixme make object so i can kill server
@@ -52,6 +52,7 @@ class HonggSlave(object):
             self.twitterInterface = TwitterInterface(self.config)
             self.twitterInterface.load()
 
+
     def doActualFuzz(self):
         """
         Child thread of fuzzer - does teh actual fuzzing.
@@ -64,6 +65,30 @@ class HonggSlave(object):
         New fuzzed data will be generated via HonggCorpusData, where
         the initial data from the corpus is managed by HonggCorpusManager.
         """
+        if self.config['use_netnamespace']:
+            namespaceName = 'ffw-' + str(self.threadId)
+            namespacePath = '/var/run/netns/' + namespaceName
+
+            # delete namespace if it already exists
+            # so the commands below do not generate errors
+            if os.path.isfile(namespacePath):
+                subprocess.call( [ 'ip', 'netns', 'del', namespaceName ] )
+
+            # add namespace
+            subprocess.call( [ 'ip', 'netns', 'add', namespaceName ] )
+
+            # enter namespace
+            with Namespace(namespacePath, 'net'):
+                # namespace is naked - add loopback interface
+                # IMPORTANT - or you get 'network unreachable' on fuzzing
+                subprocess.call( [ 'ip', 'addr', 'add', '127.0.0.1/8', 'dev', 'lo' ] )
+                subprocess.call( [ 'ip', 'link', 'set', 'dev', 'lo', 'up' ] )
+                self.realDoActualFuzz()
+        else:
+            self.realDoActualfuzz()
+
+
+    def realDoActualFuzz(self):
         #logging.basicConfig(level=logging.DEBUG)
         if "debug" in self.config and self.config["debug"]:
             self.config["processes"] = 1
@@ -72,9 +97,8 @@ class HonggSlave(object):
             utils.setupSlaveLoggingWithFile(self.threadId)
 
         if 'use_netnamespace' in self.config and self.config['use_netnamespace']:
-            linuxNamespace = LinuxNamespace(self.threadId)
-            linuxNamespace.apply()
             targetPort = self.config["target_port"]
+
         else:
             targetPort = self.config["target_port"] + self.threadId
         self.targetPort = targetPort
@@ -108,7 +132,11 @@ class HonggSlave(object):
         # connect to honggfuzz
         honggComm = honggcomm.HonggComm()
         if honggComm.openSocket(serverManager.process.pid):
-            print (" connected!")
+            print (" connected to honggfuzz!")
+            logging.info("Honggfuzz connection successful")
+        else:
+            logging.error("Could not connect to honggfuzz socket.")
+            return
 
         # test connection first
         if not networkManager.debugServerConnection():
@@ -135,7 +163,7 @@ class HonggSlave(object):
 
             honggData = honggComm.readSocket()
             if honggData == "Fuzz":
-                logging.debug("Fuzz: Warmup send")
+                logging.debug("  Warmup Fuzz: Sending: " + str(initialCorpusData.filename))
                 self._connectAndSendData(networkManager, initialCorpusData.networkData)
                 honggComm.writeSocket("okay")
 
@@ -144,11 +172,12 @@ class HonggSlave(object):
                 # BUT it should be always "New!"
                 # It should never be "Cras"
                 if honggData == "New!":
-                    logging.debug("Honggfuzz answered correctly, received: " + honggData)
+                    logging.debug("  Warmup: Honggfuzz answered correctly, received: " + honggData)
                 else:
-                    logging.warn("Honggfuzz answered wrong, it should be New! but is: " + honggData)
+                    logging.warn("  Warumup: Honggfuzz answered wrong, it should be New! but is: " + honggData)
 
         # the actual fuzzing
+        logging.debug("Warmup finished.")
         logging.info("Performing fuzzing")
         honggCorpusData = None
 

@@ -98,6 +98,7 @@ class NetworkManager(object):
         self.sock.settimeout(1)
         try:
             data = self.sock.recv(1024)
+            logging.debug("Received: " + str(data))
             if self.config["protoObj"] is not None and message is not None:
                 self.config["protoObj"].onPostRecv(data, message["index"])
             return data
@@ -207,7 +208,11 @@ class NetworkManager(object):
             time.sleep(0.5)
 
         if not alive:
+<<<<<<< HEAD
             logging.error("NET Server not alive, aborting")
+=======
+            logging.error("Server not alive, aborting - " + str(self.targetPort))
+>>>>>>> 12f6f40fad7887ebee5c895ac47c2af6264e2f99
             self._printErrAnalysis()
             print("")
             print("Common errors:")
@@ -226,11 +231,17 @@ class NetworkManager(object):
         print("Check if process exists: " + cmdPs)
         os.system(cmdPs)
 
-        print("")
-
-        cmdNetstat = "lsof -i -P | grep %s 2>/dev/null" % (binaryName)
+        cmdNetstat = "lsof -i -P "
         print("Check if port is open: " + cmdNetstat)
         os.system(cmdNetstat)
+
+        print("Trying netcat")
+        cmdNc = "echo bla | nc -v localhost " + str(self.targetPort)
+        os.system(cmdNc)
+
+        print("List intefaces")
+        cmdIp = "ip a l"
+        os.system(cmdIp)
 
 
     def sendMessages(self, networkData):
