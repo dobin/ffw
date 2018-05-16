@@ -52,7 +52,7 @@ class NetworkManager(object):
         self.sock.settimeout(0.5)
 
         server_address = ('localhost', self.targetPort)
-        logging.info("Open connection on localhost:" + str(self.targetPort))
+        logging.info("NET Open connection on localhost:" + str(self.targetPort))
         try:
             self.sock.connect(server_address)
 
@@ -61,7 +61,7 @@ class NetworkManager(object):
         except socket.error as exc:
             # server down
             self.sock.close()
-            logging.info("  Could not connect! Server is down: " + str(exc))
+            logging.info("NET  Could not connect! Server is down: " + str(exc))
             self.sock = None
             return False
 
@@ -76,7 +76,7 @@ class NetworkManager(object):
     def sendDataTcp(self, message=None):
         """Send data to the server."""
         if self.sock is None:
-            logging.error("Trying to send to a closed socket")
+            logging.error("NET Trying to send to a closed socket")
             sys.exit(1)
 
         try:
@@ -85,7 +85,7 @@ class NetworkManager(object):
 
             self.sock.sendall(message["data"])
         except socket.error as exc:
-            logging.debug("  sendData(): Send data exception on msg " + str(message["index"]) + ": " + str(exc))
+            logging.debug("NET  sendData(): Send data exception on msg " + str(message["index"]) + ": " + str(exc))
             return False
 
         return True
@@ -102,19 +102,19 @@ class NetworkManager(object):
                 self.config["protoObj"].onPostRecv(data, message["index"])
             return data
         except Exception as e:
-            logging.info("ReceiveData err on msg " + str(message["index"]) + ": " + str(e))
+            logging.info("NET ReceiveData err on msg " + str(message["index"]) + ": " + str(e))
             return None
 
 
     def testServerConnectionTcp(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_address = ('localhost', self.targetPort)
-        logging.debug("testServerConnectionTcp: connect to " + str(server_address))
+        logging.debug("NET testServerConnectionTcp: connect to " + str(server_address))
         sock.settimeout(1)
         try:
             sock.connect(server_address)
         except socket.error as exc:
-            logging.info("Connection error: " + str(exc))
+            logging.info("NET Connection error: " + str(exc))
             return False
 
         sock.close()
@@ -129,7 +129,7 @@ class NetworkManager(object):
         if not self.testServerConnection():
             return False
 
-        logging.info("Open udp connection")
+        logging.info("NET Open udp connection")
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         dest = ('127.0.0.1', self.targetPort)
         self.sock.connect(dest)
@@ -141,14 +141,14 @@ class NetworkManager(object):
 
 
     def closeConnectionUdp(self):
-        logging.info("Close udp connection")
+        logging.info("NET Close udp connection")
         self.sock.close()
 
 
     def sendDataUdp(self, message=None):
         """Send data to the server."""
         if self.sock is None:
-            logging.error("Trying to send to a closed socket")
+            logging.error("NET Trying to send to a closed socket")
             sys.exit(1)
 
         try:
@@ -157,7 +157,7 @@ class NetworkManager(object):
 
             self.sock.sendto(message["data"], ('127.0.0.1', self.targetPort))
         except socket.error as exc:
-            logging.debug("  sendData(): Send data exception on msg " + str(message["index"]) + ": " + str(exc))
+            logging.debug("NET  sendData(): Send data exception on msg " + str(message["index"]) + ": " + str(exc))
             return False
 
         return True
@@ -171,7 +171,7 @@ class NetworkManager(object):
                 self.config["protoObj"].onPostRecv(data, message["index"])
             return data
         except Exception as e:
-            logging.info("ReceiveData err on msg " + str(message["index"]) + ": " + str(e))
+            logging.info("NET ReceiveData err on msg " + str(message["index"]) + ": " + str(e))
             return None
 
 
@@ -187,7 +187,7 @@ class NetworkManager(object):
             sock.close()
             return True
         except Exception as e:
-            logging.info("testServerConnection1: Server DOWN! " + str(e))
+            logging.info("NET testServerConnection1: Server DOWN! " + str(e))
             return False
 
 
@@ -198,7 +198,7 @@ class NetworkManager(object):
         n = 0
         alive = False
         while n < 10:
-            logging.info("Check if we can connect to server localhost:" + str(self.targetPort))
+            logging.info("NET Check if we can connect to server localhost:" + str(self.targetPort))
             alive = self.testServerConnection()
             if alive:
                 return True
@@ -207,7 +207,7 @@ class NetworkManager(object):
             time.sleep(0.5)
 
         if not alive:
-            logging.error("Server not alive, aborting")
+            logging.error("NET Server not alive, aborting")
             self._printErrAnalysis()
             print("")
             print("Common errors:")
@@ -255,20 +255,20 @@ class NetworkManager(object):
     def waitForServerReadyness(self):
         n = 0
         while not self.testServerConnection():
-            logging.debug("Trying to connect")
+            logging.debug("NET Trying to connect")
             if n > 20:
-                logging.error("WaitForServerReadyNess: Server no ready after 20 tries of 0.2s (4s).. aborting")
+                logging.error("NET WaitForServerReadyNess: Server no ready after 20 tries of 0.2s (4s).. aborting")
                 return False
 
             time.sleep(0.2)
             n += 1
 
-        logging.info("Server is ready (accepting connections)")
+        logging.info("NET Server is ready (accepting connections)")
         return True
 
 
     def sendPartialPreData(self, networkData):
-        logging.info("Send pre data: ")
+        logging.info("NET Send pre data: ")
 
         for message in networkData.messages:
             if message == networkData.fuzzMsgChoice:
@@ -280,7 +280,7 @@ class NetworkManager(object):
                     return False
 
             if message["from"] == "cli":
-                logging.debug("  Sending pre message: " + str(networkData.messages.index(message)))
+                logging.debug("NET  Sending pre message: " + str(networkData.messages.index(message)))
                 ret = self.sendData(message)
                 if not ret:
                     return False
@@ -289,7 +289,7 @@ class NetworkManager(object):
 
 
     def sendPartialPostData(self, networkData):
-        logging.info("Send data: ")
+        logging.info("NET Send data: ")
 
         s = False
         for message in networkData.messages:
@@ -305,9 +305,9 @@ class NetworkManager(object):
 
                 if message["from"] == "cli":
                     if "isFuzzed" in message:
-                        logging.debug("  Sending fuzzed message: " + str(networkData.messages.index(message)))
+                        logging.debug("NET   Sending fuzzed message: " + str(networkData.messages.index(message)))
                     else:
-                        logging.debug("  Sending post message: " + str(networkData.messages.index(message)))
+                        logging.debug("NET   Sending post message: " + str(networkData.messages.index(message)))
                     res = self.sendData(message)
                     if res is False:
                         return False

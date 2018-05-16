@@ -57,14 +57,14 @@ class HonggComm(object):
 
 
     def readSocket(self):
-        logging.debug("SOCKET: Try to recv")
+        logging.debug("HONGGSOCKET: Try to recv")
         recv = self.sock.recv(4).decode()
-        logging.debug("SOCKET:   Recieved: " + recv)
+        logging.debug("HONGGSOCKET:   Recieved: " + recv)
         return recv
 
 
     def writeSocket(self, data):
-        logging.debug("SOCKET: Send: " + data)
+        logging.debug("HONGGSOCKET: Send: " + data)
         self.sock.sendall( str.encode(data) )
 
 
