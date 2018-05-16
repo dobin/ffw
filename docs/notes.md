@@ -24,6 +24,19 @@ lxc config set <container> security.nesting true
 lxc config set <container> security.privileged true
 ```
 
+## fancy plots
+
+use afl-plot, it requires `plot_data` and `fuzzer_stats`
+(which are automagically written)
+```
+$ afl-plot  . .
+progress plotting utility for afl-fuzz by <lcamtuf@google.com>
+
+[*] Generating plots...
+Warning: empty y range [0:0], adjusting to [-1:1]
+[*] Generating index.html...
+[+] All done - enjoy your charts!
+```
 
 ## "Could not connect" / "Socket Error"
 
