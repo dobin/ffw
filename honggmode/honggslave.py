@@ -208,7 +208,11 @@ class HonggSlave(object):
                 if not haveCheckedTargetIsAlive:
                     if not networkManager.waitForServerReadyness():
                         logging.error("Wanted to fuzz, but targets seems down. Force honggfuzz to restart it.")
-                        honggComm.writeSocket("bad!")
+                        try:
+                            honggComm.writeSocket("bad!")
+                        except Exception as e:
+                            logging.error("Honggfuzz server crashed? Killed?")
+                            return
                         self.iterStats["timeoutCount"] += 1
                     else:
                         haveCheckedTargetIsAlive = True
@@ -233,7 +237,11 @@ class HonggSlave(object):
 
                 if couldSend:
                     # Notify honggfuzz that we are finished sending the fuzzed data
-                    honggComm.writeSocket("okay")
+                    try:
+                        honggComm.writeSocket("okay")
+                    except Exception as e:
+                        logging.error("Honggfuzz server crashed? Killed?")
+                        return
 
                     # the correct way is to send SIGIO signal to honggfuzz
                     # https://github.com/google/honggfuzz/issues/200
@@ -244,7 +252,12 @@ class HonggSlave(object):
                     # is really up
                     logging.info("Server appears to be down, force restart")
                     self.iterStats["timeoutCount"] += 1
-                    honggComm.writeSocket("bad!")
+                    try:
+                        honggComm.writeSocket("bad!")
+                    except Exception as e:
+                        logging.error("Honggfuzz server crashed? Killed?")
+                        return
+
                     haveCheckedTargetIsAlive = False
 
             # honggfuzz says: new basic-block found
