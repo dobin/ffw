@@ -23,6 +23,10 @@ class MutatorDictionary(object):
 		tempIndex = []
 		for word in self.dict:
 			for msgIdx, msg in enumerate(corpusData.networkData.messages):
+				# only fuzz client messages
+				if msg['from'] != 'cli':
+					continue
+
 				pos = -1
 				# find (multiple) of word in msg
 				while True:
