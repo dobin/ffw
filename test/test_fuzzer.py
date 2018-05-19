@@ -47,7 +47,7 @@ class CorpusFileTest(unittest.TestCase):
 
     def test_dumbfuzzer(self):
         config = self._getConfig()
-        config['mutator'] = 'Dumb'
+        config['mutator'] = [ 'Dumb' ]
         self.assertTrue(testMutatorConfig(config, 'basic'))
         mutatorInterface = MutatorInterface(config, 0)
 
@@ -61,7 +61,7 @@ class CorpusFileTest(unittest.TestCase):
 
     def test_radamsafuzzer(self):
         config = self._getConfig()
-        config['mutator'] = 'Radamsa'
+        config['mutator'] = [ 'Radamsa' ]
         self.assertTrue(testMutatorConfig(config, 'basic'))
         mutatorInterface = MutatorInterface(config, 0)
 
@@ -71,7 +71,7 @@ class CorpusFileTest(unittest.TestCase):
         # note that we only have one cli message, which is at index 0
         self.assertNotEqual(corpusData.networkData.messages[0]['data'],
                             fuzzedCorpusData.networkData.messages[0]['data'])
-
+        
 
 if __name__ == '__main__':
     unittest.main()

@@ -58,7 +58,7 @@ class DictionaryFuzzerTest(unittest.TestCase):
     def test_dictionaryfuzzer(self):
         config = self._getConfig()
         testutils.prepareFs(config)
-        config['mutator'] = 'Dictionary'
+        config['mutator'] = [ 'Dictionary' ]
         self._writeDictionary(config)
         self.assertTrue(testMutatorConfig(config, 'basic'))
         mutatorInterface = MutatorInterface(config, 0)
@@ -97,6 +97,32 @@ class DictionaryFuzzerTest(unittest.TestCase):
         self.assertTrue(
             fuzzedCorpusData5 == None
         )
+
+
+    def test_dictionaryfuzzerWithRadamsa(self):
+        config = self._getConfig()
+        testutils.prepareFs(config)
+        config['mutator'] = [ 'Dictionary', 'Radamsa' ]
+        self._writeDictionary(config)
+        self.assertTrue(testMutatorConfig(config, 'basic'))
+        mutatorInterface = MutatorInterface(config, 0)
+
+        corpusData = self._getCorpusData(config)
+
+        n = 0
+        stats = {
+            'Dictionary': 0,
+            'Radamsa': 0,
+        }
+        while n < 20:
+            fuzzedCorpusData = mutatorInterface.fuzz(corpusData)
+            stats[ fuzzedCorpusData.fuzzer ] += 1
+            n += 1
+
+        self.assertEqual(stats['Dictionary'], 4)
+        self.assertEqual(stats['Radamsa'], 16)
+
+        print str(stats)
 
 
 if __name__ == '__main__':

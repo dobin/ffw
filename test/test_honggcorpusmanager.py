@@ -15,7 +15,7 @@ class HonggCorpusManagerTest(unittest.TestCase):
         config = {
             "input_dir": "/tmp/ffw-test/in/",
             "temp_dir": "/tmp/ffw-test/temp/",
-            "mutator": "Dumb",
+            "mutator": [ "Dumb" ],
             "basedir": os.path.dirname(os.path.realpath(__file__)) + "/..",
         }
         return config

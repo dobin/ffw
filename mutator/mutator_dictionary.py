@@ -2,6 +2,7 @@ import copy
 import logging
 import os
 
+
 class MutatorDictionary(object):
 
 	def __init__(self, threadId, seed, dictDir, threadCount=1):

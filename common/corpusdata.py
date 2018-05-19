@@ -33,6 +33,7 @@ class CorpusData(object):
             'crashes': 0,
             'hangs': 0,
         }
+        self.fuzzer = None
 
 
     def getParentCorpus(self):
