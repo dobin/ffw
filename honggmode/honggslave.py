@@ -107,7 +107,7 @@ class HonggSlave(object):
         random.seed(self.initialSeed)
         signal.signal(signal.SIGINT, signal_handler)
 
-        mutatorInterface = MutatorInterface(self.config)
+        mutatorInterface = MutatorInterface(self.config, self.threadId)
 
         networkManager = networkmanager.NetworkManager(self.config, targetPort)
         self.corpusManager = HonggCorpusManager(self.config)

@@ -71,7 +71,7 @@ class HonggCorpusManagerTest(unittest.TestCase):
         corpusData.writeToFile()
 
         # wrie a fuzzed file
-        mutatorInterface = MutatorInterface(config)
+        mutatorInterface = MutatorInterface(config, 0)
         corpusDataFuzzed = mutatorInterface.fuzz(corpusData)
         corpusDataFuzzed.writeToFile()
 

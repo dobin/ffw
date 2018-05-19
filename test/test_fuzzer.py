@@ -49,7 +49,7 @@ class CorpusFileTest(unittest.TestCase):
         config = self._getConfig()
         config['mutator'] = 'Dumb'
         self.assertTrue(testMutatorConfig(config, 'basic'))
-        mutatorInterface = MutatorInterface(config)
+        mutatorInterface = MutatorInterface(config, 0)
 
         corpusData = self._getCorpusData(config)
         fuzzedCorpusData = mutatorInterface.fuzz(corpusData)
@@ -63,7 +63,7 @@ class CorpusFileTest(unittest.TestCase):
         config = self._getConfig()
         config['mutator'] = 'Radamsa'
         self.assertTrue(testMutatorConfig(config, 'basic'))
-        mutatorInterface = MutatorInterface(config)
+        mutatorInterface = MutatorInterface(config, 0)
 
         corpusData = self._getCorpusData(config)
         fuzzedCorpusData = mutatorInterface.fuzz(corpusData)

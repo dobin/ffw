@@ -80,7 +80,7 @@ class BasicSlave(object):
                           self.config['input_dir'])
             return
 
-        mutatorInterface = MutatorInterface(self.config)
+        mutatorInterface = MutatorInterface(self.config, self.threadId)
 
         self.serverManager = ServerManager(
             self.config,

@@ -4,9 +4,15 @@ import random
 import logging
 import os
 import subprocess
+import sys
 
 from mutator_list import mutators
+from mutator_dictionary import MutatorDictionary
 import utils
+
+
+def str_to_class(classname):
+    return getattr(sys.modules[__name__], classname)
 
 
 def testMutatorConfig(config, mode):
@@ -24,18 +30,28 @@ def testMutatorConfig(config, mode):
         logging.error("Using a generative fuzzer in honggmode is not really possible")
         return False
 
-    fuzzerBin = config["basedir"] + "/" + fuzzerData["file"]
-    if not os.path.isfile(fuzzerBin):
-        logging.error("Could not find fuzzer binary: " + fuzzerBin)
+    if 'class' in fuzzerData:
+        if not str_to_class(fuzzerData['class']):
+            logging.error("Class does not exist: " + fuzzerData['class'])
+
+    elif 'file' in fuzzerData:
+        fuzzerBin = config["basedir"] + "/" + fuzzerData["file"]
+        if not os.path.isfile(fuzzerBin):
+            logging.error("Could not find fuzzer binary: " + fuzzerBin)
+            return False
+    else:
+        logging.error("Fuzzer is neither file or class")
         return False
 
     return True
 
 
 class MutatorInterface(object):
-    def __init__(self, config):
+    def __init__(self, config, threadId):
         self.config = config
         self.seed = None
+        self.threadId = threadId
+        self.fuzzerClassInstances = {}
         self._loadConfig()
 
 
@@ -44,7 +60,8 @@ class MutatorInterface(object):
         self.fuzzerData = mutators[ self.config["mutator"] ]
 
         # checked in testMutatorConfig
-        self.fuzzerBin = self.config["basedir"] + "/" + self.fuzzerData["file"]
+        if 'file' in self.fuzzerData:
+            self.fuzzerBin = self.config["basedir"] + "/" + self.fuzzerData["file"]
 
         # not checked atm
         self.grammars_string = ""
@@ -69,6 +86,18 @@ class MutatorInterface(object):
 
         self._generateSeed()
 
+        # randomly select a fuzzer
+
+        if 'file' in self.fuzzerData:
+            return self._fuzzFile(corpusData)
+        elif 'class' in self.fuzzerData:
+            return self._fuzzClass(corpusData)
+        else:
+            logging.error("Hmmm")
+
+
+    def _fuzzFile(self, corpusData):
+        logging.debug("Using File Fuzzer: " + self.fuzzerData['file'])
         self.fuzzingInFile = os.path.join(
             self.config["temp_dir"],
             str(self.seed) + ".in.raw")
@@ -77,6 +106,11 @@ class MutatorInterface(object):
             str(self.seed) + ".out.raw")
 
         corpusDataNew = corpusData.createFuzzChild(self.seed)
+        # we just randomly select a message to fuzz here
+        # the fuzzer itself cannot have any information about the data
+        # structures, so we select the data for him. Unlike in the
+        # class based fuzzer
+        corpusDataNew.networkData.selectMessage()
         initialData = corpusDataNew.networkData.getFuzzMessageData()
 
         self._writeDataToFile(initialData)
@@ -85,6 +119,28 @@ class MutatorInterface(object):
         corpusDataNew.networkData.setFuzzMessageData(fuzzedData)
 
         return corpusDataNew
+
+
+    def _fuzzClass(self, corpusData):
+        logging.debug("Using File Fuzzer: " + self.fuzzerData['class'])
+        # each fuzzer is only instantiated once
+        # if the fuzzer has to keep state for the individual corpusData,
+        # it will do so by itself.
+        if self.fuzzerData['class'] not in self.fuzzerClassInstances:
+            fuzzerClass = str_to_class(self.fuzzerData['class'])
+            fuzzerClassInstance = fuzzerClass(
+                self.threadId,
+                self.seed,
+                threadCount=self.config['processes'])
+            self.fuzzerClassInstances[ self.fuzzerData['class'] ] = fuzzerClassInstance
+
+        corpusDataNew = self.fuzzerClassInstances[ self.fuzzerData['class'] ].fuzz(corpusData)
+
+        return corpusDataNew
+
+
+    # The classes below are only for external (file-) fuzzers.
+    # It might make sense to split this class.
 
 
     def _writeDataToFile(self, data):

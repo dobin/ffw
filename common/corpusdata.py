@@ -44,7 +44,6 @@ class CorpusData(object):
         corpusData.parentFilename = self.filename
         corpusData._parent = self
         corpusData.seed = seed
-        corpusData.networkData.selectMessage()
 
         corpusData.createNewFilename()
         return corpusData
