@@ -14,6 +14,7 @@ from mutator.mutator_dictionary import MutatorDictionary
 class DictionaryFuzzerTest(unittest.TestCase):
     def _getConfig(self):
         config = {
+            "target_dir": "/tmp/ffw-test/bin",
             "input_dir": "/tmp/ffw-test/in",
             "temp_dir": "/tmp/ffw-test/temp",
             "basedir": os.path.dirname(os.path.realpath(__file__)) + "/..",
@@ -48,9 +49,17 @@ class DictionaryFuzzerTest(unittest.TestCase):
         return corpusData
 
 
+    def _writeDictionary(self, config):
+        with open(config['target_dir'] + '/dictionary.txt', "w") as f:
+            f.write("test1\n")
+            f.write("test2\n")
+
+
     def test_dictionaryfuzzer(self):
         config = self._getConfig()
+        testutils.prepareFs(config)
         config['mutator'] = 'Dictionary'
+        self._writeDictionary(config)
         self.assertTrue(testMutatorConfig(config, 'basic'))
         mutatorInterface = MutatorInterface(config, 0)
 

@@ -1,9 +1,10 @@
 import copy
 import logging
+import os
 
 class MutatorDictionary(object):
 
-	def __init__(self, threadId, seed, threadCount=1):
+	def __init__(self, threadId, seed, dictDir, threadCount=1):
 		self.seed = seed
 		self.entry = {
 			'networkMsg': 0,
@@ -12,10 +13,21 @@ class MutatorDictionary(object):
 			'replaceWordIdx': 0,
 			'counter': 0,
 		}
-		self.dict = [ "test1", "test2" ]
+
+		self.dict = [ ]
 		self.threadId = threadId
 		self.threadCount = threadCount
 		self.index = {}  # corpusData -> []entry
+
+		dictpath = os.path.join(dictDir, 'dictionary.txt')
+		self._loadDict(dictpath)
+
+
+	def _loadDict(self, dictpath):
+		with open(dictpath, 'r') as f:
+			self.dict = f.readlines()
+
+		self.dict = [x.strip() for x in self.dict]
 
 
 	def _createIndex(self, corpusData):

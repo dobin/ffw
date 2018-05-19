@@ -131,6 +131,7 @@ class MutatorInterface(object):
             fuzzerClassInstance = fuzzerClass(
                 self.threadId,
                 self.seed,
+                self.config['target_dir'],
                 threadCount=self.config['processes'])
             self.fuzzerClassInstances[ self.fuzzerData['class'] ] = fuzzerClassInstance
 
