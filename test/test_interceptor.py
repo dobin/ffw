@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import logging
 import unittest
 import os
 import threading
@@ -8,7 +9,7 @@ import time
 from common.corpusdata import CorpusData
 from network.interceptor import Interceptor
 from interceptorclientmockup import MockupClient
-
+import testutils
 
 class InterceptorTest(unittest.TestCase):
     def _getConfig(self):
@@ -28,9 +29,10 @@ class InterceptorTest(unittest.TestCase):
 
 
     def test_tcpintercept(self):
-        #logging.basicConfig(level=logging.DEBUG)
+        logging.basicConfig(level=logging.DEBUG)
         config = self._getConfig()
-        targetPort = 10000
+        testutils.prepareFs(config)
+        targetPort = 10001
 
         mockupClient = MockupClient(targetPort)
         interceptor = Interceptor(config, onlyOne=True)

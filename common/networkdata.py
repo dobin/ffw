@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import random
+import logging
 
 from utils import xstr
 
@@ -47,6 +48,16 @@ class NetworkData(object):
             if self.messages[random_index]['from'] == 'cli':
                 self.fuzzMsgIdx = random_index
                 self.fuzzMsgChoice = self.messages[random_index]
+
+
+    def setSelectedMessage(self, msgIdx):
+        """
+        Set which message was selected.
+        An external fuzzer decided by its own which msg it wants
+        to fuzz. selectMessage() was not called.
+        """
+        self.fuzzMsgIdx = msgIdx
+        self.fuzzMsgChoice = self.messages[msgIdx]
 
 
     def getFuzzMessageData(self):

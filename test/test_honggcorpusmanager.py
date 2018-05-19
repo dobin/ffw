@@ -15,7 +15,7 @@ class HonggCorpusManagerTest(unittest.TestCase):
         config = {
             "input_dir": "/tmp/ffw-test/in/",
             "temp_dir": "/tmp/ffw-test/temp/",
-            "mutator": "Dumb",
+            "mutator": [ "Dumb" ],
             "basedir": os.path.dirname(os.path.realpath(__file__)) + "/..",
         }
         return config
@@ -71,7 +71,7 @@ class HonggCorpusManagerTest(unittest.TestCase):
         corpusData.writeToFile()
 
         # wrie a fuzzed file
-        mutatorInterface = MutatorInterface(config)
+        mutatorInterface = MutatorInterface(config, 0)
         corpusDataFuzzed = mutatorInterface.fuzz(corpusData)
         corpusDataFuzzed.writeToFile()
 

@@ -48,17 +48,17 @@ class ClientTcpThread(threading.Thread):
 
 
     def run(self):
-        logging.info("Client Thread" + str(self.__threadId) + " started")
+        logging.info("Interceptor TCP Thread: Client Thread" + str(self.__threadId) + " started")
 
         self.__clientSocket.setblocking(0)
 
-        logging.info('Logging into: %s:%i' % (self.__targetHost, self.__targetPort) )
+        logging.info('Interceptor TCP Thread: Logging into: %s:%i' % (self.__targetHost, self.__targetPort) )
         targetHostSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             targetHostSocket.connect((self.__targetHost, self.__targetPort))
         except Exception as e:
-            logging.error("connect() exception: " + str(e))
-            logging.error("  while connecting to: " + self.__targetHost + ":" + str(self.__targetPort))
+            logging.error("Interceptor TCP Thread: connect() exception: " + str(e))
+            logging.error("Interceptor TCP Thread:   while connecting to: " + self.__targetHost + ":" + str(self.__targetPort))
             return
         targetHostSocket.setblocking(0)
 
@@ -91,7 +91,7 @@ class ClientTcpThread(threading.Thread):
 
                     if data is not None:
                         if len(data) > 0:
-                            logging.info("Received from client: " + str(self.__threadId) + ": " + str(len(data)))
+                            logging.info("Interceptor TCP Thread: Received from client: " + str(self.__threadId) + ": " + str(len(data)))
                             targetHostData += data
                             self.data.append( self.createDataEntry("cli", data, n) )
                             n += 1
@@ -101,14 +101,14 @@ class ClientTcpThread(threading.Thread):
                     data = None
                     try:
                         data = targetHostSocket.recv(4096)
-                        logging.info("target: recv data")
+                        logging.info("Interceptor TCP Thread: target: recv data")
                     except Exception as e:
-                        logging.error("target recv Exception: " + str(e))
+                        logging.error("Interceptor TCP Thread: target recv Exception: " + str(e))
                         break
 
                     if data is not None:
                         if len(data) > 0:
-                            logging.info("Received from server: " + str(self.__threadId) + ": " + str(len(data)))
+                            logging.info("Interceptor TCP Thread: Received from server: " + str(self.__threadId) + ": " + str(len(data)))
                             clientData += data
                             self.data.append( self.createDataEntry("srv", data, n) )
                             n += 1
@@ -127,13 +127,13 @@ class ClientTcpThread(threading.Thread):
 
         self.__clientSocket.close()
         targetHostSocket.close()
-        logging.info("ClientTcpThread terminating")
+        logging.info("Interceptor TCP Thread: ClientTcpThread terminating")
 
         # store all the stuff
-        logging.info("Got " + str(len(self.data)) + " packets")
+        logging.info("Interceptor TCP Thread: Got " + str(len(self.data)) + " packets")
         fileName = self.getDataFilename()
 
-        print("Storing into file: " + fileName)
+        print("Interceptor TCP Thread: Storing into file: " + fileName)
         networkData = NetworkData(self.config, self.data)
         corpusData = CorpusData(self.config, fileName, networkData)
         corpusData.writeToFile()
@@ -165,24 +165,24 @@ class Interceptor(object):
             serverSocket.bind((localHost, int(localPort)))
             serverSocket.listen(5)
         except Exception as e:
-            logging.error("Error binding to: %s:%s: %s" % (localHost, localPort, str(e)))
+            logging.error("Interceptor: Error binding to: %s:%s: %s" % (localHost, localPort, str(e)))
             return
 
-        logging.info("Forwarding everything to %s:%s" % (targetHost, targetPort))
-        logging.info("Waiting for new client on port: " + str(localPort))
+        logging.info("Interceptor: Forwarding everything to %s:%s" % (targetHost, targetPort))
+        logging.info("Interceptor: Waiting for new client on port: " + str(localPort))
 
         threadId = 0
         while True:
             try:
                 clientSocket, address = serverSocket.accept()
-                print("Got new client")
+                print("Interceptor: Got new client")
             except socket.error as e:
-                logging.error("accept() Socket Error: " + str(e))
-                logging.error("Try waiting a bit...")
+                logging.error("Interceptor: accept() Socket Error: " + str(e))
+                logging.error("Interceptor: Try waiting a bit...")
 
                 break
             except KeyboardInterrupt:
-                logging.info("\nTerminating all clients...")
+                logging.info("\nInterceptor: Terminating all clients...")
                 self.terminateAll = True
                 break
 
@@ -261,7 +261,7 @@ class Interceptor(object):
         serverManager = ServerManager(self.config, 0, targetPort)
         isStarted = serverManager.start()
         if not isStarted:
-            logging.error("Could not start server, check its output")
+            logging.error("Interceptor: Could not start server, check its output")
             return
 
         # test connection
@@ -276,4 +276,7 @@ class Interceptor(object):
         else:
             self._performUdpIntercept(localHost, interceptorPort, targetHost, targetPort)
 
-        serverManager.stop()
+        # cannot stop here as there are background threads still running
+        # even if we arrive at this location. need to add some more code to
+        # keep the threads in an array and check if all are exited.
+        # serverManager.stop()

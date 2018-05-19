@@ -13,6 +13,12 @@ mutators = {
         "args": '-s %(seed)s -o %(output)s "%(input)s"',
         "type": "mut"
     },
+    "Dictionary":
+    {
+        "name": "Dictionary",
+        "class": "MutatorDictionary",
+        "type": "mut",
+    },
     "Zzuf":
     {
         "name": "Zzuf",
