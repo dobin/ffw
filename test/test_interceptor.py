@@ -66,7 +66,6 @@ class InterceptorTest(unittest.TestCase):
         filename = config["input_dir"] + "intercept0.pickle"
         corpusData = CorpusData(config, filename)
         corpusData.readFromFile()
-        print "Corpusdata: " + str(corpusData)
 
         self.assertEqual(corpusData.networkData.messages[0]['data'], 'msg1')
         self.assertEqual(corpusData.networkData.messages[0]['from'], 'cli')
