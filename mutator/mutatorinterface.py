@@ -119,7 +119,6 @@ class MutatorInterface(object):
 
 
     def _fuzzFile(self, corpusData, fuzzerData):
-        print("Using File Fuzzer: " + fuzzerData['file'])
         self.fuzzingInFile = os.path.join(
             self.config["temp_dir"],
             str(self.seed) + ".in.raw")
@@ -147,7 +146,6 @@ class MutatorInterface(object):
     def _fuzzClass(self, corpusData, fuzzerData):
         """Generic class-based fuzzer interface."""
 
-        print("Using Class Fuzzer: " + fuzzerData['class'])
         # each fuzzer is only instantiated once
         # if the fuzzer has to keep state for the individual corpusData,
         # it will do so by itself.
