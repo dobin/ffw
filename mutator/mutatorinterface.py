@@ -23,7 +23,7 @@ def testMutatorConfig(config, mode):
     """
     for mutator in config['mutator']:
         # check if binary exists
-        if not mutator in mutators:
+        if mutator not in mutators:
             logging.error("Could not find fuzzer with name: " + config["mutator"])
             return False
         fuzzerData = mutators[ mutator ]

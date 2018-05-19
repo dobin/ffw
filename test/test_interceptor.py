@@ -11,6 +11,7 @@ from network.interceptor import Interceptor
 from interceptorclientmockup import MockupClient
 import testutils
 
+
 class InterceptorTest(unittest.TestCase):
     def _getConfig(self):
         config = {
@@ -21,7 +22,7 @@ class InterceptorTest(unittest.TestCase):
             "projdir": os.path.dirname(os.path.realpath(__file__)) + "/test",
             "target_port": 20000,
             "target_bin": os.path.dirname(os.path.realpath(__file__)) + "/interceptorservermockup.py",
-            "target_dir":  os.path.dirname(os.path.realpath(__file__)),
+            "target_dir": os.path.dirname(os.path.realpath(__file__)),
             "target_args": "%(port)i",
             "ipproto": "tcp",
         }

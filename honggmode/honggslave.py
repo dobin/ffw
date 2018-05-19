@@ -18,6 +18,7 @@ from mutator.mutatorinterface import MutatorInterface
 from nsenter import Namespace
 import subprocess
 
+
 def signal_handler(signal, frame):
     # TODO fixme make object so i can kill server
     #stopServer()
@@ -93,7 +94,7 @@ class HonggSlave(object):
         if "debug" in self.config and self.config["debug"]:
             self.config["processes"] = 1
 
-        if "DebugWithFile" in self.config:
+        if "DebugWithFile" in self.config and self.config["DebugWithFile"]:
             utils.setupSlaveLoggingWithFile(self.threadId)
 
         if 'use_netnamespace' in self.config and self.config['use_netnamespace']:
