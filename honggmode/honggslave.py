@@ -307,6 +307,11 @@ class HonggSlave(object):
             if self.iterStats['iterCount'] > 0 and self.iterStats['iterCount'] % 300 == 0:
                 self.networkManager.tuneTimeouts( self.corpusManager.getMaxLatency() )
 
+            if self.iterStats['iterCount'] > 0 and self.iterStats['iterCount'] % 100 == 0:
+                if self.iterStats['corpusCount'] == 1:
+                    logging.warn("No new basic blocks found!")
+                    logging.warn("Are you sure you compiled target with honggfuzz?")
+
 
     def _connectAndSendData(self, networkData):
         """
