@@ -257,6 +257,10 @@ class Interceptor(object):
 
         self.config["target_port"] = targetPort
 
+        if not os.path.isdir(self.config["input_dir"]):
+            logging.error("Input directory does not exist: " + self.config["input_dir"])
+            return
+
         # run the targetserver, as configured in config
         serverManager = ServerManager(self.config, 0, targetPort)
         isStarted = serverManager.start()
