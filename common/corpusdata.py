@@ -77,8 +77,9 @@ class CorpusData(object):
 
 
     def writeToFile(self):
-        rawData = self.getRawData()
+        self.createNewFilename()  # update filename with fuzzmsgidx
         path = os.path.join(self.basePath, self.filename)
+        rawData = self.getRawData()
         logging.debug("Write corpus to file: " + path)
         with open(path, 'w') as outfile:
             pickle.dump(rawData, outfile)
