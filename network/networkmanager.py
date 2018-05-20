@@ -17,7 +17,7 @@ class NetworkManager(object):
         self.targetPort = int(targetPort)
 
         self.connectTimeout = 0.2
-        self.recvTimeout = 0.1
+        self.recvTimeout = 0.03  # 30/s
         self.testServerConnectionTimeout = 1
 
         if config["ipproto"] is "tcp":
@@ -277,7 +277,34 @@ class NetworkManager(object):
         return True
 
 
+    def sendAllData(self, networkData):
+        """For: Honggmode."""
+        logging.info("Send data: ")
+
+        for message in networkData.messages:
+            if message["from"] == "srv":
+                t1 = time.time()
+                r = self.receiveData(message)
+                t2 = time.time()
+
+                if not r:
+                    networkData.updateMessageTimeoutCount(message)
+                    return False
+                else:
+                    networkData.updateMessageLatency(message, (t2 - t1))
+
+            if message["from"] == "cli":
+                logging.debug("  Sending message: " +
+                              str(networkData.messages.index(message)))
+                res = self.sendData(message)
+                if res is False:
+                    return False
+
+        return True
+
+
     def sendPartialPreData(self, networkData):
+        """For: BasicMode."""
         logging.info("NET Send pre data: ")
 
         for message in networkData.messages:
@@ -285,9 +312,14 @@ class NetworkManager(object):
                 break
 
             if message["from"] == "srv":
+                t1 = time.time()
                 r = self.receiveData(message)
+                t2 = time.time()
                 if not r:
+                    networkData.updateMessageTimeoutCount(message)
                     return False
+                else:
+                    networkData.updateMessageLatency(message, (t2 - t1))
 
             if message["from"] == "cli":
                 logging.debug("NET  Sending pre message: " + str(networkData.messages.index(message)))
@@ -299,6 +331,7 @@ class NetworkManager(object):
 
 
     def sendPartialPostData(self, networkData):
+        """For: BasicMode."""
         logging.info("NET Send data: ")
 
         s = False
@@ -309,9 +342,14 @@ class NetworkManager(object):
 
             if s:
                 if message["from"] == "srv":
+                    t1 = time.time()
                     r = self.receiveData(message)
+                    t2 = time.time()
                     if not r:
+                        networkData.updateMessageTimeoutCount(message)
                         return False
+                    else:
+                        networkData.updateMessageLatency(message, (t2 - t1))
 
                 if message["from"] == "cli":
                     if "isFuzzed" in message:
@@ -325,6 +363,17 @@ class NetworkManager(object):
         return True
 
 
-    def increaseTimeout(self):
-        self.connectTimeout += 0.1
-        self.recvTimeout += 0.1
+    def tuneTimeouts(self, maxLatency):
+        if maxLatency < self.recvTimeout:
+            self.recvTimeout = round(maxLatency * 3, 3)
+
+            # min 20ms
+            # we basically cannot get more than ~50/s
+            if self.recvTimeout < 0.002:
+                self.recvTimeout = 0.002
+
+            # max 100ms
+            if self.recvTimeout > 0.1:
+                self.recvTimeout = 0.1
+
+            logging.info("Set recvTimeout to: " + str(self.recvTimeout) + "  maxlatency was: " + str(round(maxLatency * 3, 3)))

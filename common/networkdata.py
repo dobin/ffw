@@ -22,6 +22,9 @@ class NetworkData(object):
                 self.fuzzMsxIdx = idx
                 self.fuzzmsgChoice = message
 
+            message['latency'] = None
+            message['timeouts'] = 0
+
 
     @staticmethod
     def createNetworkMessage(frm, data, index):
@@ -29,7 +32,9 @@ class NetworkData(object):
             "from": frm,
             "data": data,
             'index': index,
-            'latency': 0,
+
+            'latency': None,
+            'timeouts': 0,
         }
 
         return msg
@@ -82,10 +87,24 @@ class NetworkData(object):
 
 
     def updateMessageLatency(self, message, latency):
-        if 'latency' not in message or message['latency'] is None:
+        if message['latency'] is None:
             message['latency'] = latency
         else:
             message['latency'] = (message['latency'] + latency) / 2
+
+
+    def updateMessageTimeoutCount(self, message):
+        message['timeouts'] += 1
+
+
+    def getMaxLatency(self):
+        max = 0
+        for message in self.messages:
+            if message['latency'] is not None:
+                if message['latency'] > max:
+                    max = message['latency']
+
+        return max
 
 
     def __str__(self):

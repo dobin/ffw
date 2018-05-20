@@ -110,7 +110,7 @@ class HonggSlave(object):
 
         mutatorInterface = MutatorInterface(self.config, self.threadId)
 
-        networkManager = networkmanager.NetworkManager(self.config, targetPort)
+        self.networkManager = networkmanager.NetworkManager(self.config, targetPort)
         self.corpusManager = HonggCorpusManager(self.config)
         self.corpusManager.loadCorpusFiles()
         if self.corpusManager.getCorpusCount() == 0:
@@ -140,7 +140,7 @@ class HonggSlave(object):
             return
 
         # test connection first
-        if not networkManager.debugServerConnection():
+        if not self.networkManager.debugServerConnection():
             logging.error("Bootstrap: Could not connect to server.")
             return
 
@@ -165,7 +165,7 @@ class HonggSlave(object):
             honggData = honggComm.readSocket()
             if honggData == "Fuzz":
                 logging.debug("  Warmup Fuzz: Sending: " + str(initialCorpusData.filename))
-                self._connectAndSendData(networkManager, initialCorpusData.networkData)
+                self._connectAndSendData(initialCorpusData.networkData)
                 honggComm.writeSocket("okay")
 
             else:
@@ -190,7 +190,6 @@ class HonggSlave(object):
 
         while True:
             logging.debug("A fuzzing loop...")
-            self.manageTimeouts()
             self._uploadStats()
             self.corpusManager.checkForNewFiles()
             honggData = None
@@ -208,7 +207,7 @@ class HonggSlave(object):
 
                 # are we really sure that the target is alive? If not, check
                 if not haveCheckedTargetIsAlive:
-                    if not networkManager.waitForServerReadyness():
+                    if not self.networkManager.waitForServerReadyness():
                         logging.error("Wanted to fuzz, but targets seems down. Force honggfuzz to restart it.")
                         try:
                             honggComm.writeSocket("bad!")
@@ -226,7 +225,7 @@ class HonggSlave(object):
                     honggCorpusData = None  # ignore results
                     corpus = self.corpusManager.getNewExternalCorpus()
                     corpus.processed = True
-                    couldSend = self._connectAndSendData(networkManager, corpus.networkData)
+                    couldSend = self._connectAndSendData(corpus.networkData)
 
                 # just randomly select a corpus, fuzz it, send it
                 # honggfuzz will tell us what to do next
@@ -235,7 +234,7 @@ class HonggSlave(object):
 
                     corpus = self.corpusManager.getRandomCorpus()
                     honggCorpusData = mutatorInterface.fuzz(corpus)
-                    couldSend = self._connectAndSendData(networkManager, honggCorpusData.networkData)
+                    couldSend = self._connectAndSendData(honggCorpusData.networkData)
 
                 if couldSend:
                     # Notify honggfuzz that we are finished sending the fuzzed data
@@ -305,8 +304,11 @@ class HonggSlave(object):
 
                 haveCheckedTargetIsAlive = False
 
+            if self.iterStats['iterCount'] > 0 and self.iterStats['iterCount'] % 300 == 0:
+                self.networkManager.tuneTimeouts( self.corpusManager.getMaxLatency() )
 
-    def _connectAndSendData(self, networkManager, networkData):
+
+    def _connectAndSendData(self, networkData):
         """
         Connect to server via networkManager and send the data.
 
@@ -314,14 +316,14 @@ class HonggSlave(object):
         able to send the data.
         """
         n = 0
-        while not networkManager.openConnection():
+        while not self.networkManager.openConnection():
             n += 1
             if n > 6:
-                networkManager.closeConnection()
+                self.networkManager.closeConnection()
                 return False
 
-        self._sendData(networkManager, networkData)
-        networkManager.closeConnection()
+        self.networkManager.sendAllData(networkData)
+        self.networkManager.closeConnection()
 
         return True
 
@@ -344,27 +346,14 @@ class HonggSlave(object):
                  self.corpusManager.getCorpusCount(),
                  self.iterStats["crashCount"],
                  self.iterStats["timeoutCount"],
-                 fuzzPerSec)
+                 fuzzPerSec,
+                 self.corpusManager.getMaxLatency())
             self.queue.put( d )
             self.iterStats["lastUpdate"] = currTime
 
             if "fuzzer_nofork" in self.config and self.config["fuzzer_nofork"]:
                 print(" %5d: %11d  %9d  %13d  %7d  %4.2f" % d)
 
-            # for corpus in self.corpusManager:
-            #    print "A: " + str(corpus.networkData)
-
-
-    def manageTimeouts(self):
-        if self.iterStats['iterCount'] == 200:
-            if self.iterStats['timeoutCount'] > 10:
-                logging.warn("Many timeouts. Increase timeout.")
-                self.networkManager.increaseTimeout()
-
-        if self.iterStats['iterCount'] == 600:
-            if self.iterStats['timeoutCount'] > 30:
-                logging.warn("Many timeouts. Increase timeout.")
-                self.networkManager.increaseTimeout()
 
 
     def _prepareHonggfuzzArgs(self):
@@ -400,31 +389,6 @@ class HonggSlave(object):
         cmdArr.append("--")
 
         return cmdArr
-
-
-    def _sendData(self, networkManager, networkData):
-        """Send the (-fuzzed) network messages to the target."""
-        logging.info("Send data: ")
-
-        for message in networkData.messages:
-            if message["from"] == "srv":
-                t1 = time.time()
-                r = networkManager.receiveData(message)
-                t2 = time.time()
-                networkData.updateMessageLatency(message, (t2 - t1))
-
-                if not r:
-                    #logging.info("Could not read, crash?!")
-                    return False
-
-            if message["from"] == "cli":
-                logging.debug("  Sending message: " +
-                              str(networkData.messages.index(message)))
-                res = networkManager.sendData(message)
-                if res is False:
-                    return False
-
-        return True
 
 
     def _handleCrash(self, honggCorpusData, fuzzerPosition):

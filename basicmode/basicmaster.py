@@ -106,7 +106,7 @@ def fuzzConsole(config, q, procs):
         try:
             try:
                 r = q.get(timeout=3)
-                print("%d: %4.2f  %8d  %5d" % r)
+                print("%d: %4.2f  %8d  %5d  %.3d" % r)
             except:
                 # check if at least one process is alive
                 # if not, exit

@@ -59,6 +59,15 @@ class CorpusManager(object):
         return len(self.corpus)
 
 
+    def getMaxLatency(self):
+        max = 0
+        for corpus in self.corpus:
+            if corpus.networkData.getMaxLatency() > max:
+                max = corpus.networkData.getMaxLatency()
+
+        return max
+
+
 class CorpusFileIterator(object):
     """The iter() of CorpusManager class."""
 

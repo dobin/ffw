@@ -183,6 +183,9 @@ class BasicSlave(object):
                     logging.error("Error: Could not connect to server after restart. abort.")
                     return
 
+                if self.iterStats['count'] > 0 and self.iterStats['count'] % 300 == 0:
+                    self.networkManager.tuneTimeouts( self.corpusManager.getMaxLatency() )
+
         # all done, terminate server
         self.serverManager.stopServer()
 
@@ -211,7 +214,8 @@ class BasicSlave(object):
                 self.threadId,
                 fuzzPerSec,
                 self.iterStats["count"],
-                self.iterStats["crashCount"]) )
+                self.iterStats["crashCount"],
+                self.corpusManager.getMaxLatency()) )
 
             if "fuzzer_nofork" in self.config and self.config["fuzzer_nofork"]:
                 print("%d: %4.2f  %8d  %5d" % (
