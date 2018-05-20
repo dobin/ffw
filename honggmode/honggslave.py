@@ -252,7 +252,7 @@ class HonggSlave(object):
                     # target seems to be down. Have honggfuzz restart it
                     # and hope for the best, but check after restart if it
                     # is really up
-                    logging.info("Server appears to be down, force restart")
+                    logging.warn("Server appears to be down, force restart at iteration " + str(self.iterStats['iterCount'])  )
                     self.iterStats["timeoutCount"] += 1
                     try:
                         honggComm.writeSocket("bad!")
@@ -280,7 +280,7 @@ class HonggSlave(object):
                 # If new-corpus-from-other-thread: Ignore here
                 if honggCorpusData is not None:
                     logging.info( "--[ Adding crash...")
-                    self._handleCrash(honggCorpusData)
+                    self._handleCrash(honggCorpusData, 'honggcomm')
                     self.iterStats["crashCount"] += 1
 
                 # target was down and needs to be restarted by honggfuzz.
@@ -293,6 +293,17 @@ class HonggSlave(object):
             else:
                 # This should not happen
                 logging.error( "--[ Unknown Honggfuzz msg: " + str(honggData))
+
+            # periodically restart server
+            if self.iterStats['iterCount'] > 0 and self.iterStats['iterCount'] % self.config['restart_server_every'] == 0:
+                logging.info("restart server periodically at iteration " + str(self.iterStats['iterCount']))
+                try:
+                    honggComm.writeSocket("bad!")
+                except Exception as e:
+                    logging.error("Honggfuzz server crashed? Killed?")
+                    return
+
+                haveCheckedTargetIsAlive = False
 
 
     def _connectAndSendData(self, networkManager, networkData):
@@ -340,8 +351,8 @@ class HonggSlave(object):
             if "fuzzer_nofork" in self.config and self.config["fuzzer_nofork"]:
                 print(" %5d: %11d  %9d  %13d  %7d  %4.2f" % d)
 
-            for corpus in self.corpusManager:
-                print "A: " + str(corpus.networkData)
+            # for corpus in self.corpusManager:
+            #    print "A: " + str(corpus.networkData)
 
 
     def manageTimeouts(self):
@@ -416,7 +427,7 @@ class HonggSlave(object):
         return True
 
 
-    def _handleCrash(self, honggCorpusData):
+    def _handleCrash(self, honggCorpusData, fuzzerPosition):
         # check if core exists
         if self.config['handle_corefiles']:
             n = 0
@@ -429,7 +440,7 @@ class HonggSlave(object):
                 n += 1
 
         print('Found crash!')
-        crashData = CrashData(self.config, honggCorpusData, '-')
+        crashData = CrashData(self.config, honggCorpusData, fuzzerPosition)
         crashData.writeToFile()
 
         if self.config['tweetcrash']:
