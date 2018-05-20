@@ -16,6 +16,10 @@ class NetworkManager(object):
         self.sock = None
         self.targetPort = int(targetPort)
 
+        self.connectTimeout = 0.2
+        self.recvTimeout = 0.1
+        self.testServerConnectionTimeout = 1
+
         if config["ipproto"] is "tcp":
             logging.info("Using: TCP")
             self.openConnection = self.openConnectionTcp
@@ -36,20 +40,21 @@ class NetworkManager(object):
             logging.error("Unknown proto: -" + config["ipproto"] + "-")
 
 
-    ######################################33
+    ######################################
+
 
     def openConnectionTcp(self):
         """
-        Opens a TCP connection to the server
+        Opens a TCP connection to the server / targetself.
+
         True if successful
         False if not (server down)
 
-        Note: This is also used to test if the server
-        has crashed
+        Note: This is also used to test if the server has crashed
         """
         self.closeConnection()
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.settimeout(0.5)
+        self.sock.settimeout(self.connectTimeout)
 
         server_address = ('localhost', self.targetPort)
         logging.info("NET Open connection on localhost:" + str(self.targetPort))
@@ -93,9 +98,7 @@ class NetworkManager(object):
 
     def receiveDataTcp(self, message=None):
         """Receive data from the server."""
-        # 0.1 and 0.01 is too few
-        # e.g. for libiec61850
-        self.sock.settimeout(1)
+        self.sock.settimeout(self.recvTimeout)
         try:
             data = self.sock.recv(1024)
             logging.debug("Received: " + str(data))
@@ -111,7 +114,7 @@ class NetworkManager(object):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_address = ('localhost', self.targetPort)
         logging.debug("NET testServerConnectionTcp: connect to " + str(server_address))
-        sock.settimeout(1)
+        sock.settimeout(self.testServerConnectionTimeout)
         try:
             sock.connect(server_address)
         except socket.error as exc:
@@ -320,3 +323,8 @@ class NetworkManager(object):
                         return False
 
         return True
+
+
+    def increaseTimeout(self):
+        self.connectTimeout += 0.1
+        self.recvTimeout += 0.1

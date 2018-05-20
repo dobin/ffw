@@ -29,6 +29,7 @@ class NetworkData(object):
             "from": frm,
             "data": data,
             'index': index,
+            'latency': 0,
         }
 
         return msg
@@ -43,6 +44,11 @@ class NetworkData(object):
 
 
     def selectMessage(self):
+        """
+        We decide which message we want to mutate.
+        It will be fuzzed (changed) after this function.
+        Mostly used for file-based mutators.
+        """
         while self.fuzzMsgIdx is None:
             random_index = random.randrange(0, len(self.messages))
             if self.messages[random_index]['from'] == 'cli':
@@ -53,8 +59,10 @@ class NetworkData(object):
     def setSelectedMessage(self, msgIdx):
         """
         Set which message was selected.
-        An external fuzzer decided by its own which msg it wants
-        to fuzz. selectMessage() was not called.
+        An external mutator decided by its own which msg it wants
+        to mutate. selectMessage() was not called. The message
+        is already mutated, we just need to specify it here.
+        Mostly used by class-based mutators.
         """
         self.fuzzMsgIdx = msgIdx
         self.fuzzMsgChoice = self.messages[msgIdx]
@@ -73,6 +81,13 @@ class NetworkData(object):
         self.messages[self.fuzzMsgIdx]['isFuzzed'] = True
 
 
+    def updateMessageLatency(self, message, latency):
+        if 'latency' not in message or message['latency'] is None:
+            message['latency'] = latency
+        else:
+            message['latency'] = (message['latency'] + latency) / 2
+
+
     def __str__(self):
         s = ""
         for msg in self.messages:
@@ -80,7 +95,11 @@ class NetworkData(object):
                 d = ( msg['index'], len(msg['data']), True)
             else:
                 d = ( msg['index'], len(msg['data']), False)
-            s += "  Idx: %i  MsgLen: %i  isFuzzed: %r \n" % d
+            s += "  Idx: %i  MsgLen: %i  isFuzzed: %r\n" % d
+
+            #if 'latency' in msg and msg['latency'] is not None:
+            #    print("LATENCY: " + str(msg['latency']))
+
 
         s += "fuzzMsgIdx: " + str(self.fuzzMsgIdx)
 

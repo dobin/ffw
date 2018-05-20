@@ -190,6 +190,7 @@ class HonggSlave(object):
 
         while True:
             logging.debug("A fuzzing loop...")
+            self.manageTimeouts()
             self._uploadStats()
             self.corpusManager.checkForNewFiles()
             honggData = None
@@ -339,6 +340,21 @@ class HonggSlave(object):
             if "fuzzer_nofork" in self.config and self.config["fuzzer_nofork"]:
                 print(" %5d: %11d  %9d  %13d  %7d  %4.2f" % d)
 
+            for corpus in self.corpusManager:
+                print "A: " + str(corpus.networkData)
+
+
+    def manageTimeouts(self):
+        if self.iterStats['iterCount'] == 200:
+            if self.iterStats['timeoutCount'] > 10:
+                logging.warn("Many timeouts. Increase timeout.")
+                self.networkManager.increaseTimeout()
+
+        if self.iterStats['iterCount'] == 600:
+            if self.iterStats['timeoutCount'] > 30:
+                logging.warn("Many timeouts. Increase timeout.")
+                self.networkManager.increaseTimeout()
+
 
     def _prepareHonggfuzzArgs(self):
         """Add all necessary honggfuzz arguments."""
@@ -381,7 +397,11 @@ class HonggSlave(object):
 
         for message in networkData.messages:
             if message["from"] == "srv":
+                t1 = time.time()
                 r = networkManager.receiveData(message)
+                t2 = time.time()
+                networkData.updateMessageLatency(message, (t2 - t1))
+
                 if not r:
                     #logging.info("Could not read, crash?!")
                     return False
