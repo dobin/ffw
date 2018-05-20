@@ -64,6 +64,7 @@ class CorpusData(object):
             'networkData': self.networkData.getRawData(),
             'seed': self.seed,
             'time': self.time,
+            'fuzzer': self.fuzzer,
         }
         return rawData
 
@@ -74,6 +75,10 @@ class CorpusData(object):
         self.seed = rawData['seed']
         self.time = rawData['time']
         self.networkData = NetworkData(self.config, rawData['networkData'])
+
+        # optional
+        if 'fuzzer' in rawData:
+            self.fuzzer = rawData['fuzzer']
 
 
     def writeToFile(self):
