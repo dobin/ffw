@@ -62,6 +62,11 @@ DefaultConfig = {
     # Directory of verified files
     "verified_dir": "verified",
 
+    "protoObj": None,
+
     # restart server every X fuzzing iterations
     "restart_server_every": 10000,
+
+    "recvTimeout": 0.03,  # 30/s
+    "connectTimeout": 0.2,
 }

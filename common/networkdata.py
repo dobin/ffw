@@ -86,15 +86,15 @@ class NetworkData(object):
         self.messages[self.fuzzMsgIdx]['isFuzzed'] = True
 
 
-    def updateMessageLatency(self, message, latency):
-        if message['latency'] is None:
-            message['latency'] = latency
+    def updateMessageLatency(self, idx, latency):
+        if self.messages[idx]['latency'] is None:
+            self.messages[idx]['latency'] = latency
         else:
-            message['latency'] = (message['latency'] + latency) / 2
+            self.messages[idx]['latency'] = (self.messages[idx]['latency'] + latency) / 2
 
 
-    def updateMessageTimeoutCount(self, message):
-        message['timeouts'] += 1
+    def updateMessageTimeoutCount(self, idx):
+        self.messages[idx]['timeouts'] += 1
 
 
     def getMaxLatency(self):

@@ -3,12 +3,13 @@ import os
 import distutils.spawn
 from mutator.mutatorinterface import testMutatorConfig
 import defaultconfig
-import resource
+import imp
 
 
 class ConfigManager(object):
     def __init__(self):
         self.config = None
+
 
     def _isRoot(self):
         return os.geteuid() == 0
@@ -100,6 +101,13 @@ class ConfigManager(object):
         config["outcome_dir"] = config["projdir"] + config["outcome_dir"]
         config["verified_dir"] = config["projdir"] + config["verified_dir"]
         config["grammars"] = config["projdir"] + config["grammars"]
+
+        if 'use_protocol' in config and config['use_protocol']:
+            foo = imp.load_source('Protocol', config["projdir"] + 'protocol.py')
+            proto = foo.Protocol()
+            config['protocolInstance'] = proto
+        else:
+            config['protocolInstance'] = None
 
         self.config = config
 

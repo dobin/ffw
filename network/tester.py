@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 
 import logging
-import sys
+import utils
 
 from target.servermanager import ServerManager
 from . import networkmanager
@@ -25,12 +25,19 @@ class Tester():
     def __init__(self, config):
         self.config = config
         self.stats = None
+        self.networkManager = None
+        self.iterCount = 32
 
 
     def test(self):
         targetPort = self.config["target_port"]
-        serverManager = ServerManager(self.config, 0, targetPort, hideChildOutput=False)
+        serverManager = ServerManager(
+            self.config,
+            0,
+            targetPort,
+            hideChildOutput=True)
         networkManager = networkmanager.NetworkManager(self.config, targetPort)
+        self.networkManager = networkManager
         corpusManager = CorpusManager(self.config)
         corpusManager.loadCorpusFiles()
 
@@ -46,58 +53,60 @@ class Tester():
 
 
         for corpusData in corpusManager:
-            print "Testing new CorpusData"
-            self.stats = {}
-            n = 0
-            while n < len(corpusData.networkData.messages):
-                self.stats[n] = 0
-                n += 1
-
-            it = 0
-            while it < 3:
-                print("==== Iteration =====")
-                networkManager.openConnection()
-                self.sendMessages(networkManager, corpusData.networkData)
-                networkManager.closeConnection()
-                it += 1
-
-            print("Itercount: " + str(it))
-            print("Fails:")
-            if len(self.stats) == 0:
-                print("None :-)")
-            else:
-                for key, value in self.stats.items():
-                    print("Fails at msg #" + str(key) + ": " + str(value))
+            self.testCorpus(corpusData)
 
         serverManager.stop()
 
 
-    def sendMessages(self, networkManager, networkData):
-        n = 0
-        for message in networkData.messages:
-            if self.config["maxmsg"] and message["index"] > self.config["maxmsg"]:
-                break
+    def testCorpus(self, corpusData):
+        print "Testing CorpusData: " + corpusData.filename + " " + str(self.iterCount) + " times"
+        it = 0
+        while it < self.iterCount:
+            corpusDataNew = corpusData.createFuzzChild("1")
+            self.networkManager.sendAllData(corpusDataNew, recordAnswer=True)
+            it += 1
 
-            sys.stdout.write("Handling msg: " + str(n) + " ")
-            if message["from"] == "srv":
-                print("Receiving...")
-                print("  Orig: " + str(len(message["data"])))
-                ret = networkManager.receiveData(message)
+        hasTimeouts = False
+        for idx, message in enumerate(corpusData.networkData.messages):
+            if message['timeouts'] > 0:
+                hasTimeouts = True
+                print("Message %d timeouts: %d"
+                      % ( message['index'], message['timeouts']))
 
-                if not ret:
-                    print("  Could not receive")
-                    self.stats[n] += 1
-                else:
-                    print("  Real: " + str(len(ret)))
-                    if len(message["data"]) != len(ret):
-                        self.stats[n] += 1
+                n = self.getClientAnswerBefore(idx, corpusData.networkData)
+                print("Last request before good answer: " + str(n))
+                utils.hexdumpc( corpusDataNew.networkData.messages[n]['data'] )
 
-            if message["from"] == "cli":
-                print("Sending...")
-                print("  Send: " + str(len(message["data"])))
-                ret = networkManager.sendData(message)
-                if not ret:
-                    logging.debug("  server not reachable")
-                    self.stats[n] += 1
+                n = self.getServerAnswerBefore(idx, corpusData.networkData)
+                print("Last good server answer was: " + str(n))
+                utils.hexdumpc( corpusDataNew.networkData.messages[n]['data'] )
 
-            n += 1
+                print("Msg before request: " + str(idx - 1))
+                utils.hexdumpc( corpusDataNew.networkData.messages[idx - 1]['data'] )
+
+        if hasTimeouts:
+            out = """ We have timeouts. This means that we closed the connection,
+                      because the server didnt answer fast enough, or for other
+                      reasons.
+                      You can try to increase the timeout to a sane level,
+                      but this usually means that the server has some kinde of
+                      processing/ratelimiting/antiddos/resolving stuff to do.
+                      Patch it.
+                      in config.py: \"recvTimeout\": 0.1 """
+            print(out)
+
+
+    def getClientAnswerBefore(self, idx, networkData):
+        n = self.getServerAnswerBefore(idx, networkData)
+        while networkData.messages[n]['from'] != 'cli':
+            n -= 1
+
+        return n
+
+
+    def getServerAnswerBefore(self, idx, networkData):
+        n = idx - 1
+        while networkData.messages[n]['from'] != 'srv':
+            n -= 1
+
+        return n

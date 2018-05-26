@@ -52,8 +52,10 @@ class CorpusData(object):
 
     def createNewFilename(self):
         self.filename = filenameWithoutExtension(self.filename)
-        self.filename += '.' + shortSeed(self.seed)
-        self.filename += '_m' + str(self.networkData.getFuzzMessageIndex())
+        # we are maybe initial corpus (not fuzzed)
+        if self.seed and self.networkData.getFuzzMessageIndex():
+            self.filename += '.' + shortSeed(self.seed)
+            self.filename += '_m' + str(self.networkData.getFuzzMessageIndex())
         self.filename += '.pickle'
 
 

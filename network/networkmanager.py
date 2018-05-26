@@ -16,8 +16,8 @@ class NetworkManager(object):
         self.sock = None
         self.targetPort = int(targetPort)
 
-        self.connectTimeout = 0.2
-        self.recvTimeout = 0.03  # 30/s
+        self.connectTimeout = config['connectTimeout']
+        self.recvTimeout = config['recvTimeout']
         self.testServerConnectionTimeout = 1
 
         if config["ipproto"] is "tcp":
@@ -76,6 +76,7 @@ class NetworkManager(object):
     def closeConnectionTcp(self):
         if self.sock is not None:
             self.sock.close()
+            self.sock = None
 
 
     def sendDataTcp(self, message=None):
@@ -85,9 +86,9 @@ class NetworkManager(object):
             sys.exit(1)
 
         try:
-            if self.config["protoObj"] is not None and message is not None:
-                message["data"] = self.config["protoObj"].onPreSend(message["data"], message["index"])
-
+            logging.debug("Sending: " + message["data"])
+            if self.config["protocolInstance"] is not None and message is not None:
+                message["data"] = self.config["protocolInstance"].onPreSend(message["index"], message["data"])
             self.sock.sendall(message["data"])
         except socket.error as exc:
             logging.debug("NET  sendData(): Send data exception on msg " + str(message["index"]) + ": " + str(exc))
@@ -119,6 +120,7 @@ class NetworkManager(object):
             sock.connect(server_address)
         except socket.error as exc:
             logging.info("NET Connection error: " + str(exc))
+            sock.close()
             return False
 
         sock.close()
@@ -268,6 +270,7 @@ class NetworkManager(object):
             logging.debug("NET Trying to connect")
             if n > 20:
                 logging.error("NET WaitForServerReadyNess: Server no ready after 20 tries of 0.2s (4s).. aborting")
+                self._printErrAnalysis()
                 return False
 
             time.sleep(0.2)
@@ -277,28 +280,53 @@ class NetworkManager(object):
         return True
 
 
-    def sendAllData(self, networkData):
-        """For: Honggmode."""
+    def sendAllData(self, corpusData, recordAnswer=False):
         logging.info("Send data: ")
+        n = 0
+        while not self.openConnection():
+            time.sleep(0.2)
+            n += 1
+            if n > 6:
+                self.closeConnection()
+                return False
 
-        for message in networkData.messages:
+        if self.config["protocolInstance"] is not None:
+            self.config["protocolInstance"].onNewIteration()
+
+        for idx, message in enumerate(corpusData.networkData.messages):
             if message["from"] == "srv":
                 t1 = time.time()
                 r = self.receiveData(message)
                 t2 = time.time()
 
+                # If we have a parent, this is a fuzzed message, so we add the
+                # stats to the parent corpus.
                 if not r:
-                    networkData.updateMessageTimeoutCount(message)
-                    return False
+                    if corpusData._parent:
+                        corpusData._parent.networkData.updateMessageTimeoutCount(idx)
+                    else:
+                        corpusData.networkData.updateMessageTimeoutCount(idx)
+
+                    # fail fast
+                    self.closeConnection()
+                    return True
                 else:
-                    networkData.updateMessageLatency(message, (t2 - t1))
+                    if corpusData._parent:
+                        corpusData._parent.networkData.updateMessageLatency(idx, (t2 - t1))
+                    else:
+                        corpusData.networkData.updateMessageLatency(idx, (t2 - t1))
+                    if recordAnswer:
+                        message['data'] = r
 
             if message["from"] == "cli":
                 logging.debug("  Sending message: " +
-                              str(networkData.messages.index(message)))
+                              str(corpusData.networkData.messages.index(message)))
                 res = self.sendData(message)
                 if res is False:
-                    return False
+                    self.closeConnection()
+                    return True
+
+        self.closeConnection()
 
         return True
 
@@ -364,16 +392,19 @@ class NetworkManager(object):
 
 
     def tuneTimeouts(self, maxLatency):
-        if maxLatency < self.recvTimeout:
-            self.recvTimeout = round(maxLatency * 3, 3)
+        newMaxLatency = round(maxLatency * 3, 3)
+        origTimeout = self.recvTimeout
+
+        if newMaxLatency != origTimeout:
+            self.recvTimeout = newMaxLatency
 
             # min 20ms
             # we basically cannot get more than ~50/s
             if self.recvTimeout < 0.002:
                 self.recvTimeout = 0.002
 
-            # max 100ms
-            if self.recvTimeout > 0.1:
-                self.recvTimeout = 0.1
+            # max 200ms (5/s)
+            if self.recvTimeout > 0.2:
+                self.recvTimeout = 0.2
 
-            logging.info("Set recvTimeout to: " + str(self.recvTimeout) + "  maxlatency was: " + str(round(maxLatency * 3, 3)))
+            logging.warn("Set recvTimeout to: " + str(self.recvTimeout) + "  orig was: " + str(origTimeout))

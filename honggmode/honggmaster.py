@@ -92,7 +92,6 @@ def _fuzzNoFork(config, q):
 
 
 def _fuzzConsole(config, q, procs):
-    print("Thread:  Iterations  CorpusNew  CorpusOverall  Crashes  Fuzz/s")
     honggStats = HonggStats(len(procs))
     honggStats.start()
 
@@ -102,12 +101,15 @@ def _fuzzConsole(config, q, procs):
             honggStats.writePlotData()
             honggStats.writeFuzzerStats()
 
+        if n % 10 == 0:
+            honggStats.sanityChecks()
+
         # wait for new data from threads
         try:
             try:
                 r = q.get(True, 1)
                 honggStats.addToStats(r)
-                print("%3d  It: %4d  CorpusNew: %2d  CorpusOverall %2d  Crashes: %2d  ConnectTimeouts: %2d  Fuzz/s: %.1f  Latency: %.4f" % r)
+                print("%3d  It: %4d  CorpusNew: %2d  CorpusOerall %2d  Crashes: %2d  HangCount: %2d  Fuzz/s: %.1f  Latency: %.4f" % r)
             except Empty:
                 pass
 

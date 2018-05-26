@@ -1,5 +1,6 @@
 import time
 import sys
+import logging
 
 
 class HonggStats(object):
@@ -9,7 +10,7 @@ class HonggStats(object):
             'iterCount': 0,  # execs_done
             'corpusCount': 0,  # paths_total
             'crashCount': 0,  # unique_crashes
-            'timeoutCount': 0,  # unique_hangs
+            'hangCount': 0,  # unique_hangs
             'fps': 0,  # execs_per_sec
 
             'start_time': self.getUnixTime(),
@@ -19,11 +20,13 @@ class HonggStats(object):
             'last_crash': 0,
             'last_hang': 0,
             'execs_since_crash': 0,
+
+            'latency': 0,
         }
 
         n = 0
         while n < numThreads:
-            self.perf[n] = (n, 0, 0, 0, 0, 0, 0)
+            self.perf[n] = (n, 0, 0, 0, 0, 0, 0, 0, 0)
             n += 1
 
 
@@ -43,6 +46,16 @@ class HonggStats(object):
         self.f.close()
 
 
+    def sanityChecks(self):
+        for perf in self.perf:
+            if self.perf[perf][7] > 0.1:
+                logging.warn("Latency > 0.1! Decrease amount of processes!")
+
+        if self.stats['corpusCount'] < 5:
+            logging.warn("No new basic blocks found!")
+            logging.warn("Are you sure you compiled target with honggfuzz?")
+
+
     def writePlotData(self):
         # unix_time, cycles_done, cur_path, paths_total, pending_total,
         # pending_favs, map_size, unique_crashes, unique_hangs, max_depth,
@@ -56,7 +69,7 @@ class HonggStats(object):
         self.f.write('0' + ', ')  # pending_favs
         self.f.write('0' + ', ')  # map_size
         self.f.write(str(self.stats['crashCount']) + ', ')  # unique_crashes
-        self.f.write(str(self.stats['timeoutCount']) + ', ')  # unique_hangs
+        self.f.write(str(self.stats['hangCount']) + ', ')  # unique_hangs
         self.f.write('0' + ', ')  # max_depth
         self.f.write(str(self.stats['fps']) + '\n')  # execs_per_sec
         self.f.flush()
@@ -81,12 +94,14 @@ class HonggStats(object):
             self.stats['last_crash'] = self.getUnixTime()
 
         cnt = r[5] - prev_r[5]
-        self.stats['timeoutCount'] += cnt
+        self.stats['hangCount'] += cnt
         if cnt > 0:
             self.stats['last_hang'] = self.getUnixTime()
 
         cnt = r[6] - prev_r[6]
         self.stats['fps'] += cnt
+
+        self.stats['latency'] = (self.stats['latency'] + r[7]) / 2
 
         # set the stats to the current one
         self.perf[r[0]] = r
@@ -104,7 +119,7 @@ class HonggStats(object):
         sys.stdout.write('0' + ', ')  # pending_favs
         sys.stdout.write('0' + ', ')  # map_size
         sys.stdout.write(str(self.stats['crashCount']) + ', ')  # unique_crashes
-        sys.stdout.write(str(self.stats['timeoutCount']) + ', ')  # unique_hangs
+        sys.stdout.write(str(self.stats['hangCount']) + ', ')  # unique_hangs
         sys.stdout.write('0' + ', ')  # max_depth
         sys.stdout.write(str(self.stats['fps']) + '\n')  # execs_per_sec
 
@@ -159,7 +174,7 @@ class HonggStats(object):
         fuzzer_stats.write('%-18s: %i\n' % ('stability', 0))
         fuzzer_stats.write('%-18s: %i\n' % ('bitmap_cvg', 0))
         fuzzer_stats.write('%-18s: %i\n' % ('unique_crashes', self.stats['crashCount']))
-        fuzzer_stats.write('%-18s: %i\n' % ('unique_hangs', self.stats['timeoutCount']))
+        fuzzer_stats.write('%-18s: %i\n' % ('unique_hangs', self.stats['hangCount']))
         fuzzer_stats.write('%-18s: %i\n' % ('last_path', self.stats['last_path']))
         fuzzer_stats.write('%-18s: %i\n' % ('last_crash', self.stats['last_crash']))
         fuzzer_stats.write('%-18s: %i\n' % ('last_hang', self.stats['last_hang']))

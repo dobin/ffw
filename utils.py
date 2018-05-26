@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 
 import logging
+import hexdump
 
 """
 Several utility functions.
@@ -55,3 +56,7 @@ def setupSlaveLoggingWithFile(threadId):
     console.setFormatter(formatter)
     # add the handler to the root logger
     logging.getLogger('').addHandler(console)
+
+
+def hexdumpc(str):
+    hexdump.hexdump_ex( bytearray(str) )

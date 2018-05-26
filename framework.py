@@ -101,13 +101,6 @@ def realMain(config):
         print "Requirements not met."
         return
 
-    # TODO remove this from here
-    if config["proto"] == "vnc":
-        print("Using protocol: vnc")
-        config["protoObj"] = proto_vnc.ProtoVnc()
-    else:
-        config["protoObj"] = None
-
     if args.processes:
         config["processes"] = args.processes
 
