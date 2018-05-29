@@ -293,7 +293,11 @@ class NetworkManager(object):
         if self.config["protocolInstance"] is not None:
             self.config["protocolInstance"].onNewIteration()
 
+        beforeFuzzed = True
         for idx, message in enumerate(corpusData.networkData.messages):
+            if 'isFuzzed' in message and message['isFuzzed']:
+                beforeFuzzed = False
+
             if message["from"] == "srv":
                 t1 = time.time()
                 r = self.receiveData(message)
@@ -302,10 +306,11 @@ class NetworkManager(object):
                 # If we have a parent, this is a fuzzed message, so we add the
                 # stats to the parent corpus.
                 if not r:
-                    if corpusData._parent:
-                        corpusData._parent.networkData.updateMessageTimeoutCount(idx)
-                    else:
-                        corpusData.networkData.updateMessageTimeoutCount(idx)
+                    if beforeFuzzed:
+                        if corpusData._parent:
+                            corpusData._parent.networkData.updateMessageTimeoutCount(idx)
+                        else:
+                            corpusData.networkData.updateMessageTimeoutCount(idx)
 
                     # fail fast
                     self.closeConnection()

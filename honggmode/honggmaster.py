@@ -97,11 +97,11 @@ def _fuzzConsole(config, q, procs):
 
     n = 0
     while True:
-        if n % 5 == 0:
+        if n % 10 == 0:
             honggStats.writePlotData()
             honggStats.writeFuzzerStats()
 
-        if n % 10 == 0:
+        if n % 50 == 0:
             honggStats.sanityChecks()
 
         # wait for new data from threads
@@ -109,7 +109,7 @@ def _fuzzConsole(config, q, procs):
             try:
                 r = q.get(True, 1)
                 honggStats.addToStats(r)
-                print("%3d  It: %4d  CorpusNew: %2d  CorpusOerall %2d  Crashes: %2d  HangCount: %2d  Fuzz/s: %.1f  Latency: %.4f" % r)
+                print("%3d  It: %4d  CorpusNew: %2d  CorpusOerall %2d  Crashes: %2d  HangCount: %2d  Fuzz/s: %.1f  Latency: %.4f  Timeouts: %3d" % r)
             except Empty:
                 pass
 

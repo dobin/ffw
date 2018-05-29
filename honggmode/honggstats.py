@@ -22,11 +22,12 @@ class HonggStats(object):
             'execs_since_crash': 0,
 
             'latency': 0,
+            'timeouts': 0,
         }
 
         n = 0
         while n < numThreads:
-            self.perf[n] = (n, 0, 0, 0, 0, 0, 0, 0, 0)
+            self.perf[n] = (n, 0, 0, 0, 0, 0, 0, 0, 0, 0)
             n += 1
 
 
@@ -102,6 +103,9 @@ class HonggStats(object):
         self.stats['fps'] += cnt
 
         self.stats['latency'] = (self.stats['latency'] + r[7]) / 2
+
+        cnt = r[8] - prev_r[8]
+        self.stats['timeouts'] += cnt
 
         # set the stats to the current one
         self.perf[r[0]] = r

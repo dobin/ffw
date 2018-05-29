@@ -69,4 +69,5 @@ DefaultConfig = {
 
     "recvTimeout": 0.03,  # 30/s
     "connectTimeout": 0.2,
+    "hideTargetStdout": True,
 }

@@ -331,7 +331,8 @@ class HonggSlave(object):
                  self.iterStats["crashCount"],
                  self.iterStats["hangCount"],
                  fuzzPerSec,
-                 self.corpusManager.getMaxLatency())
+                 self.corpusManager.getMaxLatency(),
+                 self.corpusManager.getTimeoutCount())
             self.queue.put( d )
             self.iterStats["lastUpdate"] = currTime
 

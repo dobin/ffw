@@ -68,6 +68,16 @@ class CorpusManager(object):
         return max
 
 
+    def getTimeoutCount(self):
+        timeoutCount = 0
+        for corpus in self.corpus:
+            for message in corpus.networkData.messages:
+                timeoutCount += message["timeouts"]
+
+        return timeoutCount
+
+
+
 class CorpusFileIterator(object):
     """The iter() of CorpusManager class."""
 
