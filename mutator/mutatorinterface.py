@@ -139,6 +139,7 @@ class MutatorInterface(object):
         fuzzedData = self._readDataFromFile()
         corpusDataNew.networkData.setFuzzMessageData(fuzzedData)
         corpusDataNew.fuzzer = fuzzerData['name']
+        corpusDataNew.createNewFilename()  # update filename with fuzzmsgidx/seed
 
         return corpusDataNew
 
@@ -161,6 +162,7 @@ class MutatorInterface(object):
         corpusDataNew = self.fuzzerClassInstances[ fuzzerData['class'] ].fuzz(corpusData)
         if corpusDataNew is not None:
             corpusDataNew.fuzzer = fuzzerData['name']
+            corpusDataNew.createNewFilename()  # update filename with fuzzmsgidx/seed
 
         return corpusDataNew
 

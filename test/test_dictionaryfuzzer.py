@@ -94,8 +94,8 @@ class DictionaryFuzzerTest(unittest.TestCase):
             fuzzedCorpusData4.networkData.messages[1]['data'],
             'msg 1 cli test1 test2 test1'
         )
-        self.assertTrue(
-            fuzzedCorpusData5 == None
+        self.assertIsNone(
+            fuzzedCorpusData5
         )
 
 
@@ -121,8 +121,6 @@ class DictionaryFuzzerTest(unittest.TestCase):
 
         self.assertEqual(stats['Dictionary'], 4)
         self.assertEqual(stats['Radamsa'], 16)
-
-        print str(stats)
 
 
 if __name__ == '__main__':

@@ -46,17 +46,16 @@ class CorpusData(object):
         corpusData._parent = self
         corpusData.seed = seed
 
-        corpusData.createNewFilename()
         return corpusData
 
 
     def createNewFilename(self):
-        self.filename = filenameWithoutExtension(self.filename)
         # we are maybe initial corpus (not fuzzed)
-        if self.seed and self.networkData.getFuzzMessageIndex():
+        if self.seed is not None and self.networkData.getFuzzMessageIndex() is not None:
+            self.filename = filenameWithoutExtension(self.filename)
             self.filename += '.' + shortSeed(self.seed)
             self.filename += '_m' + str(self.networkData.getFuzzMessageIndex())
-        self.filename += '.pickle'
+            self.filename += '.pickle'
 
 
     def getRawData(self):
@@ -84,7 +83,6 @@ class CorpusData(object):
 
 
     def writeToFile(self):
-        self.createNewFilename()  # update filename with fuzzmsgidx
         path = os.path.join(self.basePath, self.filename)
         rawData = self.getRawData()
         logging.debug("Write corpus to file: " + path)
@@ -94,6 +92,7 @@ class CorpusData(object):
 
     def readFromFile(self):
         filepath = os.path.join(self.basePath, self.filename)
+        logging.debug("Read corpus from file: " + filepath)
         with open(filepath, 'r') as infile:
             rawData = pickle.load(infile)
             self.setRawData(rawData)

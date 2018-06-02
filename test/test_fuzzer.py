@@ -71,7 +71,7 @@ class CorpusFileTest(unittest.TestCase):
         # note that we only have one cli message, which is at index 0
         self.assertNotEqual(corpusData.networkData.messages[0]['data'],
                             fuzzedCorpusData.networkData.messages[0]['data'])
-        
+
 
 if __name__ == '__main__':
     unittest.main()

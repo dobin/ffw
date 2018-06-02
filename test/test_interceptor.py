@@ -25,6 +25,8 @@ class InterceptorTest(unittest.TestCase):
             "target_dir": os.path.dirname(os.path.realpath(__file__)),
             "target_args": "%(port)i",
             "ipproto": "tcp",
+            "recvTimeout": 0.1,
+            "connectTimeout": 0.2,
         }
         return config
 

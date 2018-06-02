@@ -5,12 +5,13 @@ import unittest
 from common.networkdata import NetworkData
 from common.corpusdata import CorpusData
 from mockupfuzzer import MockupFuzzer
+import testutils
 
 
 class CorpusFileTest(unittest.TestCase):
     def _getConfig(self):
         config = {
-            "input_dir": "/tmp/",
+            "input_dir": "/tmp/ffw-test/in",
         }
         return config
 
@@ -51,8 +52,9 @@ class CorpusFileTest(unittest.TestCase):
     def test_readwrite(self):
         """Test if writing+reading file works."""
         config = self._getConfig()
+        testutils.prepareFs(config)
         networkData = self._getNetworkData(config)
-        filename = "test"
+        filename = "test.pickle"
 
         corpusData1 = CorpusData(config, filename, networkData)
         corpusData1.writeToFile()
@@ -67,8 +69,9 @@ class CorpusFileTest(unittest.TestCase):
     def test_missingclimsg(self):
         """Test fail-on missing cli message (need one to fuzz)."""
         config = self._getConfig()
+        testutils.prepareFs(config)
         networkData = self._getNetworkDataNoCli(config)
-        filename = "test"
+        filename = "test.pickle"
 
         corpusData1 = CorpusData(config, filename, networkData)
         corpusData1.writeToFile()
@@ -80,9 +83,10 @@ class CorpusFileTest(unittest.TestCase):
     def test_fuzz(self):
         """Try to fuzz and check if it worked."""
         config = self._getConfig()
+        testutils.prepareFs(config)
         networkData = self._getNetworkData(config)
         fuzzer = MockupFuzzer(config)
-        filename = "test"
+        filename = "test.pickle"
 
         corpusDataParent = CorpusData(config, filename, networkData)
         corpusDataChild = fuzzer.fuzz(corpusDataParent)

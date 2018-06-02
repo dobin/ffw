@@ -20,4 +20,5 @@ class MockupFuzzer(object):
         msg = corpusDataNew.networkData.getFuzzMessageData()
         msg += "A"
         corpusDataNew.networkData.setFuzzMessageData(msg)
+        corpusDataNew.createNewFilename()  # update filename with fuzzmsgidx
         return corpusDataNew
