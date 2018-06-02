@@ -11,8 +11,6 @@ import time
 import threading
 from enum import Enum
 
-
-
 from honggcorpusmanager import HonggCorpusManager
 from . import honggslave
 from honggstats import HonggStats

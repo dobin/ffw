@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import unittest
+import os
 
 from common.networkdata import NetworkData
 from common.corpusdata import CorpusData
@@ -59,6 +60,8 @@ class CorpusFileTest(unittest.TestCase):
         corpusData1 = CorpusData(config, filename, networkData)
         corpusData1.writeToFile()
 
+        self.assertTrue(os.path.isfile(config['input_dir'] + "/test.pickle"))
+
         corpusData2 = CorpusData(config, filename)
         corpusData2.readFromFile()
 
@@ -90,6 +93,10 @@ class CorpusFileTest(unittest.TestCase):
 
         corpusDataParent = CorpusData(config, filename, networkData)
         corpusDataChild = fuzzer.fuzz(corpusDataParent)
+        corpusDataChild.writeToFile()
+
+        self.assertTrue(os.path.isfile(config['input_dir'] + "/test.1_0.pickle"))
+
 
         # note that we only have one cli message, which is at index 0
         self.assertEqual(corpusDataChild.networkData.fuzzMsgIdx, 0)

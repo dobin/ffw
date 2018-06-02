@@ -54,7 +54,7 @@ class CorpusData(object):
         if self.seed is not None and self.networkData.getFuzzMessageIndex() is not None:
             self.filename = filenameWithoutExtension(self.filename)
             self.filename += '.' + shortSeed(self.seed)
-            self.filename += '_m' + str(self.networkData.getFuzzMessageIndex())
+            self.filename += '_' + str(self.networkData.getFuzzMessageIndex())
             self.filename += '.pickle'
 
 

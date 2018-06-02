@@ -15,8 +15,7 @@ from target.servermanager import ServerManager
 from common.crashdata import CrashData
 from honggcorpusmanager import HonggCorpusManager
 from mutator.mutatorinterface import MutatorInterface
-from nsenter import Namespace
-import subprocess
+from target import targetutils
 
 
 def signal_handler(signal, frame):
@@ -67,24 +66,7 @@ class HonggSlave(object):
         the initial data from the corpus is managed by HonggCorpusManager.
         """
         if self.config['use_netnamespace']:
-            namespaceName = 'ffw-' + str(self.threadId)
-            namespacePath = '/var/run/netns/' + namespaceName
-
-            # delete namespace if it already exists
-            # so the commands below do not generate errors
-            if os.path.isfile(namespacePath):
-                subprocess.call( [ 'ip', 'netns', 'del', namespaceName ] )
-
-            # add namespace
-            subprocess.call( [ 'ip', 'netns', 'add', namespaceName ] )
-
-            # enter namespace
-            with Namespace(namespacePath, 'net'):
-                # namespace is naked - add loopback interface
-                # IMPORTANT - or you get 'network unreachable' on fuzzing
-                subprocess.call( [ 'ip', 'addr', 'add', '127.0.0.1/8', 'dev', 'lo' ] )
-                subprocess.call( [ 'ip', 'link', 'set', 'dev', 'lo', 'up' ] )
-                self.realDoActualFuzz()
+            targetutils.startInNamespace(self.realDoActualFuzz, self.threadId)
         else:
             self.realDoActualFuzz()
 

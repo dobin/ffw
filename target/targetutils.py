@@ -6,6 +6,9 @@ import logging
 import sys
 import resource
 
+from nsenter import Namespace
+import subprocess
+
 """
 Various target-server utilities.
 
@@ -13,6 +16,27 @@ Functions which makes it possible to start the server (fuzzing target),
 and other similar stuff. Used by *servermanagers, which are abstractions
 to the actual server, but use these functions here.
 """
+
+
+def startInNamespace(func, threadId):
+    namespaceName = 'ffw-' + str(threadId)
+    namespacePath = '/var/run/netns/' + namespaceName
+
+    # delete namespace if it already exists
+    # so the commands below do not generate errors
+    if os.path.isfile(namespacePath):
+        subprocess.call( [ 'ip', 'netns', 'del', namespaceName ] )
+
+    # add namespace
+    subprocess.call( [ 'ip', 'netns', 'add', namespaceName ] )
+
+    # enter namespace
+    with Namespace(namespacePath, 'net'):
+        # namespace is naked - add loopback interface
+        # IMPORTANT - or you get 'network unreachable' on fuzzing
+        subprocess.call( [ 'ip', 'addr', 'add', '127.0.0.1/8', 'dev', 'lo' ] )
+        subprocess.call( [ 'ip', 'link', 'set', 'dev', 'lo', 'up' ] )
+        func()
 
 
 def getInvokeTargetArgs(config, targetPort):

@@ -11,7 +11,7 @@ class MockupFuzzer(object):
 
 
     def _generateSeed(self):
-        return str(random.randint(0, 2**64 - 1))
+        return "1"
 
 
     def fuzz(self, corpusData):
