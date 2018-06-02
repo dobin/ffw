@@ -126,7 +126,7 @@ class HonggMaster(object):
                     self.fuzzerState = FuzzerState.FUZZING
                     self._startPeriodicThreads()
                     honggStats.addToStats(r)
-                    print("%3d  It: %4d  CorpusNew: %2d  CorpusOerall %2d  Crashes: %2d  HangCount: %2d  Fuzz/s: %.1f  Latency: %.4f  Timeouts: %3d" % r)
+                    # self._printThreadStats(r)
                 except Empty:
                     pass
 
@@ -164,6 +164,12 @@ class HonggMaster(object):
             self.nextUpdateTime = time.time() + 10
             self._periodicWriteData()
             self._periodicSanityChecks()
+            self._periodicPrintStats()
+
+
+    def _periodicPrintStats(self):
+        if self.fuzzerState is FuzzerState.FUZZING:
+            self.honggStats.printSomeStats()
 
 
     def _periodicWriteData(self):

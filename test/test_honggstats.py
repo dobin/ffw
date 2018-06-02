@@ -3,6 +3,7 @@
 import unittest
 
 from honggmode.honggstats import HonggStats
+from honggmode.honggslave import HonggSlave
 
 
 class HonggstatsTest(unittest.TestCase):
@@ -10,8 +11,8 @@ class HonggstatsTest(unittest.TestCase):
         numThreads = 2
         honggStats = HonggStats(numThreads)
 
-        stats1 = (0, 10, 2, 1, 2, 2, 33, 1, 1)
-        stats2 = (1, 10, 2, 0, 1, 1, 22, 1, 1)
+        stats1 = HonggSlave.createHonggSlaveMasterData(0, 10, 2, 1, 2, 2, 33, 1, 1)
+        stats2 = HonggSlave.createHonggSlaveMasterData(1, 10, 2, 0, 1, 1, 22, 1, 1)
 
         honggStats.addToStats(stats1)
         honggStats.addToStats(stats2)

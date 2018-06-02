@@ -3,6 +3,9 @@ import sys
 import logging
 
 
+from honggslave import HonggSlave
+
+
 class HonggStats(object):
     def __init__(self, numThreads):
         self.perf = {}
@@ -27,7 +30,7 @@ class HonggStats(object):
 
         n = 0
         while n < numThreads:
-            self.perf[n] = (n, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+            self.perf[n] = HonggSlave.createHonggSlaveMasterData(n, 0, 0, 0, 0, 0, 0, 0, 0)
             n += 1
 
 
@@ -49,7 +52,7 @@ class HonggStats(object):
 
     def sanityChecks(self):
         for perf in self.perf:
-            if self.perf[perf][7] > 0.1:
+            if self.perf[perf]['maxLatency'] > 0.1:
                 logging.warn("Latency > 0.1! Decrease amount of processes!")
 
         if self.stats['corpusCount'] < 5:
@@ -84,37 +87,54 @@ class HonggStats(object):
 
     def addToStats(self, r):
         # get previous stats of the thread
-        prev_r = self.perf[r[0]]
+        prev_r = self.perf[ r['threadId'] ]
         self.stats['last_update'] = self.getUnixTime()
 
-        cnt = r[1] - prev_r[1]
+        cnt = r['iterCount'] - prev_r['iterCount']
         self.stats['iterCount'] += cnt
 
-        cnt = r[2] - prev_r[2]
+        cnt = r['corpusCount'] - prev_r['corpusCount']
         self.stats['corpusCount'] += cnt
         if cnt > 0:
             self.stats['last_path'] = self.getUnixTime()
 
-        cnt = r[4] - prev_r[4]
+        cnt = r['crashCount'] - prev_r['crashCount']
         self.stats['crashCount'] += cnt
         if cnt > 0:
             self.stats['last_crash'] = self.getUnixTime()
 
-        cnt = r[5] - prev_r[5]
+        cnt = r['hangCount'] - prev_r['hangCount']
         self.stats['hangCount'] += cnt
         if cnt > 0:
             self.stats['last_hang'] = self.getUnixTime()
 
-        cnt = r[6] - prev_r[6]
+        cnt = r['fuzzPerSec'] - prev_r['fuzzPerSec']
         self.stats['fps'] += cnt
 
-        self.stats['latency'] = (self.stats['latency'] + r[7]) / 2
+        self.stats['latency'] = (self.stats['latency'] + r['maxLatency']) / 2
 
-        cnt = r[8] - prev_r[8]
+        cnt = r['timeoutCount'] - prev_r['timeoutCount']
         self.stats['timeouts'] += cnt
 
         # set the stats to the current one
-        self.perf[r[0]] = r
+        self.perf[ r['threadId'] ] = r
+
+
+    def printSomeStats(self):
+        for perf in self.perf:
+            p = self.perf[perf]
+            r = (
+                p['threadId'],
+                p['iterCount'],
+                p['corpusCount'],
+                p['corpusCountOverall'],
+                p['crashCount'],
+                p['hangCount'],
+                p['fuzzPerSec'],
+                p['maxLatency'],
+                p['timeoutCount']
+            )
+            print("%3d  It: %4d  CorpusNew: %2d  CorpusOerall %2d  Crashes: %2d  HangCount: %2d  Fuzz/s: %2.1f  Latency: %.4f  Timeouts: %3d" % r)
 
 
     def printAflStats(self):

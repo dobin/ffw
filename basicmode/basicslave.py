@@ -15,7 +15,6 @@ import utils
 from target import targetutils
 
 
-
 def signal_handler(signal, frame):
     # TODO fixme make object so i can kill server
     #stopServer()

@@ -294,6 +294,30 @@ class HonggSlave(object):
         return self.networkManager.sendAllData(corpusData)
 
 
+    @staticmethod
+    def createHonggSlaveMasterData(
+            threadId,
+            iterCount,
+            corpusCount,
+            corpusCountOverall,
+            crashCount,
+            hangCount,
+            fuzzPerSec,
+            maxLatency,
+            timeoutCount):
+        d = {}
+        d['threadId'] = threadId
+        d['iterCount'] = iterCount
+        d['corpusCount'] = corpusCount
+        d['corpusCountOverall'] = corpusCountOverall
+        d['crashCount'] = crashCount
+        d['hangCount'] = hangCount
+        d['fuzzPerSec'] = fuzzPerSec
+        d['maxLatency'] = maxLatency
+        d['timeoutCount'] = timeoutCount
+        return d
+
+
     def _uploadStats(self):
         """Send fuzzing statistics to parent."""
         currTime = time.time()
@@ -306,19 +330,30 @@ class HonggSlave(object):
             fuzzPerSec = float(self.iterStats["iterCount"]) / float(currTime - self.iterStats["startTime"])
 
             # send fuzzing information to parent process
-            d = (self.threadId,
-                 self.iterStats["iterCount"],
-                 self.iterStats["corpusCount"],
-                 self.corpusManager.getCorpusCount(),
-                 self.iterStats["crashCount"],
-                 self.iterStats["hangCount"],
-                 fuzzPerSec,
-                 self.corpusManager.getMaxLatency(),
-                 self.corpusManager.getTimeoutCount())
+            d = HonggSlave.createHonggSlaveMasterData(
+                self.threadId,
+                self.iterStats["iterCount"],
+                self.iterStats["corpusCount"],
+                self.corpusManager.getCorpusCount(),
+                self.iterStats["crashCount"],
+                self.iterStats["hangCount"],
+                fuzzPerSec,
+                self.corpusManager.getMaxLatency(),
+                self.corpusManager.getTimeoutCount())
             self.queue.put( d )
             self.iterStats["lastUpdate"] = currTime
 
             if "fuzzer_nofork" in self.config and self.config["fuzzer_nofork"]:
+                d = (self.threadId,
+                     self.iterStats["iterCount"],
+                     self.iterStats["corpusCount"],
+                     self.corpusManager.getCorpusCount(),
+                     self.iterStats["crashCount"],
+                     self.iterStats["hangCount"],
+                     fuzzPerSec,
+                     self.corpusManager.getMaxLatency(),
+                     self.corpusManager.getTimeoutCount())
+
                 print(" %5d: %11d  %9d  %13d  %7d  %4.2f" % d)
 
 
