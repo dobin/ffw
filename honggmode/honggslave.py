@@ -241,6 +241,10 @@ class HonggSlave(object):
                         logging.error("Honggfuzz server crashed? Killed?")
                         return
 
+                    if self.config['hangsAreCrashes']:
+                        self._handleCrash(honggCorpusData, 'hang')
+                        self.iterStats["crashCount"] += 1
+
                     haveCheckedTargetIsAlive = False
 
             # honggfuzz says: new basic-block found

@@ -29,7 +29,10 @@ DefaultConfig = {
     "handle_corefiles": False,
 
     # have a special app protocol implemented? use it here
-    "proto": None,
+    # this will load protocol.py in the projdir
+    # the instance of protocol.py will be stored in protocolInstance
+    "use_protocol": False,
+    "protocolInstance": None,
 
     # the maximum network message number we will look at
     # (send, replay, test etc.)
@@ -62,12 +65,18 @@ DefaultConfig = {
     # Directory of verified files
     "verified_dir": "verified",
 
-    "protoObj": None,
-
     # restart server every X fuzzing iterations
     "restart_server_every": 10000,
 
+    # how long we wait for an server answer
     "recvTimeout": 0.03,  # 30/s
+
+    # how long we wait to check if the server is up/down
     "connectTimeout": 0.2,
+
+    # hides the target server stdout - or not (on certain phases)
     "hideTargetStdout": True,
+
+    # Interpret hangs as crashes. Mostly experimental.
+    "hangsAreCrashes": False,
 }

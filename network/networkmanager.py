@@ -103,8 +103,8 @@ class NetworkManager(object):
         try:
             data = self.sock.recv(1024)
             logging.debug("Received: " + str(data))
-            if self.config["protoObj"] is not None and message is not None:
-                self.config["protoObj"].onPostRecv(data, message["index"])
+            if self.config["protocolInstance"] is not None and message is not None:
+                self.config["protocolInstance"].onPostRecv(data, message["index"])
             return data
         except Exception as e:
             logging.info("NET ReceiveData err on msg " + str(message["index"]) + ": " + str(e))
@@ -158,8 +158,8 @@ class NetworkManager(object):
             sys.exit(1)
 
         try:
-            if self.config["protoObj"] is not None and message is not None:
-                message["data"] = self.config["protoObj"].onPreSend(message["data"], message["index"])
+            if self.config["protocolInstance"] is not None and message is not None:
+                message["data"] = self.config["protocolInstance"].onPreSend(message["data"], message["index"])
 
             self.sock.sendto(message["data"], ('127.0.0.1', self.targetPort))
         except socket.error as exc:
@@ -173,8 +173,8 @@ class NetworkManager(object):
         """Receive data from the server."""
         try:
             data, addr = self.sock.recvfrom(1024)
-            if self.config["protoObj"] is not None and message is not None:
-                self.config["protoObj"].onPostRecv(data, message["index"])
+            if self.config["protocolInstance"] is not None and message is not None:
+                self.config["protocolInstance"].onPostRecv(data, message["index"])
             return data
         except Exception as e:
             logging.info("NET ReceiveData err on msg " + str(message["index"]) + ": " + str(e))
