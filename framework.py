@@ -18,7 +18,7 @@ from network import tester
 from network import proto_vnc
 
 from basicmode import basicmaster
-from honggmode import honggmaster
+from honggmode.honggmaster import HonggMaster
 from configmanager import ConfigManager
 
 
@@ -192,7 +192,8 @@ def ffwHonggmode(configManager, args):
     else:
         config["honggmode_option"] = None
 
-    honggmaster.doFuzz(config)
+    honggMaster = HonggMaster(config)
+    honggMaster.doFuzz()
 
 
 def ffwClientFuzz(configManager, args):

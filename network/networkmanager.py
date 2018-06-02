@@ -412,4 +412,4 @@ class NetworkManager(object):
             if self.recvTimeout > 0.2:
                 self.recvTimeout = 0.2
 
-            logging.warn("Set recvTimeout to: " + str(self.recvTimeout) + "  orig was: " + str(origTimeout))
+            logging.info("Set recvTimeout to: " + str(self.recvTimeout) + "  orig was: " + str(origTimeout))

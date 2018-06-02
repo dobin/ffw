@@ -32,7 +32,7 @@ def shortSeed(s):
     if s is None:
         return '-'
 
-    return s[:5]
+    return s[:4]
 
 
 def setupSlaveLoggingWithFile(threadId):

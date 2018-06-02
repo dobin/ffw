@@ -56,6 +56,12 @@ class HonggStats(object):
             logging.warn("No new basic blocks found!")
             logging.warn("Are you sure you compiled target with honggfuzz?")
 
+        if self.stats['timeouts'] > ( self.stats['iterCount'] / 10 ):
+            logging.warn(">10 percent Timeout count (%d iterations, %d timeouts)"
+                         % ( self.stats['timeouts'], self.stats['iterCount']) )
+            logging.warn("Fuzzing is not effective. Identify reason of connection")
+            logging.warn("Timeout, use --test, and restart.")
+
 
     def writePlotData(self):
         # unix_time, cycles_done, cur_path, paths_total, pending_total,

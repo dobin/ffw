@@ -24,7 +24,7 @@ class CrashData():
         elif corpusData is not None:
             self.filename = utils.filenameWithoutExtension(corpusData.filename)
             self.filename += '.' + utils.shortSeed(self.corpusData.seed)
-            self.filename += '_m' + str(self.corpusData.networkData.getFuzzMessageIndex())
+            self.filename += '_' + str(self.corpusData.networkData.getFuzzMessageIndex())
             self.filename += '.crash'
 
         # our parent spawned us - attribute it to them

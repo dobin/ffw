@@ -42,7 +42,7 @@ class Tester():
         self.config = config
         self.stats = None
         self.networkManager = None
-        self.iterCount = 4
+        self.iterCount = 32
 
 
     def test(self):
@@ -67,6 +67,8 @@ class Tester():
         else:
             print("Initial test successful - could connect to server.")
 
+        if corpusManager.getCorpusCount() == 0:
+            print("No input corpus found - nothing to test. Exiting.")
 
         for corpusData in corpusManager:
             self.testCorpus(corpusData)
@@ -76,6 +78,7 @@ class Tester():
 
     def testCorpus(self, corpusData):
         print "---[ Testing CorpusData: " + corpusData.filename + " " + str(self.iterCount) + " times"
+        print("We use the following recvTimeout: " + str(self.config['recvTimeout']))
         it = 0
         corpusArr = []
         while it < self.iterCount:
@@ -114,12 +117,18 @@ class Tester():
 
         if hasTimeouts:
             print(messageHaveTimeouts)
+        else:
+            print("No timeouts, looking fine!")
 
 
     def getClientAnswerBefore(self, idx, networkData):
         n = self.getServerAnswerBefore(idx, networkData)
         while networkData.messages[n]['from'] != 'cli':
             n -= 1
+
+            # no underflow pls
+            if n < 0:
+                return 0
 
         return n
 
@@ -128,5 +137,9 @@ class Tester():
         n = idx - 1
         while networkData.messages[n]['from'] != 'srv':
             n -= 1
+
+            # no underflow pls
+            if n < 0:
+                return 0
 
         return n
