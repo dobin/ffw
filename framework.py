@@ -22,6 +22,7 @@ from honggmode.honggmaster import HonggMaster
 from configmanager import ConfigManager
 import utils
 
+
 # https://stackoverflow.com/questions/9321741/printing-to-screen-and-writing-to-a-file-at-the-same-time
 def setupLoggingWithFile(config):
     # set up logging to file - see previous section for more details

@@ -111,10 +111,10 @@ class NetworkData(object):
         s = ""
         for msg in self.messages:
             if 'isFuzzed' in msg:
-                d = ( msg['index'], msg['from'], len(msg['data']), True, str(msg['latency']))
+                d = ( msg['index'], msg['from'], len(msg['data']), True, str(msg['latency']), str(msg['timeouts']))
             else:
-                d = ( msg['index'], msg['from'], len(msg['data']), False, str(msg['latency']))
-            s += "  Idx: %2i  From: %s  MsgLen: %4i  isFuzzed: %r  latency: %s\n" % d
+                d = ( msg['index'], msg['from'], len(msg['data']), False, str(msg['latency']), str(msg['timeouts']))
+            s += "  Idx: %2i  From: %s  MsgLen: %4i  isFuzzed: %r  latency: %s  timeouts: %s\n" % d
 
             #if 'latency' in msg and msg['latency'] is not None:
             #    print("LATENCY: " + str(msg['latency']))
