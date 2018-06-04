@@ -79,4 +79,7 @@ DefaultConfig = {
 
     # Interpret hangs as crashes. Mostly experimental.
     "hangsAreCrashes": False,
+
+    # use tmpfs for tmp/
+    "use_tmpfs": True,
 }

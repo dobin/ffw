@@ -2,6 +2,8 @@
 
 import logging
 import hexdump
+import subprocess
+
 
 """
 Several utility functions.
@@ -60,3 +62,14 @@ def setupSlaveLoggingWithFile(threadId):
 
 def hexdumpc(str):
     hexdump.hexdump_ex( bytearray(str) )
+
+
+def setupTmpfs(config, enable=True):
+    if enable:
+        logging.info("Mounting tmpfs")
+        cmd = [ "/bin/mount", "-t", "tmpfs", "tmpfs", config['temp_dir'] ]
+        subprocess.call(cmd)
+    else:
+        logging.info("UnMounting tmpfs")
+        cmd = [ "/bin/umount", config['temp_dir'] ]
+        subprocess.call(cmd)

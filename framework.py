@@ -20,7 +20,7 @@ from network import proto_vnc
 from basicmode import basicmaster
 from honggmode.honggmaster import HonggMaster
 from configmanager import ConfigManager
-
+import utils
 
 # https://stackoverflow.com/questions/9321741/printing-to-screen-and-writing-to-a-file-at-the-same-time
 def setupLoggingWithFile(config):
@@ -172,7 +172,10 @@ def ffwBasicFuzz(configManager, args):
     config = configManager.config
     if not configManager.checkFuzzRequirements(config, 'basic'):
         return False
+
+    utils.setupTmpfs(config, enable=True)
     basicmaster.doFuzz(config, args.gui)
+    utils.setupTmpfs(config, enable=False)
 
 
 def ffwHonggmode(configManager, args):
@@ -193,7 +196,9 @@ def ffwHonggmode(configManager, args):
         config["honggmode_option"] = None
 
     honggMaster = HonggMaster(config)
+    utils.setupTmpfs(config, enable=True)
     honggMaster.doFuzz()
+    utils.setupTmpfs(config, enable=False)
 
 
 def ffwClientFuzz(configManager, args):
