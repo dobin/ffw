@@ -23,12 +23,13 @@ class DebugServerManager(AbstractVerifierServerManager):
         self.crashEvent = None
         self.proc = None
         self.p = None
-
+        if config["debug"]:
+            logging.basicConfig(level=logging.DEBUG)
 
     def _startServer(self):
         # create child via ptrace debugger
         # API: createChild(arguments[], no_stdout, env=None)
-        logging.debug("START: " + str(targetutils.getInvokeTargetArgs(self.config, self.targetPort + 1000)))
+        logging.debug("DebugServerManager: starting " + str(targetutils.getInvokeTargetArgs(self.config, self.targetPort + 1000)))
         self.pid = createChild(
             targetutils.getInvokeTargetArgs(self.config, self.targetPort),
             False,  # no_stdout
@@ -46,7 +47,7 @@ class DebugServerManager(AbstractVerifierServerManager):
         # FIXME
         event = self.dbg.waitProcessEvent(blocking=False)
         if event is not None and type(event) == ProcessExit:
-            logging.error("Started server, but it already exited: " + str(event))
+            logging.error("DebugServerManager: Started server, but it already exited: " + str(event))
             return False
 
         return True
@@ -63,9 +64,9 @@ class DebugServerManager(AbstractVerifierServerManager):
 
     def _waitForCrash(self):
         while True:
-            logging.info("DebugServer: Waiting for process event")
+            logging.info("ServerManager: Debug: Waiting for process event")
             event = self.dbg.waitProcessEvent()
-            logging.info("DebugServer: Got event: " + str(event))
+            logging.info("ServerManager: Debug: " + str(event))
             # If this is a process exit we need to check if it was abnormal
             if type(event) == ProcessExit:
                 if event.signum is None or event.exitcode == 0:
@@ -85,11 +86,11 @@ class DebugServerManager(AbstractVerifierServerManager):
             break
 
         if event is not None and event.signum != 15:
-            logging.info("DebugServer: Event Result: Crash")
+            logging.info("ServerManager: Debug: Event Result: Crash")
             self.crashEvent = event
             return True
         else:
-            logging.info("DebugServer: Event Result: No crash")
+            logging.info("ServerManager: Debug: Event Result: No crash")
             self.crashEvent = None
             return False
 
@@ -102,7 +103,7 @@ class DebugServerManager(AbstractVerifierServerManager):
             faultAddress = event.process.getInstrPointer()
         except Exception as e:
             # process already dead, hmm
-            print(("GetCrashDetails exception: " + str(e)))
+            print("DebugServerManager: GetCrashDetails exception: " + str(e))
 
         # Find the module that contains this address
         # Now we need to turn the address into an offset. This way when the process
@@ -119,7 +120,7 @@ class DebugServerManager(AbstractVerifierServerManager):
                     faultOffset = faultAddress - mapping.start
                     break
         except Exception as error:
-            print("getCrashDetails Exception: " + str(error))
+            print("DebugServerManager: getCrashDetails Exception: " + str(error))
             # it always has a an exception...
             pass
 
@@ -163,7 +164,7 @@ class DebugServerManager(AbstractVerifierServerManager):
 
         except Exception as e:
             # process already dead, hmm
-            print(("GetCrashDetails exception: " + str(e)))
+            print(("DebugServerManager: GetCrashDetails exception: " + str(e)))
 
 
         asanOutput = targetutils.getAsanOutput(self.config, self.pid)

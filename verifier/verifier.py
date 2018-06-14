@@ -19,11 +19,11 @@ from common.crashmanager import CrashManager
 sleeptimes = {
     # wait between server start and first connection attempt
     # so it can settle-in
-    "wait_time_for_server_rdy": 0.5,
+    "wait_time_for_server_rdy": 0.25,
 
     # how long we let the server run
     # usually it should crash immediately
-    "max_server_run_time": 2,
+    "max_server_run_time": 0.25,
 }
 
 
@@ -241,6 +241,7 @@ class Verifier(object):
 
         res = self.networkManager.debugServerConnection()
         if not res:
+            logging.error("Could not connect")
             return None
 
         logging.info("Verifier: Sending fuzzed messages")
@@ -258,6 +259,7 @@ class Verifier(object):
             # empty result. has to be handled.
             if serverCrashData:
                 logging.info("Verifier: I've got a crash: ")
+                print("Verifier: I've got a crash: ")
                 serverCrashData.setProcessStdout(serverStdout)
             else:
                 logging.error("Verifier: Some server error:")
@@ -265,6 +267,7 @@ class Verifier(object):
 
             return serverCrashData
         except Queue.Empty:
+            logging.info("Verifier: NO crash (empty queue)")
             self.stopChild()
             return None
 

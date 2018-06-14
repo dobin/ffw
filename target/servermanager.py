@@ -13,7 +13,7 @@ import targetutils
 GLOBAL_SLEEP = {
     # how long to wait after server start
     # can be high as it is not happening so often
-    "sleep_after_server_start": 1,
+    "sleep_after_server_start": 0.5,
 }
 
 

@@ -67,18 +67,21 @@ class AbstractVerifierServerManager(object):
             logging.info("Retrying to start server...")
             ret = self._startServer()
 
-        logging.info("Server PID: " + str(self.pid))
+        logging.info("DebugServer: Server PID: " + str(self.pid))
 
         # notify parent about the pid
         self.queue_sync.put( ("pid", self.pid) )
 
         # block until we have a crash
         # the client will send the network messages
+        logging.info("DebugServer: Waiting for a crash")
         if self._waitForCrash():
             # seems we have a crash. get details, so we
             # can return it to the parent via queue_sync
+            logging.info("DebugServer: We have a crash")
             crashData = self._getCrashDetails()
         else:
+            logging.info("DebugServer: We have NO crash (timeout)")
             crashData = None
 
         # _getCrashDetails could return None

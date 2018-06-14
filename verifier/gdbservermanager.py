@@ -43,7 +43,7 @@ class GdbServerManager(AbstractVerifierServerManager):
 
 
     def _waitForCrash(self):
-        logging.info("Wait for crash")
+        logging.info("ServerManager: GDB: Wait for crash")
 
         # start gdb
         argsGdb = [ "/usr/bin/gdb", self.config["target_bin"], '-q' ]
