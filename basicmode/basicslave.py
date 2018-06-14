@@ -56,9 +56,9 @@ class BasicSlave(object):
             targetPort = self.config["target_port"] + self.threadId
 
 
-        corpusManager = CorpusManager(self.config)
-        corpusManager.loadCorpusFiles()
-        if corpusManager.getCorpusCount() == 0:
+        self.corpusManager = CorpusManager(self.config)
+        self.corpusManager.loadCorpusFiles()
+        if self.corpusManager.getCorpusCount() == 0:
             logging.error("No corpus input data found in: " +
                           self.config['input_dir'])
             return
@@ -104,7 +104,7 @@ class BasicSlave(object):
                 # lets sleep a bit
                 time.sleep(0.5)
 
-            selectedCorpusData = corpusManager.getRandomCorpus()
+            selectedCorpusData = self.corpusManager.getRandomCorpus()
 
             # save this iteration data for future crashes
             # we do this at the start, not at the end, so we have to

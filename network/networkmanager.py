@@ -340,7 +340,7 @@ class NetworkManager(object):
         """For: BasicMode."""
         logging.info("NET Send pre data: ")
 
-        for message in networkData.messages:
+        for idx, message in enumerate(networkData.messages):
             if message == networkData.fuzzMsgChoice:
                 break
 
@@ -349,10 +349,10 @@ class NetworkManager(object):
                 r = self.receiveData(message)
                 t2 = time.time()
                 if not r:
-                    networkData.updateMessageTimeoutCount(message)
+                    networkData.updateMessageTimeoutCount(idx)
                     return False
                 else:
-                    networkData.updateMessageLatency(message, (t2 - t1))
+                    networkData.updateMessageLatency(idx, (t2 - t1))
 
             if message["from"] == "cli":
                 logging.debug("NET  Sending pre message: " + str(networkData.messages.index(message)))
@@ -368,7 +368,7 @@ class NetworkManager(object):
         logging.info("NET Send data: ")
 
         s = False
-        for message in networkData.messages:
+        for idx, message in enumerate(networkData.messages):
             # skip pre messages
             if message == networkData.fuzzMsgChoice:
                 s = True
@@ -379,10 +379,10 @@ class NetworkManager(object):
                     r = self.receiveData(message)
                     t2 = time.time()
                     if not r:
-                        networkData.updateMessageTimeoutCount(message)
+                        networkData.updateMessageTimeoutCount(idx)
                         return False
                     else:
-                        networkData.updateMessageLatency(message, (t2 - t1))
+                        networkData.updateMessageLatency(idx, (t2 - t1))
 
                 if message["from"] == "cli":
                     if "isFuzzed" in message:
