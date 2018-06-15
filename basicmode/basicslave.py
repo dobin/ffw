@@ -33,7 +33,7 @@ class BasicSlave(object):
         if self.config['use_netnamespace']:
             targetutils.startInNamespace(self.realDoActualFuzz, self.threadId)
         else:
-            self.readDoActualfuzz()
+            self.realDoActualFuzz()
 
 
     def realDoActualFuzz(self):
