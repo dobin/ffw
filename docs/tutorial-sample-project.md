@@ -1,5 +1,9 @@
 # FFW: Setup sample project
 
+This tutorial will show how to setup the fuzzing for the
+provided `vulnserver` target.
+
+
 ## Create directory structure
 
 Create a copy of the template directory for the software you want to test, in this case vulnserver:
@@ -12,6 +16,7 @@ $ cd vulnserver/
 The directory `vulnserver` will be our working directory from now on.
 It will contain the file `config.py`, and the directories `corpus/`, `bin/`, `crashes/`, `verified/`, and `temp/`.
 
+
 ## Create requirements
 
 To create the necessary folder structure, just call `make`:
@@ -19,6 +24,7 @@ To create the necessary folder structure, just call `make`:
 ffw/vulnserver $ make
 mkdir bin crashes temp verified
 ```
+
 
 ## Compile the target
 
@@ -30,26 +36,30 @@ gcc -O0 -fsanitize=address -fno-stack-protector -fno-omit-frame-pointer vulnserv
 gcc -O0 -fno-stack-protector -fno-omit-frame-pointer vulnserver.c -o vulnserver_plain
 ```
 
-And copy it to the `bin/` directory:
+And copy the binary `vulnserver_plain_asan` to the `ffw/vulnserver/bin/` directory:
 ```
 ffw/vulnserver/src $ cp ./vulnserver_plain_asan ./bin
 ```
 
+
 ## Configure fuzzer
 
 Edit `fuzzing.py`. Specify the path to the binary, and how to give the port number as parameter. Note that the existing `config.py` is already
-prepared:
+prepared, but it should look like this:
 ```
+{
     "name": "vulnserver 1",
-    "target_bin" : PROJDIR + "bin/vulnserver_plain_asan",
+    "target_bin" : "bin/vulnserver_plain_asan",
     "target_args": "%(port)i",
     "ipproto": "tcp",
+    "target_port": 20000,
+}
 ```
 
 
 ## Perform intercept
 
-Note, if you do not want to perform this step: just copy `intercept0.pickle` to `corpus/`:
+*NOTE*: if you do not want to perform this step: just copy `intercept0.pickle` to `corpus/`:
 ```
 ffw/vulnserver$ cp intercept0.pickle corpus/
 ```
@@ -72,7 +82,9 @@ INFO:root:Interceptor: Forwarding everything to localhost:20000
 INFO:root:Interceptor: Waiting for new client on port: 10000
 ```
 
-Start the client in another terminal to send some messages to the server:
+Start the client in another terminal to send some messages to the server.
+Note that we are taking port `10000` here, where FFW listens - not the
+original listener port of `20000` (or FFW will not see our packets):
 ```
 ffw/vulnserver# ./src/vulnserver_client.py 10000
 Connecting to 127.0.0.1 port 10000
@@ -104,7 +116,7 @@ DEBUG:root:Write corpus to file: /Development/ffw/vulnserver/corpus/intercept0.p
 
 Press `CTRL-C` to quit the server.
 
-This will generate the file `corpus/intercept0.pickle`. You can view it by using `../printpickly.py corpus/intercept0.pickle`:
+This will generate the file `corpus/intercept0.pickle`. You can view it by using `../printpickle.py corpus/intercept0.pickle`:
 ```
 ffw/vulnserver $ ../printpickle.py corpus/intercept0.pickle
 [   {   'data': 'AAAA', 'from': 'cli'},
@@ -249,7 +261,12 @@ ffw/vulnserver# ../printpickle.py crashes/data_0.3975_4.3975_4.crash
 
 ## Verify crashes
 
-We have a lot of crashes, as indicated by the files in the `crashes/` directory. Lets verify it to be sure that they are indeed valid crashes, and get additional information about the crash:
+We have a lot of crashes, as indicated by the files in the `crashes/` directory. Lets verify it to be sure that they are indeed valid crashes, and get additional information about the crash.
+
+Note that not all crashes from the `crashes/` directory are really valid
+crashes - if all of them are not reproducible, delete them and fuzz some
+more.
+
 
 ```
 ffw/vulnserver# ../ffw.py --verify
@@ -307,7 +324,9 @@ Listening on port: 20000
 
 In another terminal, use `replay` with either the crash or verified file:
 ```
-
+ffw/vulnserver# ../ffw.py --replay --file crashes/intercept0.5295_4.5295_4.crash
+Basedir: /Development/ffw
+Config file: /Development/ffw/vulnserver/config.py
 ```
 
 It should provoke the crash in the target program running in GDB:
