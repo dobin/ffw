@@ -16,25 +16,25 @@ It will contain the file `fuzzing.py`, and the directories `in/`, `bin/`, `out/`
 
 ## Compile the target
 
-Copy the binary of the server you want to fuzz to bin. It is already prepared
-in the `vulnserver/` directory, can be compiled with `make`:
+Copy the binary of the server you want to fuzz to bin. It is already prepared in the `src/` directory, can be compiled with `make`:
 ```
-$ make
+ffw/vulnserver/ $ cd src
+ffw/vulnserver/src $ make
 gcc -O0 -fsanitize=address -fno-stack-protector -fno-omit-frame-pointer vulnserver.c -o vulnserver_asan
 gcc -O0 -fno-stack-protector -fno-omit-frame-pointer vulnserver.c -o vulnserver_plain
 ```
 
 And copy it to the `bin/` directory:
 ```
-$ cp ./vulnserver_asan ./bin
+ffw/vulnserver/src $ cp ./vulnserver_plain_asan ./bin
 ```
 
 ## Configure fuzzer
 
 Edit `fuzzing.py` until STOP line. Specify the path to the binary, and how to give the port number as parameter:
 ```
-    "name": "vulnserver",
-    "target_bin" : PROJDIR + "bin/vulnserver_asan",
+    "name": "vulnserver 1",
+    "target_bin" : PROJDIR + "bin/vulnserver_plain_asan",
     "target_args": "%(port)i",
     "ipproto": "tcp",
 ```
@@ -45,48 +45,59 @@ Edit `fuzzing.py` until STOP line. Specify the path to the binary, and how to gi
 Start interceptor-mode. By default it will take port 10'000 as default listener
 port, and starts the target server on port 20'000.
 ```
-ffw/vulnserver $ ./fuzzing.py --intercept --listenport 1024 --debug
-Debug mode enabled
-INFO:root:Starting server with args: ['bin/vulnserver_asan', '20000']
-INFO:root:  Pid: 21158
-INFO:root:Start server PID: 21158
-Forwarding everything to localhost:20000
-Waiting for client on port: 1024
+/ffw/vulnserver# ../ffw.py --intercept --debug
+Basedir: /Development/ffw
+Config file: /Development/ffw/vulnserver/config.py
+Interceptor listen on port: 10000
+Target server port: 20000
+INFO:root:Starting server with args: ['/Development/ffw/vulnserver/bin/vulnserver_plain_asan', '20000']
+INFO:root:  Pid: 12908
+INFO:root:  Return code: None
+INFO:root:Start server PID: 12908
+INFO:root:Using: TCP
+INFO:root:NET Check if we can connect to server localhost:20000
+DEBUG:root:NET testServerConnectionTcp: connect to ('localhost', 20000)
+INFO:root:Interceptor: Forwarding everything to localhost:20000
+INFO:root:Interceptor: Waiting for new client on port: 10000
 ```
 
 Start the client in another terminal to send some messages to the server:
 ```
-ffw/vulnserver  $ ./vulnserver_client.py 1024
-Connecting to 127.0.0.1 port 1024
+ffw/vulnserver# ./src/vulnserver_client.py 10000
+Connecting to 127.0.0.1 port 10000
 Send message 1
 Send message 2
 Send message 3
+
 ```
 
 The server will print text similar to:
 ```
-Client Thread0 started
-INFO:root:Logging into: localhost:20000
-Received from client: 0: 4
-target: recv data
-Received from server: 0: 2
-Received from client: 0: 4
-target: recv data
-Received from server: 0: 2
-Received from client: 0: 4
-target: recv data
-Received from server: 0: 2
-target: recv data
-ClientTcpThread terminating
-Got 6 packets
+Interceptor: Got new client
+INFO:root:Interceptor TCP Thread: Client Thread0 started
+INFO:root:Interceptor TCP Thread: Logging into: localhost:20000
+INFO:root:Interceptor TCP Thread: Received from client: 0: 4
+INFO:root:Interceptor TCP Thread: target: recv data
+INFO:root:Interceptor TCP Thread: Received from server: 0: 2
+INFO:root:Interceptor TCP Thread: Received from client: 0: 4
+INFO:root:Interceptor TCP Thread: target: recv data
+INFO:root:Interceptor TCP Thread: Received from server: 0: 2
+INFO:root:Interceptor TCP Thread: Received from client: 0: 4
+INFO:root:Interceptor TCP Thread: target: recv data
+INFO:root:Interceptor TCP Thread: Received from server: 0: 2
+INFO:root:Interceptor TCP Thread: target: recv data
+INFO:root:Interceptor TCP Thread: ClientTcpThread terminating
+INFO:root:Interceptor TCP Thread: Got 6 packets
+Interceptor TCP Thread: Storing into file: intercept0.pickle
+DEBUG:root:Write corpus to file: /Development/ffw/vulnserver/corpus/intercept0.pickle
 ```
 
 Press `CTRL-C` to quit the server.
 
-This will generate the file `in/data_0.pickle`. You can view it by using `../printpickly.py in/data_0.pickle`:
+This will generate the file `corpus/intercept0.pickle`. You can view it by using `../printpickly.py corpus/intercept0.pickle`:
 
 ```
-ffw/vulnserver $ ../printpickle.py in/data_0.pickle
+ffw/vulnserver $ ../printpickle.py corpus/intercept0.pickle
 [   {   'data': 'AAAA', 'from': 'cli'},
     {   'data': 'ok', 'from': 'srv'},
     {   'data': 'BBBB', 'from': 'cli'},
@@ -100,43 +111,21 @@ It should contain some data from server and client.
 
 ## Test intercepted data
 
-Test if the recorded data can be replayed by using the test-mode. It will start the fuzz target, and replays the recorded data stored in `in/data_0.pickle` three times. If there are 0 fails, it is
+Test if the recorded data can be replayed by using the test-mode. It will start the fuzz target, and replays the recorded data stored in `corpus/intercept0.pickle` several times. If there are 0 fails, it is
 pretty reproducible.
 
 ```
-$ ./fuzzing.py --test --debug
-Debug mode enabled
-INFO:root:Using: TCP
-INFO:root:Starting server with args: ['./ffw/vulnserver/bin/vulnserver_asan', '20000']
-INFO:root:  Pid: 22247
-INFO:root:Start server PID: 22247
-==== Iteration =====
-INFO:root:Open connection on localhost:20000
-Handling msg: 0 Sending...
-  Send: 4
-Handling msg: 1 Receiving...
-  Orig: 2
-  Real: 2
-Handling msg: 2 Sending...
-  Send: 4
-Handling msg: 3 Receiving...
-  Orig: 2
-  Real: 2
-Handling msg: 4 Sending...
-  Send: 4
-Handling msg: 5 Receiving...
-  Orig: 2
-  Real: 2
-==== Iteration =====
-[...]
-Itercount: 3
-Fails:
-Fails at msg #0: 0
-Fails at msg #1: 0
-Fails at msg #2: 0
-Fails at msg #3: 0
-Fails at msg #4: 0
-Fails at msg #5: 0
+ffw/vulnserver# ../ffw.py --test
+Basedir: /Development/ffw
+Config file: /Development/ffw/vulnserver/config.py
+Using port: 20000
+Initial test successful - could connect to server.
+---[ Testing CorpusData: data_0.pickle 32 times
+We use the following recvTimeout: 0.03
+No timeouts, looking fine!
+---[ Testing CorpusData: intercept0.pickle 32 times
+We use the following recvTimeout: 0.03
+No timeouts, looking fine!
 ```
 
 All looking good!
@@ -145,84 +134,151 @@ All looking good!
 
 We are ready to fuzz. Start the fuzzer:
 ```
-$ ./fuzzing.py --fuzz --debug
-Debug mode enabled
-Config:  
-  Running fuzzer:    Radamsa
-  Outcomde dir:      ./ffw/vulnserver/out
-  Target:            ./ffw/vulnserver/bin/vulnserver_asan
-  Input dir:         ./ffw/vulnserver/in
-  Analyze response:  True
+ffw/vulnserver# ../ffw.py --fuzz --debug
+Basedir: /Development/ffw
+Config file: /Development/ffw/vulnserver/config.py
+Rember "use_netnamespace requires nesting in container"
+INFO:root:Mounting tmpfs
+DEBUG:root:Read corpus from file: /Development/ffw/vulnserver/corpus/data_0.pickle
+DEBUG:root:Read corpus from file: /Development/ffw/vulnserver/corpus/intercept0.pickle
+INFO:root:Input corpus files loaded: 2
 Start child: 0
+Thread#  Fuzz/s   Count   Crashes
+DEBUG:nsenter:Entering net namespace /var/run/netns/ffw-0
+INFO:root:Setup fuzzing..
+DEBUG:root:Read corpus from file: /Development/ffw/vulnserver/corpus/data_0.pickle
+DEBUG:root:Read corpus from file: /Development/ffw/vulnserver/corpus/intercept0.pickle
+INFO:root:Input corpus files loaded: 2
+INFO:root:Using: TCP
+INFO:root:Starting server with args: ['/Development/ffw/vulnserver/bin/vulnserver_plain_asan', '20000']
+INFO:root:  Pid: 12932
+INFO:root:  Return code: None
+INFO:root:Start server PID: 12932
+DEBUG:root:NET testServerConnectionTcp: connect to ('localhost', 20000)
+INFO:root:NET Server is ready (accepting connections)
+0 Start fuzzing...
+DEBUG:root:
 
-[...]
 
 DEBUG:root:A fuzzing loop...
-INFO:root:Open connection on localhost:20000
-DEBUG:root:Fuzzing the data
-DEBUG:root:selected input: 2  from: cli  len: 4
-INFO:root:Call fuzzer, seed: 15032758009265251593
-INFO:root:Send pre data:
-DEBUG:root:  Sending pre message: 0
-INFO:root:Send data:
-DEBUG:root:  Sending message: 2
-INFO:root:Could not read, crash?!
+INFO:root:NET Open connection on localhost:20000
+DEBUG:root:Fuzz the data
+INFO:root:Call mutator, seed: 17050315392402380266
+DEBUG:root:Mutator command args: -s 17050315392402380266 -o /Development/ffw/vulnserver/temp/17050315392402380266.out.raw "/Development/ffw/vulnserver/temp/17050315392402380266.in.raw"
+DEBUG:root:Read fuzzing data: BBBBBBBBBBBBB
+INFO:root:NET Send pre data:
+DEBUG:root:NET  Sending pre message: 0
+DEBUG:root:Sending: AAAA
+DEBUG:root:Received: ok
+INFO:root:NET Send data:
+DEBUG:root:NET   Sending fuzzed message: 2
+DEBUG:root:Sending: BBBBBBBBBBBBB
+INFO:root:NET ReceiveData err on msg 3: timed out
 INFO:root: C Could not send, possible crash? (postdata)
-INFO:root:Detected Crash (C)
-INFO:root:getCrashData(): get data, but server alive?!
-INFO:root:Get asan output: ./ffw/vulnserver/temp/asan.22379
-INFO:root:Did not find ASAN output file: ./ffw/vulnserver/temp/asan.22379
-INFO:root:Stop server PID: 22379
-INFO:root:Starting server with args: ['./ffw/vulnserver/bin/vulnserver_asan', '20000']
-INFO:root:  Pid: 22405
-INFO:root:Start server PID: 22405
+DEBUG:root:NET testServerConnectionTcp: connect to ('localhost', 20000)
+INFO:root:C Broken connection... continue
+DEBUG:root:
+[...]
 ```
 
-This will result in more and more files in the `out/` directory, if crashes are detected. Lets it run for a few minutes.
+This will result in more and more files in the `crashes/` directory, if crashes are detected. Lets it run for a few minutes.
+
 ```
-ffw/vulnserver$ ls out/
-1071287157815228985.ffw   1147553628983128942.ffw   18287258929267146782.ffw
-1071287157815228985.txt   1147553628983128942.txt   18287258929267146782.txt
-10807046273026107559.ffw  15032758009265251593.ffw  2679312059348738636.ffw
-10807046273026107559.txt  15032758009265251593.txt  2679312059348738636.txt
+ffw/vulnserver# ls crashes/
+data_0.5329_2.5329_2.crash  intercept0.1240_2.1240_2.crash
+data_0.9988_4.9988_4.crash  intercept0.1647_4.1647_4.crash
 ```
 
-The `.txt` files contain the plaintext information about the crash, the `.ffw`
-files are python pickle files.
+Lets have a look at a content of a crash file:
+```
+ffw/vulnserver# ../printpickle.py crashes/data_0.3975_4.3975_4.crash
+{   'asanOutput': '=================================================================\n==12983==ERROR: AddressSanitizer: heap-buffer-overflow on address 0x6020000000b8 at pc 0x7f59ef30b77a bp 0x7fff42b67050 sp [...]\n',
+    'corpusData': {   'filename': 'data_0.3975_4.pickle',
+                      'fuzzer': 'Radamsa',
+                      'networkData': [   {   'data': 'AAAA',
+                                             'from': 'cli',
+                                             'index': 0,
+                                             'latency': None,
+                                             'timeouts': 0},
+                                         {   'data': 'ok',
+                                             'from': 'srv',
+                                             'index': 1,
+                                             'latency': 0.0002589225769042969,
+                                             'timeouts': 0},
+                                         {   'data': 'BBBB',
+                                             'from': 'cli',
+                                             'index': 2,
+                                             'latency': None,
+                                             'timeouts': 0},
+                                         {   'data': 'ok',
+                                             'from': 'srv',
+                                             'index': 3,
+                                             'latency': 0.00014591217041015625,
+                                             'timeouts': 0},
+                                         {   'data': 'C\xf3\xa0\x81\xe7C\xf3\xa0\x81\xa7\xe2\x80\x86Cc',
+                                             'from': 'cli',
+                                             'index': 4,
+                                             'isFuzzed': True,
+                                             'latency': None,
+                                             'timeouts': 0},
+                                         {   'data': 'ok',
+                                             'from': 'srv',
+                                             'index': 5,
+                                             'latency': None,
+                                             'timeouts': 1}],
+                      'parentFilename': 'data_0.pickle',
+                      'seed': '3975385818332432263',
+                      'time': None},
+    'exitcode': 0,
+    'filename': 'data_0.3975_4.3975_4.crash',
+    'fuzzerPos': 'A',
+    'reallydead': -6,
+    'serverpid': 12983,
+    'signum': 0}
+```
 
 
 ## Verify crashes
 
-We have a lot of crashes, as indicated by the files in the `out/` directory. Lets verify it to be sure that they are indeed valid crashes, and get additional information about the crash:
+We have a lot of crashes, as indicated by the files in the `crashes/` directory. Lets verify it to be sure that they are indeed valid crashes, and get additional information about the crash:
 
 ```
-ffw/vulnserver$ ./fuzzing.py --verify --debug
-Debug mode enabled
-INFO:root:Crash verifier
-Processing 6 outcome files
-Now processing: 0: ./ffw/vulnserver/out/15032758009265251593.ffw
-INFO:root:Using: TCP
-INFO:root:DebugServer: Start Server
-DEBUG:root:START: ['./ffw/vulnserver/bin/vulnserver_asan', '21100']
-INFO:root:Attach <PtraceProcess #23559> to debugger
-INFO:root:Set <PtraceProcess #23559> options to 1
-Listening on port: 20100
-INFO:root:Server PID: 23559
-INFO:root:DebugServer: Waiting for process event
-INFO:root:Verifier: Server pid: 23559
-New client connected
-INFO:root:Server is ready (accepting connections)
-INFO:root:Verifier: Sending fuzzed messages
-INFO:root:Open connection on localhost:20100
-[...]
+ffw/vulnserver# ../ffw.py --verify
+Basedir: /Development/ffw
+Config file: /Development/ffw/vulnserver/config.py
+06-15 10:42 root         WARNING  Terminate <PtraceProcess #13014>
+Verifier: crash verified: data_0.5329_2.5329_2.crash: 140161457819835
+Verifier: crash verified: data_0.5329_2.5329_2.crash: None
+06-15 10:42 root         WARNING  Terminate <PtraceProcess #13027>
+Verifier: crash verified: intercept0.1647_4.1647_4.crash: 139923769520315
+Verifier: crash verified: intercept0.1647_4.1647_4.crash: None
+06-15 10:42 root         WARNING  Terminate <PtraceProcess #13040>
+Verifier: crash verified: data_0.9988_4.9988_4.crash: 140067457188027
+Verifier: crash verified: data_0.9988_4.9988_4.crash: None
+06-15 10:42 root         WARNING  Terminate <PtraceProcess #13053>
+Verifier: crash verified: intercept0.1240_2.1240_2.crash: 139797202968763
+Verifier: crash verified: intercept0.1240_2.1240_2.crash: None
+06-15 10:42 root         WARNING  Terminate <PtraceProcess #13066>
+Verifier: crash verified: data_0.3975_4.3975_4.crash: 140396065943739
+Verifier: crash verified: data_0.3975_4.3975_4.crash: None
 ```
 
-If the crash from `out/` could be verified, new files appear in the `verfified/` directory:
+If the crash from `crashes/` could be verified, new files appear in the `verfified/` directory:
 ```
-ffw/vulnserver$ ls verified/
-1071287157815228985.ffw  18287258929267146782.ffw  README.txt
-1071287157815228985.txt  18287258929267146782.txt
+ffw/vulnserver# ls verified/
+README.txt                            data_0.9988_4.9988_4.gdb.verified
+data_0.3975_4.3975_4.asan.verified    data_0.9988_4.9988_4.ptrace.verified
+data_0.3975_4.3975_4.gdb.verified     intercept0.1240_2.1240_2.asan.verified
+data_0.3975_4.3975_4.ptrace.verified  intercept0.1240_2.1240_2.gdb.verified
+data_0.5329_2.5329_2.asan.verified    intercept0.1240_2.1240_2.ptrace.verified
+data_0.5329_2.5329_2.gdb.verified     intercept0.1647_4.1647_4.asan.verified
+data_0.5329_2.5329_2.ptrace.verified  intercept0.1647_4.1647_4.gdb.verified
+data_0.9988_4.9988_4.asan.verified    intercept0.1647_4.1647_4.ptrace.verified
 ```
+
+The `.verified` pickle file will have a lot of additional information
+about the crash.
+
 
 ## Replay crashes
 
@@ -231,22 +287,18 @@ To manually replay the crashes, e.g. if the target runs in GDB, use the
 
 Start the target in a terminal in gdb:
 ```
-./ffw/vulnserver$ gdb -q ./bin/vulnserver_asan
-Reading symbols from ./bin/vulnserver_asan...(no debugging symbols found)...done.
-(gdb) r 1024
-Starting program: ./ffw/vulnserver/bin/vulnserver_asan 1024
-Listening on port: 1024
+ffw/vulnserver# gdb -q ./bin/vulnserver_plain_asan
+Reading symbols from ./bin/vulnserver_plain_asan...done.
+(gdb) r 20000
+Starting program: /Development/ffw/vulnserver/bin/vulnserver_plain_asan 20000
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+Listening on port: 20000
 ```
 
-In another terminal, use `replay` with a `.ffw` file:
+In another terminal, use `replay` with either the crash or verified file:
 ```
-./ffw/vulnserver$ ./fuzzing.py --replay --port 1024 --file verified/18287258929267146782.ffw --debug
-Debug mode enabled
-File: verified/18287258929267146782.ffw
-Port: 1024
-INFO:root:Using: TCP
-INFO:root:Open connection on localhost:1024
-INFO:root:ReceiveData err on msg 3: timed out
+
 ```
 
 It should provoke the crash in the target program running in GDB:
@@ -254,8 +306,10 @@ It should provoke the crash in the target program running in GDB:
 New client connected
 Received data with len: 4 on state: 0
 Auth success
-Received data with len: 28 on state: 1
-
-Program received signal SIGSEGV, Segmentation fault.
-0x000000004242b0b5 in ?? ()
+Received data with len: 4 on state: 1
+BBBB
+Received data with len: 15 on state: 2
+=================================================================
+==13085==ERROR: AddressSanitizer: heap-buffer-overflow on address 0x602000000018 at pc 0x7ffff6e9377a bp 0x7fffffffde90 sp 0x7fffffffd638
+[...]
 ```

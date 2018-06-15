@@ -4,7 +4,14 @@
 
 ### Docker
 
-### LXC
+Start via:
+```
+docker run -ti --privileged -lxc-conf="aa_profile=unconfined" dobin/ffw:0.1
+```
+
+* Privileged: Have more permissions
+* lxc-conf: Enable nesting
+
 
 ### Proxmox LXC
 

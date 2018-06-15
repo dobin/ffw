@@ -19,40 +19,6 @@ Note: In Ubuntu 17.10, this requires the following packages:
 $ sudo apt-get install binutils-dev libunwind-dev clang
 ```
 
-## Fuzz with hardware-based feedback
-
-Note:
-* Requires a new CPU, Kernel
-* Does not work in vmware
-* Requires root
-
-Go into the vulnserver ffw project:
-
-```
-$ cd ~/ffw/vulnserver
-```
-
-Edit the `fuzzing.py` and specify that we want to perform hardware-based
-fuzzing feedback:
-
-```
-"honggpath": "/home/fuzzer/honggfuzz/honggfuzz",
-"honggcov": "hw"
-```
-
-We will still use "vulnserver_asan" as binary, which is not compiled with
-any fuzzing feedback code.
-
-Start with:
-```
-# ./fuzzing.py --honggmode --debug
-```
-(Instead of `./fuzzing.py --fuzz`)
-
-You'll should have an output like this if it works:
-```
-INFO:root:--[ Adding file to corpus...
-```
 
 ## Fuzz with software-based feedback
 
@@ -60,32 +26,56 @@ Note:
 * This required Ubuntu 17.04 or higher
 * On Ubuntu 16.04 there will be something like `clang: error: unsupported argument 'trace-pc-guard' to option 'fsanitize-coverage='`
 
+Compile target with `hfuzz_cc/hfuzz-clang` or similar.
+
 Compile `vulnserver` with hfuzz:
 ```
-$ cd vulnserver/
-$ export HFUZZ_CC_ASAN="true"
-$ ~/honggfuzz/hfuzz_cc/hfuzz-clang vulnserver.c -o bin/vulnserver_hfuzz
+ffw/vulnserver/src# make
+gcc -g -O0 -fsanitize=address -fno-stack-protector -fno-omit-frame-pointer vulnserver.c -o vulnserver_plain_asan
+gcc -g -O0 -fno-stack-protector -fno-omit-frame-pointer vulnserver.c -o vulnserver_plain
+
+ffw/vulnserver/src# cp vulnserver_hfuzz ../bin
 ```
 
-Change config to point to this new binary:
+Change `config.py` to point to this new binary:
 ```
-"target_bin": PROJDIR + "bin/vulnserver_hfuzz",
-```
-
-Configure honggfuzz:
-```
-"honggpath": "/home/fuzzer/honggfuzz/honggfuzz",
-"honggmode_option": "sw"
+"target_bin": "bin/vulnserver_hfuzz",
 ```
 
-Start honggfuzz:
+Start in honggmode:
 ```
-$ ./fuzzing.py --honggmode --debug
-```
-
-You'll should have an output like this if it works:
-```
-INFO:root:--[ Adding file to corpus...
+ffw/vulnserver/# ../ffw.py --honggmode
+Basedir: /Development/ffw
+Config file: /Development/ffw/vulnserver/config.py
+Rember "use_netnamespace requires nesting in container"
+Start fuzzing child #0
+ connected to honggfuzz!
+Performing warmup. This can take some time.
+    Corpus   0  (    -):  Parent:   -  Msg:   -  Children:   0  Crashes:   0
+    Corpus   1  (    -):  Parent:   -  Msg:   -  Children:   0  Crashes:   0
+Found crash!
+Found crash!
+Found crash!
+Found crash!
+Found crash!
+Found crash!
+Found crash!
+    Corpus   0  (    -):  Parent:   -  Msg:   -  Children:   0  Crashes:   5
+    Corpus   1  (    -):  Parent:   -  Msg:   -  Children:   0  Crashes:   2
+Found crash!
+Found crash!
+Found crash!
+    Corpus   0  (    -):  Parent:   -  Msg:   -  Children:   0  Crashes:   5
+    Corpus   1  (    -):  Parent:   -  Msg:   -  Children:   0  Crashes:   5
+Found crash!
+Found crash!
+Found crash!
+Found crash!
+    Corpus   0  (    -):  Parent:   -  Msg:   -  Children:   0  Crashes:   8
+    Corpus   1  (    -):  Parent:   -  Msg:   -  Children:   0  Crashes:   6
+Found crash!
+Found crash!
+^CFinished
 ```
 
 
@@ -129,14 +119,3 @@ connecting to /tmp/honggfuzz_socket
 ```
 
 If the message `Adding file to corpus` appears, it works.
-
-### Closed-source project options
-
-Add one of the following options. See https://github.com/google/honggfuzz/blob/master/docs/FeedbackDrivenFuzzing.md for reference. `--linux_perf_bts_edge` works well.
-
-```
-"honggmode_option": "--linux_perf_bts_edge"
-"honggmode_option": "--linux_perf_ipt_block"
-"honggmode_option": "--linux_perf_instr"
-"honggmode_option": "--linux_perf_branch"
-```
