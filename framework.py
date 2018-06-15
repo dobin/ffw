@@ -241,13 +241,16 @@ def ffwMinimize(config, args):
 
 def ffwReplay(config, args):
     replayer = replay.Replayer(config)
+    targetPort = None
 
     if not args.file:
         print "Use --file to specify a file to be replayed"
-    elif not args.targetport:
-        print "Use --targetport to specify port to send data to"
-    else:
-        replayer.replayFile(args.targetport, args.file)
+        return False
+
+    if not args.targetport:
+        targetPort = config['target_port']
+
+    replayer.replayFile(targetPort, args.file)
 
 
 def ffwUpload(config, args):
