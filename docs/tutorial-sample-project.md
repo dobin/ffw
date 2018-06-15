@@ -3,21 +3,17 @@
 This tutorial will show how to setup the fuzzing for the
 provided `vulnserver` target.
 
-
-## Create directory structure
-
-Create a copy of the template directory for the software you want to test, in this case vulnserver:
-
+It is part of FFW:
 ```
 $ cd ffw/
 $ cd vulnserver/
 ```
 
+
+## Create directory structure
+
 The directory `vulnserver` will be our working directory from now on.
 It will contain the file `config.py`, and the directories `corpus/`, `bin/`, `crashes/`, `verified/`, and `temp/`.
-
-
-## Create requirements
 
 To create the necessary folder structure, just call `make`:
 ```
@@ -28,7 +24,8 @@ mkdir bin crashes temp verified
 
 ## Compile the target
 
-Copy the binary of the server you want to fuzz to bin. It is already prepared in the `src/` directory, can be compiled with `make`:
+Copy the binary of the server you want to fuzz to `bin/`, where
+we will reference it later in `config.py`. The target exists in the `src/` directory, can be compiled with `make`:
 ```
 ffw/vulnserver/ $ cd src
 ffw/vulnserver/src $ make
@@ -36,7 +33,7 @@ gcc -O0 -fsanitize=address -fno-stack-protector -fno-omit-frame-pointer vulnserv
 gcc -O0 -fno-stack-protector -fno-omit-frame-pointer vulnserver.c -o vulnserver_plain
 ```
 
-And copy the binary `vulnserver_plain_asan` to the `ffw/vulnserver/bin/` directory:
+Copy the binary `vulnserver_plain_asan` to the `ffw/vulnserver/bin/` directory:
 ```
 ffw/vulnserver/src $ cp ./vulnserver_plain_asan ./bin
 ```
@@ -45,7 +42,7 @@ ffw/vulnserver/src $ cp ./vulnserver_plain_asan ./bin
 ## Configure fuzzer
 
 Edit `fuzzing.py`. Specify the path to the binary, and how to give the port number as parameter. Note that the existing `config.py` is already
-prepared, but it should look like this:
+prepared - it should look like this:
 ```
 {
     "name": "vulnserver 1",
@@ -150,6 +147,7 @@ No timeouts, looking fine!
 ```
 
 All looking good!
+
 
 ## Perform fuzzing
 
@@ -266,7 +264,6 @@ We have a lot of crashes, as indicated by the files in the `crashes/` directory.
 Note that not all crashes from the `crashes/` directory are really valid
 crashes - if all of them are not reproducible, delete them and fuzz some
 more.
-
 
 ```
 ffw/vulnserver# ../ffw.py --verify
