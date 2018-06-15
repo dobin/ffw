@@ -249,17 +249,21 @@ class Verifier(object):
 
         # get crash result data from child
         #   or empty if server did not crash
+        # serverCrashData is type verifier:ServerCrashData
         try:
             logging.info("Verifier: Wait for crash data")
-            (t, serverCrashData) = self.queue_sync.get(True, sleeptimes["max_server_run_time"])
+            (t, serverCrashData) = self.queue_sync.get(
+                True,
+                sleeptimes["max_server_run_time"])
             serverStdout = self.queue_out.get()
 
             # it may be that the debugServer detects a process exit
             # (e.g. port already used), and therefore sends an
             # empty result. has to be handled.
             if serverCrashData:
-                logging.info("Verifier: I've got a crash: ")
-                print("Verifier: I've got a crash: ")
+                logging.info("Verifier: I've got a crash")
+                print("Verifier: crash verified: %s: %s " %
+                      (crashData.filename, serverCrashData.faultAddress))
                 serverCrashData.setProcessStdout(serverStdout)
             else:
                 logging.error("Verifier: Some server error:")
@@ -267,7 +271,8 @@ class Verifier(object):
 
             return serverCrashData
         except Queue.Empty:
-            logging.info("Verifier: NO crash (empty queue)")
+            logging.info("Verifier: no crash on: %s" % (crashData.filename) )
+            print("Verifier: no crash on: %s" % (crashData.filename) )
             self.stopChild()
             return None
 

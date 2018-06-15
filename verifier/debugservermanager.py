@@ -26,13 +26,14 @@ class DebugServerManager(AbstractVerifierServerManager):
         if config["debug"]:
             logging.basicConfig(level=logging.DEBUG)
 
+
     def _startServer(self):
         # create child via ptrace debugger
         # API: createChild(arguments[], no_stdout, env=None)
         logging.debug("DebugServerManager: starting " + str(targetutils.getInvokeTargetArgs(self.config, self.targetPort + 1000)))
         self.pid = createChild(
             targetutils.getInvokeTargetArgs(self.config, self.targetPort),
-            False,  # no_stdout
+            True,  # no_stdout
             None,
         )
 
@@ -103,7 +104,7 @@ class DebugServerManager(AbstractVerifierServerManager):
             faultAddress = event.process.getInstrPointer()
         except Exception as e:
             # process already dead, hmm
-            print("DebugServerManager: GetCrashDetails exception: " + str(e))
+            logging.info("DebugServerManager: GetCrashDetails exception: " + str(e))
 
         # Find the module that contains this address
         # Now we need to turn the address into an offset. This way when the process
@@ -120,7 +121,7 @@ class DebugServerManager(AbstractVerifierServerManager):
                     faultOffset = faultAddress - mapping.start
                     break
         except Exception as error:
-            print("DebugServerManager: getCrashDetails Exception: " + str(error))
+            logging.info("DebugServerManager: getCrashDetails Exception: " + str(error))
             # it always has a an exception...
             pass
 
@@ -164,7 +165,7 @@ class DebugServerManager(AbstractVerifierServerManager):
 
         except Exception as e:
             # process already dead, hmm
-            print(("DebugServerManager: GetCrashDetails exception: " + str(e)))
+            logging.info(("DebugServerManager: GetCrashDetails exception: " + str(e)))
 
 
         asanOutput = targetutils.getAsanOutput(self.config, self.pid)

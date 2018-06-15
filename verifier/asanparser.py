@@ -64,7 +64,7 @@ class AsanParser(object):
         if not self.lines:
             return asanData
 
-        print "ASANdata: " + str(self.lines)
+        logging.debug("ASANdata: " + str(self.lines))
 
         # first line is just some ===, the second line is the important one
         headerLine = self.lines[1]

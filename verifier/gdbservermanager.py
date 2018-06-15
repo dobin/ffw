@@ -48,7 +48,7 @@ class GdbServerManager(AbstractVerifierServerManager):
         # start gdb
         argsGdb = [ "/usr/bin/gdb", self.config["target_bin"], '-q' ]
 
-        print("Start server: " + str(argsGdb))
+        logging.info("Start server: " + str(argsGdb))
         p = Popen(argsGdb, stdout=PIPE, stdin=PIPE, stderr=PIPE)
 
         data1 = "r " + self.config["target_args"] % ( { "port": self.targetPort } )
