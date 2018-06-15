@@ -7,12 +7,18 @@ Create a copy of the template directory for the software you want to test, in th
 ```
 $ cd ffw/
 $ cd vulnserver/
-$ cp -R ../template/* .
 ```
 
 The directory `vulnserver` will be our working directory from now on.
-It will contain the file `fuzzing.py`, and the directories `in/`, `bin/`, `out/`, `verified/`, and `temp/`.
+It will contain the file `config.py`, and the directories `corpus/`, `bin/`, `crashes/`, `verified/`, and `temp/`.
 
+## Create requirements
+
+To create the necessary folder structure, just call `make`:
+```
+ffw/vulnserver $ make
+mkdir bin crashes temp verified
+```
 
 ## Compile the target
 
@@ -31,7 +37,8 @@ ffw/vulnserver/src $ cp ./vulnserver_plain_asan ./bin
 
 ## Configure fuzzer
 
-Edit `fuzzing.py` until STOP line. Specify the path to the binary, and how to give the port number as parameter:
+Edit `fuzzing.py`. Specify the path to the binary, and how to give the port number as parameter. Note that the existing `config.py` is already
+prepared:
 ```
     "name": "vulnserver 1",
     "target_bin" : PROJDIR + "bin/vulnserver_plain_asan",
@@ -42,8 +49,12 @@ Edit `fuzzing.py` until STOP line. Specify the path to the binary, and how to gi
 
 ## Perform intercept
 
-Start interceptor-mode. By default it will take port 10'000 as default listener
-port, and starts the target server on port 20'000.
+Note, if you do not want to perform this step: just copy `intercept0.pickle` to `corpus/`:
+```
+ffw/vulnserver$ cp intercept0.pickle corpus/
+```
+
+Start interceptor-mode. By default it will take port 10'000 as default listener port, and starts the target server on port 20'000.
 ```
 /ffw/vulnserver# ../ffw.py --intercept --debug
 Basedir: /Development/ffw
@@ -68,7 +79,6 @@ Connecting to 127.0.0.1 port 10000
 Send message 1
 Send message 2
 Send message 3
-
 ```
 
 The server will print text similar to:
@@ -95,7 +105,6 @@ DEBUG:root:Write corpus to file: /Development/ffw/vulnserver/corpus/intercept0.p
 Press `CTRL-C` to quit the server.
 
 This will generate the file `corpus/intercept0.pickle`. You can view it by using `../printpickly.py corpus/intercept0.pickle`:
-
 ```
 ffw/vulnserver $ ../printpickle.py corpus/intercept0.pickle
 [   {   'data': 'AAAA', 'from': 'cli'},

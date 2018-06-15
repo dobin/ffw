@@ -1,8 +1,8 @@
 
-all: requirements compile
+all: requirements 
 
 requirements:
-	mkdir bin crashes temp verified
+	mkdir bin corpus crashes temp verified
 
 compile:
 	cd src; make HFUZZ_CC_ASAN="true" CC="/Development/honggfuzz/hfuzz_cc/hfuzz-clang"

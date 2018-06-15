@@ -3,7 +3,7 @@
 
 {
     # name of the software we fuzz
-    "name": "",
+    "name": "vulnserver",
 
     # which version of the software are we fuzzing (optional)
     "version": "",
@@ -12,7 +12,7 @@
     "comment": "",
 
     # Path to target
-    "target_bin": "bin/vulnserver_hfuzz",
+    "target_bin": "bin/vulnserver_plain_asan",
 
     # target arguments
     # separate arguments by space
@@ -31,5 +31,5 @@
 
     "honggpath": "/Development/honggfuzz/honggfuzz",
 
-    "use_netnamespace": True,
+    "use_netnamespace": False,
 }
