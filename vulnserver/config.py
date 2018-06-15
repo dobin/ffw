@@ -12,7 +12,7 @@
     "comment": "",
 
     # Path to target
-    "target_bin": "bin/server",
+    "target_bin": "bin/vulnserver_hfuzz",
 
     # target arguments
     # separate arguments by space
@@ -28,6 +28,8 @@
 
     # "tcp" or "udp" protocol?
     "ipproto": "tcp",
+
+    "honggpath": "/Development/honggfuzz/honggfuzz",
 
     "use_netnamespace": True,
 }
