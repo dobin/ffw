@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 # FFW - Fuzzing For Worms
 # Author: Dobin Rutishauser
@@ -7,6 +7,8 @@ import logging
 import argparse
 import os
 import glob
+import sys
+import inspect
 
 from network import replay
 from network.interceptor import Interceptor
@@ -85,18 +87,32 @@ def realMain(config):
     # wtf is this
     configManager = ConfigManager()
     if config is None:
+        basedir = None
+        configFile = None
+
         if args.config is None:
-            print "No config specified. Either start via fuzzing.py, or with --config <configfile>"
-            return False
-        else:
-            if not args.basedir:
-                print "Please specify FFW basedir"
-                return False
+            maybeConfigFile = os.getcwd() + "/config.py"
+            if os.path.isfile( maybeConfigFile ):
+                configFile = maybeConfigFile
             else:
-                config = configManager.loadConfigByFile(args.config, args.basedir)
-                if config is None:
-                    print "Invalid config"
-                    return False
+                print "No config specified. Either start via fuzzing.py, or with --config <configfile>"
+                return False
+        else:
+            configFile = args.config
+
+        if not args.basedir:
+            # https://stackoverflow.com/questions/50499/how-do-i-get-the-path-and-name-of-the-file-that-is-currently-executing
+            basedir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+        else:
+            basedir = args.basedir
+
+
+        print "Basedir: " + basedir
+        print "Config file: " + configFile
+        config = configManager.loadConfigByFile(configFile, basedir)
+        if config is None:
+            print "Invalid config"
+            return False
 
     if not configManager.checkRequirements(config):
         print "Requirements not met."
