@@ -4,7 +4,7 @@ import sys
 import os.path
 import os
 
-# import parent dir as pytohn search path
+# import parent dir as python search path
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir))
 
 import framework
