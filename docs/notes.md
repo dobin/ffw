@@ -113,7 +113,7 @@ And fix it.
 ### Fix ptrace
 
 python-ptrace sometimes encounters a bug. Fix the regex specified below.
-The path may be different (depending on how you installed pytohn-ptrace).
+The path may be different (depending on how you installed python-ptrace).
 May not be always necessary (?). Will only affect verify-mode of ffw.
 
 * Relevant file: memory_mapping.py
