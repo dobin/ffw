@@ -17,6 +17,12 @@ Features:
 * Fast fuzzing setup (no source code changes or protocol reversing needed!)
 * Reasonable fuzzing performance
 
+# Presentation 
+
+Presented at security conference Area 41 2018. 
+* (Fuzzing For Worms Slides)[https://docs.google.com/presentation/d/1tLELphbkh2bVLyIedagNoFKBn_DEYv29RskZY4u-szA/edit?usp=sharing]
+* (Youtube)[https://www.youtube.com/watch?v=akpk9hrizc4]
+
 
 # Docker
 
